@@ -129,6 +129,29 @@
     max-height:420px;
 }
 
+.msg-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    max-width:100%;
+}
+
+.msg-row.me{
+    justify-content:flex-end;
+}
+
+.msg-reply-icon{
+    font-size:16px;
+    color:#7da9ff;
+    opacity:0;
+    transition:opacity .15s;
+    flex-shrink:0;
+}
+
+.msg-row.swiping .msg-reply-icon{
+    opacity:1;
+}
+
 .msg{
     max-width:75%;
     padding:12px 16px;
@@ -136,11 +159,51 @@
     background:rgba(255,255,255,.06);
     font-size:14px;
     line-height:1.5;
+    cursor:pointer;
+    touch-action:pan-y;
 }
 
 .msg.me{
     align-self:flex-end;
     background:linear-gradient(90deg,#0066ff,#00b7ff);
+}
+
+.msg-quote{
+    display:block;
+    border-left:3px solid #7da9ff;
+    background:rgba(0,0,0,.2);
+    border-radius:8px;
+    padding:6px 10px;
+    margin-bottom:8px;
+}
+
+.msg.me .msg-quote{
+    border-left-color:rgba(255,255,255,.7);
+    background:rgba(0,0,0,.15);
+}
+
+.msg-quote-author{
+    display:block;
+    font-size:11px;
+    font-weight:700;
+    color:#7da9ff;
+}
+
+.msg.me .msg-quote-author{
+    color:rgba(255,255,255,.85);
+}
+
+.msg-quote-text{
+    display:block;
+    font-size:12px;
+    color:rgba(255,255,255,.7);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.msg.me .msg-quote-text{
+    color:rgba(255,255,255,.75);
 }
 
 .msg-author{
@@ -160,6 +223,52 @@
     font-size:10px;
     color:rgba(255,255,255,.5);
     margin-top:4px;
+}
+
+.reply-preview{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:0 24px;
+    padding:10px 14px;
+    background:rgba(0,102,255,.1);
+    border-left:3px solid #0066ff;
+    border-radius:10px;
+}
+
+.reply-preview-content{
+    min-width:0;
+}
+
+.reply-preview-label{
+    display:block;
+    font-size:12px;
+    color:#7da9ff;
+    font-weight:700;
+    margin-bottom:2px;
+}
+
+.reply-preview-content p{
+    margin:0;
+    font-size:13px;
+    color:rgba(255,255,255,.75);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.reply-preview button{
+    background:none;
+    border:none;
+    color:#a3a3c2;
+    font-size:16px;
+    cursor:pointer;
+    flex-shrink:0;
+}
+
+.reply-preview button:hover{
+    color:#ff8a8a;
 }
 
 .message-form{
