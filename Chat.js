@@ -3,7 +3,9 @@ REMIX-NEXUS — CHAT LOGIC
 Talks to the Express + Socket.io server hosted on Railway.
 ==============================*/
 
-const socket = io("https://remix-nexus-production.up.railway.app");
+const socket = io("https://remix-nexus-production.up.railway.app", {
+  auth: { token: window.AUTH ? AUTH.getToken() : null }
+});
 
 /* -----------------------------------------------------------
    ROOMS (DEFAULT_ROOMS comes from rooms.js, loaded before this file)
@@ -65,6 +67,36 @@ const newRoomInput = document.getElementById('newRoomName');
 const createRoomBtn = document.getElementById('createRoomBtn');
 const connectionBadge = document.getElementById('connectionBadge');
 
+const replyPreview = document.getElementById('replyPreview');
+const replyPreviewAuthor = document.getElementById('replyPreviewAuthor');
+const replyPreviewText = document.getElementById('replyPreviewText');
+const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+
+let replyingTo = null; // { id, author, text }
+
+function generateId(){
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+}
+
+function setReplyTarget(msg){
+  if (!msg || !msg.text) return;
+  replyingTo = { id: msg.id || '', author: msg.author, text: msg.text };
+  replyPreviewAuthor.textContent = msg.author;
+  replyPreviewText.textContent = msg.text.length > 120 ? msg.text.slice(0, 120) + '…' : msg.text;
+  replyPreview.style.display = 'flex';
+  messageInput.focus();
+}
+
+function clearReplyTarget(){
+  replyingTo = null;
+  replyPreview.style.display = 'none';
+}
+
+if (cancelReplyBtn){
+  cancelReplyBtn.addEventListener('click', clearReplyTarget);
+}
+
 function updateConnectionBadge(){
   if (!connectionBadge) return;
   if (!socket){
@@ -97,13 +129,26 @@ function renderMessages(){
   const messages = getMessages(activeRoomId);
   const me = getUsername();
 
-  messagesEl.innerHTML = messages.map(m => `
-    <div class="msg ${m.author === me ? 'me' : ''}">
-      <span class="msg-author">${escapeHTML(m.author)}</span>
-      ${escapeHTML(m.text)}
-      <span class="msg-time">${new Date(m.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-    </div>
-  `).join('') || '<p class="empty-state">No messages yet — say hi 👋</p>';
+  messagesEl.innerHTML = messages.map(m => {
+    const isMe = m.author === me;
+    const replyBlock = m.replyTo
+      ? `<div class="msg-quote">
+           <span class="msg-quote-author">${escapeHTML(m.replyTo.author)}</span>
+           <span class="msg-quote-text">${escapeHTML(m.replyTo.text)}</span>
+         </div>`
+      : '';
+
+    return `
+    <div class="msg-row ${isMe ? 'me' : ''}" data-id="${escapeHTML(m.id || '')}" data-author="${escapeHTML(m.author)}" data-text="${escapeHTML(m.text)}">
+      <span class="msg-reply-icon">↩</span>
+      <div class="msg ${isMe ? 'me' : ''}">
+        ${replyBlock}
+        <span class="msg-author">${escapeHTML(m.author)}</span>
+        ${escapeHTML(m.text)}
+        <span class="msg-time">${new Date(m.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+      </div>
+    </div>`;
+  }).join('') || '<p class="empty-state">No messages yet — say hi 👋</p>';
 
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
@@ -132,10 +177,17 @@ function sendMessage(text){
   const trimmed = text.trim();
   if (!trimmed) return;
 
-  const message = { author: getUsername(), text: trimmed, time: Date.now() };
+  const message = {
+    id: generateId(),
+    author: getUsername(),
+    text: trimmed,
+    time: Date.now(),
+    replyTo: replyingTo ? { id: replyingTo.id, author: replyingTo.author, text: replyingTo.text } : null
+  };
 
   if (socket && socket.connected){
     socket.emit('chat:message', { room: activeRoomId, message });
+    clearReplyTarget();
     return;
   }
 
@@ -143,6 +195,7 @@ function sendMessage(text){
   const messages = getMessages(activeRoomId);
   messages.push(message);
   saveMessages(activeRoomId, messages);
+  clearReplyTarget();
   renderRooms();
   renderMessages();
 }
@@ -157,6 +210,67 @@ function createRoom(name){
   saveRooms(rooms);
   switchRoom(id);
 }
+
+/* -----------------------------------------------------------
+   REPLY GESTURES — swipe left on touch devices, right-click on desktop
+----------------------------------------------------------- */
+function readMsgFromRow(row){
+  if (!row) return null;
+  return { id: row.dataset.id, author: row.dataset.author, text: row.dataset.text };
+}
+
+messagesEl.addEventListener('contextmenu', (e) => {
+  const row = e.target.closest('.msg-row');
+  if (!row) return;
+  e.preventDefault();
+  setReplyTarget(readMsgFromRow(row));
+});
+
+let touchState = null; // { row, bubble, startX, startY, active }
+const SWIPE_TRIGGER_PX = 60;
+const SWIPE_MAX_PX = 90;
+
+messagesEl.addEventListener('touchstart', (e) => {
+  const row = e.target.closest('.msg-row');
+  if (!row) return;
+  const bubble = row.querySelector('.msg');
+  const touch = e.touches[0];
+  touchState = { row, bubble, startX: touch.clientX, startY: touch.clientY, active: false };
+}, { passive: true });
+
+messagesEl.addEventListener('touchmove', (e) => {
+  if (!touchState) return;
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - touchState.startX;
+  const deltaY = touch.clientY - touchState.startY;
+
+  // Only treat this as a reply-swipe if the motion is mostly horizontal
+  // and leftward — otherwise let the page scroll normally.
+  if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && deltaX < 0){
+    touchState.active = true;
+    const clamped = Math.max(deltaX, -SWIPE_MAX_PX);
+    touchState.bubble.style.transform = `translateX(${clamped}px)`;
+    touchState.row.classList.toggle('swiping', Math.abs(clamped) > 20);
+  }
+}, { passive: true });
+
+messagesEl.addEventListener('touchend', () => {
+  if (!touchState) return;
+  const { row, bubble, active } = touchState;
+
+  const transform = bubble.style.transform;
+  const match = /translateX\((-?\d+(\.\d+)?)px\)/.exec(transform);
+  const deltaX = match ? parseFloat(match[1]) : 0;
+
+  bubble.style.transform = '';
+  row.classList.remove('swiping');
+
+  if (active && deltaX <= -SWIPE_TRIGGER_PX){
+    setReplyTarget(readMsgFromRow(row));
+  }
+
+  touchState = null;
+});
 
 /* -----------------------------------------------------------
    EVENTS
