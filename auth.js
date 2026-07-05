@@ -1,5 +1,5 @@
 /*==============================
-REMIXMC — SHARED AUTH HELPER
+REMIX-NEXUS — SHARED AUTH HELPER
 Loaded on every page. Keeps the logged-in
 user's token/info in localStorage and gives
 every page a simple, consistent way to read it.
