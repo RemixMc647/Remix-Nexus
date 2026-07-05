@@ -1,0 +1,58 @@
+/* ===========================
+   REMIX-NEXUS — CONTACTS PAGE
+   Reuses .chat-shell / .chat-rooms / .chat-main / .messages / .msg
+   from Chat.css — this file only adds what's specific to contacts.
+=========================== */
+
+.contact-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 12px;
+    border-radius:14px;
+    cursor:pointer;
+    transition:.2s;
+    background:rgba(255,255,255,.03);
+}
+
+.contact-item:hover{
+    background:rgba(0,102,255,.15);
+}
+
+.contact-item.active{
+    background:#0066ff;
+    box-shadow:0 0 15px rgba(0,102,255,.5);
+}
+
+.contact-avatar{
+    width:38px;
+    height:38px;
+    flex-shrink:0;
+    border-radius:50%;
+    background:linear-gradient(135deg,#0066ff,#00b7ff);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+}
+
+.contact-name{
+    font-size:14px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.loggedout-icon{
+    font-size:48px;
+    margin-bottom:10px;
+}
+
+.loggedout-actions{
+    display:flex;
+    gap:16px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:14px;
+}
