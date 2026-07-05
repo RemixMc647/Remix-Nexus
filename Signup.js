@@ -44,7 +44,7 @@ REMIX-NEXUS — SIGNUP LOGIC
     showMessage('', false);
 
     try {
-      const res = await fetch(BACKEND_URL + '/api/signup', {
+      const res = await fetch('https://remix-nexus-production.up.railway.app/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
