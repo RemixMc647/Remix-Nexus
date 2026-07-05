@@ -34,6 +34,7 @@
         <a href="./MusicHome.html" class="href"><button class="button1" title="Home">🏠</button></a>
         <a href="./Trending.html" class="href"><button class="button2" title="Live">🔥</button></a>
         <a href="./Chat.html" class="href" aria-current="page"><button class="button3" title="Chat">💬</button></a>
+        <a href="./Contacts.html" class="href"><button class="button3" title="Contacts">👥</button></a>
         <a href="./Search.html" class="href"><button class="button3" title="Search">🔎</button></a>
         <a href="./Profile.html" class="href"><button class="button4" title="Profile">👤</button></a>
     </div>
@@ -59,6 +60,14 @@
 
     <div id="messages" class="messages" aria-live="polite"></div>
 
+    <div id="replyPreview" class="reply-preview" style="display:none;">
+      <div class="reply-preview-content">
+        <span class="reply-preview-label">Replying to <b id="replyPreviewAuthor"></b></span>
+        <p id="replyPreviewText"></p>
+      </div>
+      <button id="cancelReplyBtn" type="button" title="Cancel reply">✕</button>
+    </div>
+
     <form id="messageForm" class="message-form" autocomplete="off">
       <input id="messageInput" type="text" placeholder="Say something to the squad…" maxlength="500" required>
       <button type="submit">Send</button>
@@ -74,6 +83,7 @@
         <a href="./MusicHome.html">Home</a>
         <a href="./Trending.html">Live</a>
         <a href="./Chat.html">Chat</a>
+        <a href="./Contacts.html">Contacts</a>
         <a href="./Search.html">Search</a>
         <a href="./Profile.html">Profile</a>
         <a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener">▶ YouTube</a>
