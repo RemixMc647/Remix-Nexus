@@ -42,7 +42,7 @@ app.use(cors({
 }));
 
 // ---- STATIC FRONT-END ----
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR = __dirname;
 app.use(express.static(PUBLIC_DIR));
 
 // ---- DATABASE ----
