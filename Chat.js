@@ -1,10 +1,9 @@
 /*==============================
 REMIX-NEXUS — CHAT LOGIC
-Talks to the same Express + Socket.io server that serves
-this page (same-origin, so no URL config needed).
+Talks to the Express + Socket.io server hosted on Railway.
 ==============================*/
 
-const socket = window.io ? io(BACKEND_URL) : null;
+const socket = io("https://remix-nexus-production.up.railway.app");
 
 /* -----------------------------------------------------------
    ROOMS (DEFAULT_ROOMS comes from rooms.js, loaded before this file)
