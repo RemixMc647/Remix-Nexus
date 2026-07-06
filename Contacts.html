@@ -60,7 +60,13 @@
 
   <main class="chat-main">
     <div class="chat-header">
-      <h2 id="activeContactName">Select a contact</h2>
+      <div class="chat-header-profile">
+        <span id="activeContactAvatar" class="chat-header-avatar" style="display:none;"></span>
+        <div>
+          <h2 id="activeContactName">Select a contact</h2>
+          <span id="activeContactJoined" class="chat-header-subtext"></span>
+        </div>
+      </div>
       <span id="dmConnectionBadge" class="pill-badge">Connecting…</span>
     </div>
 
