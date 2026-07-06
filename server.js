@@ -104,7 +104,7 @@ io.use((socket, next) => {
 });
 
 // ---- USER MODEL ----
-const AVATAR_OPTIONS = ['🎮', '🕹️', '👾', '🧱', '🚀', '⚔️', '🔥', '🏆', '🎯', '🐉'];
+const AVATAR_OPTIONS = ['🎮', '🕹️', '👾', '🧱', '🚀', '⚔️', '🔥', '🏆', '🎯', '🐉','😎','💀','🐱‍👤','🕷','👩🏻','🎧','🍆','🍑'];
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
