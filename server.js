@@ -611,6 +611,35 @@ io.on('connection', (socket) => {
     io.to(room).emit('chat:message', { room, message: clean });
   });
 
+  // DELETE A MESSAGE — only the logged-in author of a message can delete
+  // it. Ownership is checked against the message's authorId (set from the
+  // verified JWT when it was sent), never trusting whatever the client
+  // claims, so nobody can delete someone else's message. Guest-authored
+  // messages (authorId is null) can't be deleted this way at all, since a
+  // guest has no persistent identity to prove ownership with.
+  socket.on('chat:message:delete', ({ room, messageId }) => {
+    if (!room || !messageId) return;
+
+    if (!socket.userId) {
+      socket.emit('chat:error', { message: 'Log in to delete your messages.' });
+      return;
+    }
+
+    const history = getHistory(room);
+    const index = history.findIndex((m) => m.id === messageId);
+
+    if (index === -1) return; // already gone (expired or deleted elsewhere)
+
+    const target = history[index];
+    if (!target.authorId || String(target.authorId) !== String(socket.userId)) {
+      socket.emit('chat:error', { message: 'You can only delete your own messages.' });
+      return;
+    }
+
+    history.splice(index, 1);
+    io.to(room).emit('chat:message:deleted', { room, messageId });
+  });
+
   // DIRECT MESSAGES — only available to logged-in users, since a guest
   // has no persistent account for anyone to reply back to.
   socket.on('dm:message', async ({ toUserId, text }) => {
