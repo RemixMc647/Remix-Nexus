@@ -8,9 +8,9 @@
 const YT_CHANNEL_HANDLE = '@remixmc-d6v';
 
 const VIDEOS = [
-  { file: './minecraft-1.mp4', title: 'Minecraft Clip #1', meta: '🎮 Community clip', badge: 'NEW' },
-  { file: './minecraft-2.mp4', title: 'Minecraft Clip #2', meta: '🎮 Community clip', badge: 'HOT' },
-  { file: './minecraft-3.mp4', title: 'Minecraft Clip #3', meta: '🎮 Community clip', badge: 'CLIP' },
+  { file: './#minecraft.mp4', title: 'Minecraft Clip #1', meta: '🎮 Community clip', badge: 'NEW' },
+  { file: './#minecraft (2).mp4', title: 'Minecraft Clip #2', meta: '🎮 Community clip', badge: 'HOT' },
+  { file: './#minecraft (3).mp4', title: 'Minecraft Clip #3', meta: '🎮 Community clip', badge: 'CLIP' },
 ];
 
 function videoCardHTML(video, index){
