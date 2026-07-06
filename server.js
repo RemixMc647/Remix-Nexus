@@ -80,7 +80,13 @@ const io = new Server(server, {
   cors: {
     origin: FRONTEND_ORIGIN,
     credentials: true
-  }
+  },
+  // Socket.io's default payload cap is 1MB, which is smaller than our
+  // voice-note/image/video data: URLs. Without raising this, those
+  // messages get silently dropped by the transport before they ever
+  // reach the size checks below. 20MB comfortably covers the 16MB video
+  // cap plus JSON overhead.
+  maxHttpBufferSize: 20 * 1024 * 1024
 });
 
 // Verify the JWT (if the client sent one) BEFORE the connection completes.
@@ -141,7 +147,11 @@ const dmSchema = new mongoose.Schema({
   participants: { type: [String], required: true, index: true },
   fromUserId: { type: String, required: true },
   toUserId: { type: String, required: true },
-  text: { type: String, required: true },
+  // `text` is no longer strictly required — a DM can now be media-only
+  // (an image or video with no caption), same as room chat's voice notes.
+  text: { type: String, default: '' },
+  mediaType: { type: String, enum: ['image', 'video', null], default: null },
+  mediaData: { type: String, default: null }, // data: URL, same approach as voice notes
   time: { type: Date, default: Date.now },
   edited: { type: Boolean, default: false }
 });
@@ -558,6 +568,7 @@ app.get('/api/dm/:userId', dbGuard, authMiddleware, async (req, res) => {
       fromUserId: m.fromUserId,
       toUserId: m.toUserId,
       text: m.text,
+      media: m.mediaType ? { type: m.mediaType, data: m.mediaData } : null,
       time: m.time,
       edited: m.edited
     }));
@@ -685,14 +696,37 @@ io.on('connection', (socket) => {
       && typeof message.audio.data === 'string'
       && message.audio.data.startsWith('data:audio/');
 
-    if (!hasText && !hasAudio) return;
+    // Images/videos travel the same way voice notes do — a base64 data:
+    // URL embedded straight in the message. `media.type` is trusted from
+    // the data: URL prefix itself, not from whatever the client claims.
+    const rawMediaData = message.media && typeof message.media.data === 'string' ? message.media.data : null;
+    const isImageMedia = rawMediaData && rawMediaData.startsWith('data:image/');
+    const isVideoMedia = rawMediaData && rawMediaData.startsWith('data:video/');
+    const hasMedia = !!(isImageMedia || isVideoMedia);
 
-    // Voice notes live in the same in-memory room history as everything
-    // else, so cap the payload size to keep memory use sane.
-    const MAX_AUDIO_DATA_LENGTH = 2_000_000; // ~1.5MB of actual audio
+    if (!hasText && !hasAudio && !hasMedia) return;
+
+    // Voice notes and media all live in the same in-memory room history,
+    // so cap each payload size to keep memory use sane.
+    const MAX_AUDIO_DATA_LENGTH = 2_000_000;  // ~1.5MB of actual audio
+    const MAX_IMAGE_DATA_LENGTH = 6_000_000;  // ~4.5MB of actual image
+    const MAX_VIDEO_DATA_LENGTH = 16_000_000; // ~12MB of actual video — keep clips short
+
     if (hasAudio && message.audio.data.length > MAX_AUDIO_DATA_LENGTH) {
       socket.emit('chat:error', { message: 'That voice note is too large to send — keep it under about a minute.' });
       return;
+    }
+
+    if (hasMedia) {
+      const limit = isVideoMedia ? MAX_VIDEO_DATA_LENGTH : MAX_IMAGE_DATA_LENGTH;
+      if (rawMediaData.length > limit) {
+        socket.emit('chat:error', {
+          message: isVideoMedia
+            ? 'That video is too large to send — try a shorter or lower-resolution clip.'
+            : 'That image is too large to send — try a smaller file.'
+        });
+        return;
+      }
     }
 
     // If the socket has a verified identity (logged in), that identity
@@ -721,6 +755,9 @@ io.on('connection', (socket) => {
             data: message.audio.data,
             duration: Math.min(120, Math.max(0, Number(message.audio.duration) || 0))
           }
+        : null,
+      media: hasMedia
+        ? { type: isVideoMedia ? 'video' : 'image', data: rawMediaData }
         : null,
       time: Date.now(),
       replyTo
@@ -761,8 +798,8 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (target.audio) {
-      socket.emit('chat:error', { message: 'Voice notes can’t be edited.' });
+    if (target.audio || target.media) {
+      socket.emit('chat:error', { message: 'Voice notes and media can’t be edited.' });
       return;
     }
 
@@ -803,9 +840,33 @@ io.on('connection', (socket) => {
 
   // DIRECT MESSAGES — only available to logged-in users, since a guest
   // has no persistent account for anyone to reply back to.
-  socket.on('dm:message', async ({ toUserId, text }) => {
+  socket.on('dm:message', async ({ toUserId, text, media }) => {
     if (!socket.userId) return;
-    if (!toUserId || typeof text !== 'string' || !text.trim()) return;
+    if (!toUserId) return;
+
+    const hasText = typeof text === 'string' && text.trim().length > 0;
+
+    const rawMediaData = media && typeof media.data === 'string' ? media.data : null;
+    const isImageMedia = rawMediaData && rawMediaData.startsWith('data:image/');
+    const isVideoMedia = rawMediaData && rawMediaData.startsWith('data:video/');
+    const hasMedia = !!(isImageMedia || isVideoMedia);
+
+    if (!hasText && !hasMedia) return;
+
+    const MAX_IMAGE_DATA_LENGTH = 6_000_000;  // ~4.5MB of actual image
+    const MAX_VIDEO_DATA_LENGTH = 16_000_000; // ~12MB of actual video
+
+    if (hasMedia) {
+      const limit = isVideoMedia ? MAX_VIDEO_DATA_LENGTH : MAX_IMAGE_DATA_LENGTH;
+      if (rawMediaData.length > limit) {
+        socket.emit('chat:error', {
+          message: isVideoMedia
+            ? 'That video is too large to send — try a shorter or lower-resolution clip.'
+            : 'That image is too large to send — try a smaller file.'
+        });
+        return;
+      }
+    }
 
     try {
       const key = conversationKey(socket.userId, toUserId);
@@ -814,7 +875,9 @@ io.on('connection', (socket) => {
         participants: key,
         fromUserId: String(socket.userId),
         toUserId: String(toUserId),
-        text: text.trim().slice(0, 1000)
+        text: hasText ? text.trim().slice(0, 1000) : '',
+        mediaType: hasMedia ? (isVideoMedia ? 'video' : 'image') : null,
+        mediaData: hasMedia ? rawMediaData : null
       });
 
       const payload = {
@@ -822,6 +885,7 @@ io.on('connection', (socket) => {
         fromUserId: doc.fromUserId,
         toUserId: doc.toUserId,
         text: doc.text,
+        media: hasMedia ? { type: doc.mediaType, data: doc.mediaData } : null,
         time: doc.time
       };
 
@@ -852,6 +916,11 @@ io.on('connection', (socket) => {
 
       if (String(target.fromUserId) !== String(socket.userId)) {
         socket.emit('chat:error', { message: 'You can only edit your own messages.' });
+        return;
+      }
+
+      if (target.mediaType) {
+        socket.emit('chat:error', { message: 'Media messages can’t be edited.' });
         return;
       }
 
