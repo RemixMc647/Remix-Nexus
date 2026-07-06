@@ -173,6 +173,53 @@ roomParticipantSchema.index({ roomId: 1, userId: 1 }, { unique: true });
 
 const RoomParticipant = mongoose.model('RoomParticipant', roomParticipantSchema);
 
+// ---- ROOM MESSAGE MODEL ----
+// Room chat used to live only in an in-memory Map, which meant every
+// redeploy/restart wiped every room's history. Persisting it here means
+// messages survive redeploys — they only disappear once MongoDB's TTL
+// index below actually expires them, 24 hours after they were sent.
+const roomMessageSchema = new mongoose.Schema({
+  // Client-generated id (or server-generated fallback) — this is what
+  // edit/delete/replyTo all key off of, same as when this lived in memory.
+  id: { type: String, required: true, unique: true },
+  room: { type: String, required: true, index: true },
+  author: { type: String, required: true },
+  authorId: { type: String, default: null },
+  text: { type: String, default: '' },
+  audioData: { type: String, default: null },
+  audioDuration: { type: Number, default: 0 },
+  mediaType: { type: String, enum: ['image', 'video', null], default: null },
+  mediaData: { type: String, default: null },
+  replyTo: {
+    id: { type: String, default: '' },
+    author: { type: String, default: '' },
+    text: { type: String, default: '' }
+  },
+  time: { type: Date, default: Date.now },
+  edited: { type: Boolean, default: false }
+});
+
+roomMessageSchema.index({ room: 1, time: 1 });
+// TTL index: MongoDB automatically deletes a document 24 hours after its
+// `time` value, regardless of server restarts/redeploys in between.
+roomMessageSchema.index({ time: 1 }, { expireAfterSeconds: 24 * 60 * 60 });
+
+const RoomMessage = mongoose.model('RoomMessage', roomMessageSchema);
+
+function normalizeRoomMessage(m) {
+  return {
+    id: m.id,
+    author: m.author,
+    authorId: m.authorId,
+    text: m.text,
+    audio: m.audioData ? { data: m.audioData, duration: m.audioDuration } : null,
+    media: m.mediaType ? { type: m.mediaType, data: m.mediaData } : null,
+    time: m.time instanceof Date ? m.time.getTime() : m.time,
+    replyTo: (m.replyTo && m.replyTo.id) ? { id: m.replyTo.id, author: m.replyTo.author, text: m.replyTo.text } : null,
+    edited: m.edited
+  };
+}
+
 function conversationKey(idA, idB) {
   return [String(idA), String(idB)].sort();
 }
@@ -585,27 +632,21 @@ app.get('/api/dm/:userId', dbGuard, authMiddleware, async (req, res) => {
 });
 
 // ---- SOCKET.IO CHAT ----
-const MAX_HISTORY_PER_ROOM = 200;
-const HISTORY_TTL_MS = 24 * 60 * 60 * 1000; // messages older than this get dropped automatically
-const roomHistory = new Map(); // roomId -> [{ id, author, authorId, text, time, replyTo, edited }]
+const MAX_HISTORY_PER_ROOM = 200; // how many recent messages to load when someone joins a room
 const roomOnline = new Map(); // roomId -> Map of userId -> { userId, username, avatar, sockets: Set<socketId> } (live presence only, not persisted)
 const participantWriteCache = new Set(); // "roomId:userId" already written to DB this run, to avoid redundant upserts
 
-// Messages are always pushed in chronological order, so expired ones are
-// always at the front — trimming from the front is enough, no need to
-// scan the whole array. This also means chat history clears itself out
-// naturally 24 hours after it was sent, on top of clearing completely
-// whenever the server restarts/redeploys (since this is in-memory only).
-function getHistory(roomId) {
-  if (!roomHistory.has(roomId)) roomHistory.set(roomId, []);
-  const messages = roomHistory.get(roomId);
-
-  const cutoff = Date.now() - HISTORY_TTL_MS;
-  while (messages.length && messages[0].time < cutoff) {
-    messages.shift();
+// Loads the most recent messages for a room straight from MongoDB, in
+// chronological order. Expired messages (older than 24h) are already gone
+// by this point, since MongoDB's TTL index removes them automatically.
+async function getRoomHistory(roomId) {
+  try {
+    const docs = await RoomMessage.find({ room: roomId }).sort({ time: -1 }).limit(MAX_HISTORY_PER_ROOM);
+    return docs.reverse().map(normalizeRoomMessage);
+  } catch (err) {
+    console.error('Room history fetch error:', err);
+    return [];
   }
-
-  return messages;
 }
 
 // Records, permanently, that this user has been active in this room — this
@@ -677,7 +718,7 @@ io.on('connection', (socket) => {
     socket.join('user:' + socket.userId);
   }
 
-  socket.on('chat:join', ({ room }) => {
+  socket.on('chat:join', async ({ room }) => {
     if (!room || typeof room !== 'string') return;
 
     if (currentRoom){
@@ -688,11 +729,12 @@ io.on('connection', (socket) => {
     socket.join(room);
     addOnline(room, socket);
 
-    socket.emit('chat:history', { room, messages: getHistory(room) });
+    const messages = await getRoomHistory(room);
+    socket.emit('chat:history', { room, messages });
     socket.emit('chat:online', { room, users: roomOnlineList(room) });
   });
 
-  socket.on('chat:message', ({ room, message }) => {
+  socket.on('chat:message', async ({ room, message }) => {
     if (!room || !message) return;
 
     const hasText = typeof message.text === 'string' && message.text.trim().length > 0;
@@ -710,8 +752,8 @@ io.on('connection', (socket) => {
 
     if (!hasText && !hasAudio && !hasMedia) return;
 
-    // Voice notes and media all live in the same in-memory room history,
-    // so cap each payload size to keep memory use sane.
+    // Voice notes and media are stored as data: URLs in MongoDB, so cap
+    // each payload size to keep documents reasonably sized.
     const MAX_AUDIO_DATA_LENGTH = 2_000_000;  // ~1.5MB of actual audio
     const MAX_IMAGE_DATA_LENGTH = 6_000_000;  // ~4.5MB of actual image
     const MAX_VIDEO_DATA_LENGTH = 16_000_000; // ~12MB of actual video — keep clips short
@@ -749,39 +791,37 @@ io.on('connection', (socket) => {
         }
       : null;
 
-    const clean = {
-      id: typeof message.id === 'string' && message.id ? message.id.slice(0, 60) : makeMessageId(),
-      author,
-      authorId: socket.userId || null,
-      text: hasText ? String(message.text).trim().slice(0, 500) : '',
-      audio: hasAudio
-        ? {
-            data: message.audio.data,
-            duration: Math.min(120, Math.max(0, Number(message.audio.duration) || 0))
-          }
-        : null,
-      media: hasMedia
-        ? { type: isVideoMedia ? 'video' : 'image', data: rawMediaData }
-        : null,
-      time: Date.now(),
-      replyTo
-    };
+    const messageId = typeof message.id === 'string' && message.id ? message.id.slice(0, 60) : makeMessageId();
 
-    const history = getHistory(room);
-    history.push(clean);
-    if (history.length > MAX_HISTORY_PER_ROOM) history.shift();
+    try {
+      const doc = await RoomMessage.create({
+        id: messageId,
+        room,
+        author,
+        authorId: socket.userId || null,
+        text: hasText ? String(message.text).trim().slice(0, 500) : '',
+        audioData: hasAudio ? message.audio.data : null,
+        audioDuration: hasAudio ? Math.min(120, Math.max(0, Number(message.audio.duration) || 0)) : 0,
+        mediaType: hasMedia ? (isVideoMedia ? 'video' : 'image') : null,
+        mediaData: hasMedia ? rawMediaData : null,
+        replyTo
+      });
 
-    if (clean.authorId) {
-      trackRoomParticipant(room, clean.authorId); // fire-and-forget; persists forever
+      if (doc.authorId) {
+        trackRoomParticipant(room, doc.authorId); // fire-and-forget; persists forever
+      }
+
+      io.to(room).emit('chat:message', { room, message: normalizeRoomMessage(doc) });
+    } catch (err) {
+      console.error('Room message save error:', err);
+      socket.emit('chat:error', { message: 'That message could not be sent — please try again.' });
     }
-
-    io.to(room).emit('chat:message', { room, message: clean });
   });
 
   // EDIT A MESSAGE — same ownership rule as delete: only the verified
   // author (authorId set from the JWT at send-time) can edit it, and a
   // guest-authored message (no authorId) can never be edited this way.
-  socket.on('chat:message:edit', ({ room, messageId, text }) => {
+  socket.on('chat:message:edit', async ({ room, messageId, text }) => {
     if (!room || !messageId || typeof text !== 'string') return;
 
     if (!socket.userId) {
@@ -792,25 +832,29 @@ io.on('connection', (socket) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    const history = getHistory(room);
-    const target = history.find((m) => m.id === messageId);
+    try {
+      const target = await RoomMessage.findOne({ room, id: messageId });
 
-    if (!target) return; // already gone (expired or deleted elsewhere)
+      if (!target) return; // already gone (expired or deleted elsewhere)
 
-    if (!target.authorId || String(target.authorId) !== String(socket.userId)) {
-      socket.emit('chat:error', { message: 'You can only edit your own messages.' });
-      return;
+      if (!target.authorId || String(target.authorId) !== String(socket.userId)) {
+        socket.emit('chat:error', { message: 'You can only edit your own messages.' });
+        return;
+      }
+
+      if (target.audioData || target.mediaType) {
+        socket.emit('chat:error', { message: 'Voice notes and media can’t be edited.' });
+        return;
+      }
+
+      target.text = trimmed.slice(0, 500);
+      target.edited = true;
+      await target.save();
+
+      io.to(room).emit('chat:message:edited', { room, messageId, text: target.text });
+    } catch (err) {
+      console.error('Room message edit error:', err);
     }
-
-    if (target.audio || target.media) {
-      socket.emit('chat:error', { message: 'Voice notes and media can’t be edited.' });
-      return;
-    }
-
-    target.text = trimmed.slice(0, 500);
-    target.edited = true;
-
-    io.to(room).emit('chat:message:edited', { room, messageId, text: target.text });
   });
 
   // DELETE A MESSAGE — only the logged-in author of a message can delete
@@ -819,7 +863,7 @@ io.on('connection', (socket) => {
   // claims, so nobody can delete someone else's message. Guest-authored
   // messages (authorId is null) can't be deleted this way at all, since a
   // guest has no persistent identity to prove ownership with.
-  socket.on('chat:message:delete', ({ room, messageId }) => {
+  socket.on('chat:message:delete', async ({ room, messageId }) => {
     if (!room || !messageId) return;
 
     if (!socket.userId) {
@@ -827,19 +871,21 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const history = getHistory(room);
-    const index = history.findIndex((m) => m.id === messageId);
+    try {
+      const target = await RoomMessage.findOne({ room, id: messageId });
 
-    if (index === -1) return; // already gone (expired or deleted elsewhere)
+      if (!target) return; // already gone (expired or deleted elsewhere)
 
-    const target = history[index];
-    if (!target.authorId || String(target.authorId) !== String(socket.userId)) {
-      socket.emit('chat:error', { message: 'You can only delete your own messages.' });
-      return;
+      if (!target.authorId || String(target.authorId) !== String(socket.userId)) {
+        socket.emit('chat:error', { message: 'You can only delete your own messages.' });
+        return;
+      }
+
+      await target.deleteOne();
+      io.to(room).emit('chat:message:deleted', { room, messageId });
+    } catch (err) {
+      console.error('Room message delete error:', err);
     }
-
-    history.splice(index, 1);
-    io.to(room).emit('chat:message:deleted', { room, messageId });
   });
 
   // DIRECT MESSAGES — only available to logged-in users, since a guest
