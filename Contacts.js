@@ -44,6 +44,81 @@ function formatDuration(seconds){
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/* -----------------------------------------------------------
+   UNREAD COUNTS + DESKTOP NOTIFICATIONS
+   The badge is per-contact (shown on their name in the sidebar). The
+   desktop notification fires for any incoming DM whenever the tab isn't
+   actually in front of the person — same trigger WhatsApp Web uses.
+----------------------------------------------------------- */
+function getUnreadContacts(){
+  try {
+    const raw = localStorage.getItem('remix-nexusUnreadContacts');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveUnreadContacts(counts){
+  localStorage.setItem('remix-nexusUnreadContacts', JSON.stringify(counts));
+}
+
+function bumpUnreadContact(contactId){
+  const counts = getUnreadContacts();
+  counts[contactId] = (counts[contactId] || 0) + 1;
+  saveUnreadContacts(counts);
+}
+
+function clearUnreadContact(contactId){
+  const counts = getUnreadContacts();
+  if (!counts[contactId]) return;
+  delete counts[contactId];
+  saveUnreadContacts(counts);
+}
+
+// The tab counts as "not being looked at" if it's hidden (a different tab
+// or app is in front) or the browser window itself doesn't have focus.
+function isAppInForeground(){
+  return document.visibilityState === 'visible' && document.hasFocus();
+}
+
+if ('Notification' in window && Notification.permission === 'default'){
+  Notification.requestPermission().catch(() => {});
+}
+
+function notifyNewDM(payload, otherId){
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (isAppInForeground()) return;
+
+  const contact = contacts.find(c => c.id === otherId);
+  const name = contact ? contact.username : 'New message';
+  const preview = payload.text
+    || (payload.audio ? '🎤 Voice note' : (payload.media ? (payload.media.type === 'video' ? '🎬 Video' : '🖼️ Photo') : ''));
+
+  try {
+    const n = new Notification(name, {
+      body: preview,
+      tag: 'dm:' + otherId // replaces any earlier notification for this same conversation instead of stacking
+    });
+    n.onclick = () => {
+      window.focus();
+      openContact(otherId, contact ? { username: contact.username, avatar: contact.avatar } : { username: name });
+      n.close();
+    };
+  } catch (err) {
+    console.error('Notification error:', err);
+  }
+}
+
+// When the tab regains focus, whatever conversation is currently open
+// counts as "seen" again — clear its badge.
+function handleDmForegroundReturn(){
+  if (isAppInForeground() && activeContact){
+    clearUnreadContact(activeContact.id);
+    renderContactList();
+  }
+}
+window.addEventListener('focus', handleDmForegroundReturn);
+document.addEventListener('visibilitychange', handleDmForegroundReturn);
+
 function updateDmBadge(){
   if (!dmConnectionBadge) return;
   if (!socket){
@@ -59,12 +134,18 @@ function renderContactList(){
     return;
   }
 
-  contactListEl.innerHTML = contacts.map(c => `
+  const unread = getUnreadContacts();
+
+  contactListEl.innerHTML = contacts.map(c => {
+    const count = unread[c.id] || 0;
+    return `
     <div class="contact-item ${activeContact && activeContact.id === c.id ? 'active' : ''}" data-id="${c.id}">
       <div class="contact-avatar">${c.avatar || '🎮'}</div>
       <span class="contact-name">${escapeHTML(c.username)}</span>
+      ${count > 0 ? `<span class="room-count">${count > 99 ? '99+' : count}</span>` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function renderDMMessages(){
@@ -162,6 +243,7 @@ async function openContact(contactId, fallback){
   if (!contact) return;
 
   activeContact = contact;
+  clearUnreadContact(contactId);
   renderContactHeader(contact);
   renderContactList();
 
@@ -270,6 +352,31 @@ function dmBlobToDataURL(blob){
 
 const MAX_IMAGE_DATA_URL_LENGTH = 6_000_000;  // ~4.5MB of actual image
 const MAX_VIDEO_DATA_URL_LENGTH = 16_000_000; // ~12MB of actual video — keep clips short
+const MAX_VIDEO_DURATION_SECONDS = 30 * 60;   // videos over 30 minutes are rejected
+
+// Reads how long a video file is by loading just its metadata (not the
+// whole file) into an off-DOM <video> element. Resolves with NaN if the
+// browser can't determine it, so callers can decide how to handle that.
+function getVideoDurationSeconds(file){
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+
+    const cleanUp = () => URL.revokeObjectURL(video.src);
+
+    video.onloadedmetadata = () => {
+      const duration = video.duration;
+      cleanUp();
+      resolve(Number.isFinite(duration) ? duration : NaN);
+    };
+    video.onerror = () => {
+      cleanUp();
+      resolve(NaN);
+    };
+
+    video.src = URL.createObjectURL(file);
+  });
+}
 
 async function sendDmMedia(file){
   if (!file || !activeContact || !socket) return;
@@ -279,6 +386,14 @@ async function sendDmMedia(file){
   if (!isVideo && !isImage){
     alert('Only photos and videos can be sent this way.');
     return;
+  }
+
+  if (isVideo){
+    const durationSeconds = await getVideoDurationSeconds(file);
+    if (Number.isFinite(durationSeconds) && durationSeconds > MAX_VIDEO_DURATION_SECONDS){
+      alert('That video is too long to send — videos can be at most 30 minutes.');
+      return;
+    }
   }
 
   const dataUrl = await dmBlobToDataURL(file);
@@ -431,16 +546,36 @@ if (dmStopRecordingBtn) dmStopRecordingBtn.addEventListener('click', () => stopD
 if (dmCancelRecordingBtn) dmCancelRecordingBtn.addEventListener('click', () => stopDmRecording(true));
 
 function handleIncomingDM(payload){
-  if (!activeContact) return;
+  const isMine = String(payload.fromUserId) === String(me.id);
+  const otherId = isMine ? String(payload.toUserId) : String(payload.fromUserId);
 
-  const belongsToActiveConversation =
-    (String(payload.fromUserId) === String(activeContact.id) && String(payload.toUserId) === String(me.id)) ||
-    (String(payload.fromUserId) === String(me.id) && String(payload.toUserId) === String(activeContact.id));
+  const isActiveConversation = activeContact && String(activeContact.id) === otherId;
 
-  if (!belongsToActiveConversation) return;
+  if (isActiveConversation){
+    activeMessages.push(payload);
 
-  activeMessages.push(payload);
-  renderDMMessages();
+    if (isAppInForeground()){
+      clearUnreadContact(otherId);
+    } else if (!isMine){
+      bumpUnreadContact(otherId);
+    }
+
+    renderDMMessages();
+    renderContactList();
+
+    if (!isMine) notifyNewDM(payload, otherId);
+    return;
+  }
+
+  if (isMine) return; // don't badge/notify for my own messages sent from another tab
+
+  bumpUnreadContact(otherId);
+  renderContactList();
+  notifyNewDM(payload, otherId);
+
+  // A message from someone not yet in the sidebar (a brand-new
+  // conversation partner) — refresh from the server so they show up.
+  if (!contacts.some(c => c.id === otherId)) loadContacts();
 }
 
 (async function init(){
