@@ -6,7 +6,7 @@
 //   3) Runs the live chat rooms via Socket.io
 // ===============================================================
 
-require('dotenv').config();
+require('dotenv').config(); 
 
 const express = require('express');
 const http = require('http');
