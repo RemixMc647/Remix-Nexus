@@ -36,6 +36,10 @@ const AUTH = {
     localStorage.removeItem(this.USER_KEY);
   },
 
+  // (see window.AUTH assignment at the bottom of this file — top-level
+  // `const` declarations don't automatically attach to `window`, but
+  // other scripts on the page check `window.AUTH` specifically.)
+
   // Re-checks with the server that the token is still valid and refreshes
   // the cached user info. Returns the user object, or null if logged out.
   async fetchMe() {
@@ -61,6 +65,16 @@ const AUTH = {
     }
   }
 };
+
+// IMPORTANT: `const AUTH = {...}` above creates AUTH as a global variable,
+// but top-level const/let declarations do NOT attach to `window` the way
+// `var` or a function declaration would. Chat.js (and possibly other
+// pages) specifically check `window.AUTH` before using it, so without
+// this line, `window.AUTH` is always undefined — even though `AUTH` on
+// its own works fine — and every one of those checks silently falls back
+// to "logged out" behavior (guest username, no token, no delete/edit
+// buttons) no matter how correctly the person is actually logged in.
+window.AUTH = AUTH;
 
 // ---- NAV BAR: swap the Profile icon's tooltip + reflect login state ----
 document.addEventListener('DOMContentLoaded', () => {
