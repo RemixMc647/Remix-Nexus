@@ -8,9 +8,9 @@
 const YT_CHANNEL_HANDLE = '@remixmc-d6v';
 
 const VIDEOS = [
-  { id: '', title: 'Add your latest upload here', meta: '🎮 Set the video ID in Trending.js', badge: 'NEW' },
-  { id: '', title: 'Add another video here', meta: '🎮 Set the video ID in Trending.js', badge: 'HOT' },
-  { id: '', title: 'Add another video here', meta: '🎮 Set the video ID in Trending.js', badge: 'CLIP' },
+  { id: '0', title: './#minecraft.mp4', meta: '🎮 Set the video ID in Trending.js', badge: 'NEW' },
+  { id: '1', title: './#minecraft (1).mp4', meta: '🎮 Set the video ID in Trending.js', badge: 'HOT' },
+  { id: '2', title: './#minecraft (2).mp4', meta: '🎮 Set the video ID in Trending.js', badge: 'CLIP' },
 ];
 
 function videoCardHTML(video, index){
