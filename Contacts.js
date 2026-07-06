@@ -19,6 +19,11 @@ const dmMessageForm = document.getElementById('dmMessageForm');
 const dmMessageInput = document.getElementById('dmMessageInput');
 const dmAttachBtn = document.getElementById('dmAttachBtn');
 const dmMediaInput = document.getElementById('dmMediaInput');
+const dmVoiceBtn = document.getElementById('dmVoiceBtn');
+const dmRecordingBar = document.getElementById('dmRecordingBar');
+const dmRecordingTimerEl = document.getElementById('dmRecordingTimer');
+const dmCancelRecordingBtn = document.getElementById('dmCancelRecordingBtn');
+const dmStopRecordingBtn = document.getElementById('dmStopRecordingBtn');
 
 let socket = null;
 let me = null;
@@ -30,6 +35,13 @@ function escapeHTML(str){
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function formatDuration(seconds){
+  const total = Math.max(0, Math.round(seconds || 0));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function updateDmBadge(){
@@ -64,16 +76,25 @@ function renderDMMessages(){
   dmMessagesEl.innerHTML = activeMessages.map(m => {
     const isMe = String(m.fromUserId) === String(me.id);
     const hasMedia = m.media && m.media.data;
+    const hasAudio = m.audio && m.audio.data;
 
-    const bodyBlock = hasMedia
-      ? (m.media.type === 'video'
-          ? `<div class="media-note"><video controls preload="metadata" src="${m.media.data}"></video></div>`
-          : `<div class="media-note"><img src="${m.media.data}" alt="Shared image" loading="lazy"></div>`)
-      : `<span class="msg-text">${escapeHTML(m.text)}</span>`;
+    let bodyBlock;
+    if (hasMedia){
+      bodyBlock = m.media.type === 'video'
+        ? `<div class="media-note"><video controls preload="metadata" src="${m.media.data}"></video></div>`
+        : `<div class="media-note"><img src="${m.media.data}" alt="Shared image" loading="lazy"></div>`;
+    } else if (hasAudio){
+      bodyBlock = `<div class="voice-note">
+           <audio controls preload="metadata" src="${m.audio.data}"></audio>
+           <span class="voice-note-duration">${formatDuration(m.audio.duration)}</span>
+         </div>`;
+    } else {
+      bodyBlock = `<span class="msg-text">${escapeHTML(m.text)}</span>`;
+    }
 
-    // Media messages can't be edited, only deleted — same rule as
-    // voice notes in room chat.
-    const editBtn = (isMe && !hasMedia)
+    // Voice notes and media messages can't be edited, only deleted —
+    // same rule as room chat.
+    const editBtn = (isMe && !hasMedia && !hasAudio)
       ? `<button type="button" class="msg-edit-btn" title="Edit message">✏️</button>`
       : '';
 
@@ -147,6 +168,7 @@ async function openContact(contactId, fallback){
   dmMessageInput.disabled = false;
   dmMessageForm.querySelector('button[type="submit"]').disabled = false;
   if (dmAttachBtn) dmAttachBtn.disabled = false;
+  if (dmVoiceBtn) dmVoiceBtn.disabled = false;
   dmMessagesEl.innerHTML = '<p class="empty-state">Loading conversation…</p>';
 
   try {
@@ -288,6 +310,125 @@ if (dmAttachBtn && dmMediaInput){
     if (file) sendDmMedia(file);
   });
 }
+
+/* -----------------------------------------------------------
+   VOICE NOTES — record with MediaRecorder, send as a data URL,
+   same approach as room chat.
+----------------------------------------------------------- */
+const MAX_RECORDING_SECONDS = 120; // keeps things reasonable
+const MAX_AUDIO_DATA_URL_LENGTH = 2_000_000; // ~1.5MB of actual audio
+
+let dmMediaRecorder = null;
+let dmRecordedChunks = [];
+let dmRecordingStartTime = 0;
+let dmRecordingTimerInterval = null;
+let dmRecordingCancelled = false;
+
+function pickAudioMimeType(){
+  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+  return candidates.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+function showDmRecordingUI(){
+  if (!dmRecordingBar) return;
+  dmMessageForm.style.display = 'none';
+  dmRecordingBar.classList.add('active');
+}
+
+function hideDmRecordingUI(){
+  if (!dmRecordingBar) return;
+  dmMessageForm.style.display = 'flex';
+  dmRecordingBar.classList.remove('active');
+  if (dmRecordingTimerEl) dmRecordingTimerEl.textContent = '0:00';
+}
+
+async function startDmRecording(){
+  if (!activeContact || !socket) return;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert("Voice notes need microphone access, and this browser doesn't support it.");
+    return;
+  }
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    alert('Microphone access was blocked. Allow it in your browser settings to send voice notes.');
+    return;
+  }
+
+  dmRecordedChunks = [];
+  dmRecordingCancelled = false;
+
+  const mimeType = pickAudioMimeType();
+  dmMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+  dmMediaRecorder.addEventListener('dataavailable', (e) => {
+    if (e.data && e.data.size > 0) dmRecordedChunks.push(e.data);
+  });
+
+  dmMediaRecorder.addEventListener('stop', () => {
+    stream.getTracks().forEach(track => track.stop());
+    clearInterval(dmRecordingTimerInterval);
+    hideDmRecordingUI();
+
+    if (dmRecordingCancelled || dmRecordedChunks.length === 0) return;
+
+    const durationSeconds = Math.min(
+      MAX_RECORDING_SECONDS,
+      Math.round((Date.now() - dmRecordingStartTime) / 1000)
+    );
+
+    const blob = new Blob(dmRecordedChunks, { type: dmMediaRecorder.mimeType || 'audio/webm' });
+    sendDmVoiceNote(blob, durationSeconds);
+  });
+
+  dmMediaRecorder.start();
+  dmRecordingStartTime = Date.now();
+  showDmRecordingUI();
+
+  dmRecordingTimerInterval = setInterval(() => {
+    const elapsed = (Date.now() - dmRecordingStartTime) / 1000;
+    if (dmRecordingTimerEl) dmRecordingTimerEl.textContent = formatDuration(elapsed);
+    if (elapsed >= MAX_RECORDING_SECONDS) stopDmRecording(false);
+  }, 250);
+}
+
+function stopDmRecording(cancelled){
+  if (!dmMediaRecorder || dmMediaRecorder.state === 'inactive') return;
+  dmRecordingCancelled = !!cancelled;
+  dmMediaRecorder.stop();
+}
+
+async function sendDmVoiceNote(blob, durationSeconds){
+  if (!activeContact || !socket) return;
+
+  const dataUrl = await dmBlobToDataURL(blob);
+
+  if (dataUrl.length > MAX_AUDIO_DATA_URL_LENGTH){
+    alert('That voice note is too long to send — try keeping it under about a minute.');
+    return;
+  }
+
+  socket.emit('dm:message', {
+    toUserId: activeContact.id,
+    text: '',
+    audio: { data: dataUrl, duration: durationSeconds }
+  });
+}
+
+if (dmVoiceBtn){
+  dmVoiceBtn.addEventListener('click', () => {
+    if (!activeContact) return;
+    if (dmMediaRecorder && dmMediaRecorder.state === 'recording') return;
+    startDmRecording();
+  });
+}
+
+if (dmStopRecordingBtn) dmStopRecordingBtn.addEventListener('click', () => stopDmRecording(false));
+if (dmCancelRecordingBtn) dmCancelRecordingBtn.addEventListener('click', () => stopDmRecording(true));
 
 function handleIncomingDM(payload){
   if (!activeContact) return;
