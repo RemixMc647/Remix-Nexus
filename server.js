@@ -142,7 +142,8 @@ const dmSchema = new mongoose.Schema({
   fromUserId: { type: String, required: true },
   toUserId: { type: String, required: true },
   text: { type: String, required: true },
-  time: { type: Date, default: Date.now }
+  time: { type: Date, default: Date.now },
+  edited: { type: Boolean, default: false }
 });
 
 const DirectMessage = mongoose.model('DirectMessage', dmSchema);
@@ -549,7 +550,19 @@ app.get('/api/dm/:userId', dbGuard, authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'That user could not be found.' });
     }
 
-    res.json({ user: publicUser(otherUser), messages });
+    // Normalize `id` alongside Mongo's `_id` so the client can treat
+    // history messages and live socket messages (which only ever have
+    // `id`) the same way everywhere — e.g. for edit/delete lookups.
+    const normalized = messages.map((m) => ({
+      id: m._id,
+      fromUserId: m.fromUserId,
+      toUserId: m.toUserId,
+      text: m.text,
+      time: m.time,
+      edited: m.edited
+    }));
+
+    res.json({ user: publicUser(otherUser), messages: normalized });
   } catch (err) {
     console.error('Get DM history error:', err);
     res.status(500).json({ error: 'Something went wrong.' });
@@ -816,6 +829,73 @@ io.on('connection', (socket) => {
       io.to('user:' + doc.fromUserId).emit('dm:message', payload); // other tabs of the sender
     } catch (err) {
       console.error('DM send error:', err);
+    }
+  });
+
+  // EDIT A DM — same ownership rule as room chat: only the verified
+  // sender (fromUserId, set from the JWT when it was created) can edit
+  // it. Persisted straight to MongoDB since DMs aren't kept in memory.
+  socket.on('dm:message:edit', async ({ messageId, text }) => {
+    if (!messageId || typeof text !== 'string') return;
+
+    if (!socket.userId) {
+      socket.emit('chat:error', { message: 'Log in to edit your messages.' });
+      return;
+    }
+
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    try {
+      const target = await DirectMessage.findById(messageId);
+      if (!target) return; // already gone (deleted elsewhere)
+
+      if (String(target.fromUserId) !== String(socket.userId)) {
+        socket.emit('chat:error', { message: 'You can only edit your own messages.' });
+        return;
+      }
+
+      target.text = trimmed.slice(0, 1000);
+      target.edited = true;
+      await target.save();
+
+      const payload = { messageId: String(target._id), text: target.text };
+      io.to('user:' + target.toUserId).emit('dm:message:edited', payload);
+      io.to('user:' + target.fromUserId).emit('dm:message:edited', payload);
+    } catch (err) {
+      console.error('DM edit error:', err);
+    }
+  });
+
+  // DELETE A DM — only the logged-in sender of a message can delete it.
+  // Ownership is checked against fromUserId (set from the verified JWT
+  // when it was sent), never trusting whatever the client claims.
+  socket.on('dm:message:delete', async ({ messageId }) => {
+    if (!messageId) return;
+
+    if (!socket.userId) {
+      socket.emit('chat:error', { message: 'Log in to delete your messages.' });
+      return;
+    }
+
+    try {
+      const target = await DirectMessage.findById(messageId);
+      if (!target) return; // already gone (deleted elsewhere)
+
+      if (String(target.fromUserId) !== String(socket.userId)) {
+        socket.emit('chat:error', { message: 'You can only delete your own messages.' });
+        return;
+      }
+
+      const toUserId = target.toUserId;
+      const fromUserId = target.fromUserId;
+      await target.deleteOne();
+
+      const payload = { messageId };
+      io.to('user:' + toUserId).emit('dm:message:deleted', payload);
+      io.to('user:' + fromUserId).emit('dm:message:deleted', payload);
+    } catch (err) {
+      console.error('DM delete error:', err);
     }
   });
 
