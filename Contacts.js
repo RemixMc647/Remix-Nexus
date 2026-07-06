@@ -17,6 +17,8 @@ const dmConnectionBadge = document.getElementById('dmConnectionBadge');
 const dmMessagesEl = document.getElementById('dmMessages');
 const dmMessageForm = document.getElementById('dmMessageForm');
 const dmMessageInput = document.getElementById('dmMessageInput');
+const dmAttachBtn = document.getElementById('dmAttachBtn');
+const dmMediaInput = document.getElementById('dmMediaInput');
 
 let socket = null;
 let me = null;
@@ -61,14 +63,28 @@ function renderDMMessages(){
 
   dmMessagesEl.innerHTML = activeMessages.map(m => {
     const isMe = String(m.fromUserId) === String(me.id);
+    const hasMedia = m.media && m.media.data;
+
+    const bodyBlock = hasMedia
+      ? (m.media.type === 'video'
+          ? `<div class="media-note"><video controls preload="metadata" src="${m.media.data}"></video></div>`
+          : `<div class="media-note"><img src="${m.media.data}" alt="Shared image" loading="lazy"></div>`)
+      : `<span class="msg-text">${escapeHTML(m.text)}</span>`;
+
+    // Media messages can't be edited, only deleted — same rule as
+    // voice notes in room chat.
+    const editBtn = (isMe && !hasMedia)
+      ? `<button type="button" class="msg-edit-btn" title="Edit message">✏️</button>`
+      : '';
+
     return `
       <div class="msg ${isMe ? 'me' : ''}" data-id="${m.id}">
         <span class="msg-author">${isMe ? 'You' : escapeHTML(activeContact.username)}</span>
-        <span class="msg-text">${escapeHTML(m.text)}</span>
+        ${bodyBlock}
         <span class="msg-time">${new Date(m.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${m.edited ? ' · edited' : ''}</span>
         ${isMe ? `
           <span class="msg-actions">
-            <button type="button" class="msg-edit-btn" title="Edit message">✏️</button>
+            ${editBtn}
             <button type="button" class="msg-delete-btn" title="Delete message">🗑️</button>
           </span>
         ` : ''}
@@ -130,6 +146,7 @@ async function openContact(contactId, fallback){
 
   dmMessageInput.disabled = false;
   dmMessageForm.querySelector('button[type="submit"]').disabled = false;
+  if (dmAttachBtn) dmAttachBtn.disabled = false;
   dmMessagesEl.innerHTML = '<p class="empty-state">Loading conversation…</p>';
 
   try {
@@ -215,6 +232,62 @@ dmMessageForm.addEventListener('submit', (e) => {
   socket.emit('dm:message', { toUserId: activeContact.id, text });
   dmMessageInput.value = '';
 });
+
+/* -----------------------------------------------------------
+   PHOTOS & VIDEOS — same data-URL approach as room chat's
+   voice notes, just sent over the dm:message channel.
+----------------------------------------------------------- */
+function dmBlobToDataURL(blob){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+const MAX_IMAGE_DATA_URL_LENGTH = 6_000_000;  // ~4.5MB of actual image
+const MAX_VIDEO_DATA_URL_LENGTH = 16_000_000; // ~12MB of actual video — keep clips short
+
+async function sendDmMedia(file){
+  if (!file || !activeContact || !socket) return;
+
+  const isVideo = file.type.startsWith('video/');
+  const isImage = file.type.startsWith('image/');
+  if (!isVideo && !isImage){
+    alert('Only photos and videos can be sent this way.');
+    return;
+  }
+
+  const dataUrl = await dmBlobToDataURL(file);
+  const limit = isVideo ? MAX_VIDEO_DATA_URL_LENGTH : MAX_IMAGE_DATA_URL_LENGTH;
+
+  if (dataUrl.length > limit){
+    alert(isVideo
+      ? 'That video is too large to send — try a shorter clip or lower resolution.'
+      : 'That image is too large to send — try a smaller file.');
+    return;
+  }
+
+  socket.emit('dm:message', {
+    toUserId: activeContact.id,
+    text: '',
+    media: { type: isVideo ? 'video' : 'image', data: dataUrl }
+  });
+}
+
+if (dmAttachBtn && dmMediaInput){
+  dmAttachBtn.addEventListener('click', () => {
+    if (!activeContact) return;
+    dmMediaInput.click();
+  });
+
+  dmMediaInput.addEventListener('change', () => {
+    const file = dmMediaInput.files && dmMediaInput.files[0];
+    dmMediaInput.value = ''; // reset so picking the same file again still fires 'change'
+    if (file) sendDmMedia(file);
+  });
+}
 
 function handleIncomingDM(payload){
   if (!activeContact) return;
