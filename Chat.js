@@ -3,9 +3,14 @@ REMIX-NEXUS — CHAT LOGIC
 Talks to the Express + Socket.io server hosted on Railway.
 ==============================*/
 
+console.log('DEBUG window.AUTH exists?', !!window.AUTH);
+console.log('DEBUG AUTH.getToken() at socket-creation time:', window.AUTH ? AUTH.getToken() : 'no AUTH object');
+
 const socket = io("https://remix-nexus-production.up.railway.app", {
   auth: { token: window.AUTH ? AUTH.getToken() : null }
 });
+
+console.log('DEBUG socket.auth immediately after creation:', socket.auth);
 
 /* -----------------------------------------------------------
    ROOMS (DEFAULT_ROOMS comes from rooms.js, loaded before this file)
