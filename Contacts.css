@@ -48,6 +48,17 @@
     display:flex;
     align-items:center;
     gap:12px;
+    min-width:0; /* lets the name below actually truncate instead of forcing the header wider */
+}
+
+.chat-header-profile > div{
+    min-width:0;
+}
+
+.chat-header-profile h2{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
 }
 
 .chat-header-avatar{
@@ -122,4 +133,26 @@
     justify-content:center;
     flex-wrap:wrap;
     margin-top:14px;
+}
+
+/* Touchscreens have no real ":hover" — without this, the edit/delete
+   buttons would stay invisible forever on phone, since they only ever
+   appear via .msg:hover in the rule above. */
+@media(hover:none){
+    .msg-actions{ opacity:1; }
+}
+
+@media(max-width:480px){
+    .contact-item{ padding:8px 10px; gap:10px; }
+    .contact-avatar{ width:32px; height:32px; font-size:15px; }
+    .contact-name{ font-size:13px; }
+
+    .chat-header-profile{ gap:8px; min-width:0; }
+    .chat-header-avatar{ width:32px; height:32px; font-size:15px; }
+    .chat-header-subtext{ font-size:10px; }
+
+    .msg-edit-btn,
+    .msg-delete-btn{ font-size:11px; padding:2px 5px; }
+
+    .loggedout-icon{ font-size:38px; }
 }
