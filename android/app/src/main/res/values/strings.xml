@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Remix Nexus</string>
+    <string name="title_activity_main">Remix Nexus</string>
+    <string name="package_name">com.remixmc647.remixnexus</string>
+    <string name="custom_url_scheme">com.remixmc647.remixnexus</string>
+</resources>
