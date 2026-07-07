@@ -24,6 +24,28 @@ const crypto = require('crypto');
 let nodemailer = null;
 try { nodemailer = require('nodemailer'); } catch (err) { /* not installed — that's fine */ }
 
+// firebase-admin sends push notifications through FCM — this is what
+// reaches a user even when the app is fully closed (not just backgrounded).
+// Run: npm install firebase-admin
+let admin = null;
+try { admin = require('firebase-admin'); } catch (err) { /* not installed yet — see setup notes */ }
+
+let firebaseReady = false;
+if (admin && process.env.FIREBASE_SERVICE_ACCOUNT) {
+  try {
+    // Paste the whole service-account JSON (from Firebase Console) as a
+    // single-line string into this env var.
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    firebaseReady = true;
+    console.log('✅ Firebase Admin initialized — push notifications enabled');
+  } catch (err) {
+    console.error('❌ Firebase Admin init error:', err.message);
+  }
+} else {
+  console.warn('⚠️  FIREBASE_SERVICE_ACCOUNT not set — push notifications to closed/background apps will not be sent yet.');
+}
+
 const app = express();
 
 // ---- CONFIG ----
@@ -149,7 +171,11 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String, default: '🎮' },
   createdAt: { type: Date, default: Date.now },
   resetPasswordTokenHash: { type: String, default: null },
-  resetPasswordExpires: { type: Date, default: null }
+  resetPasswordExpires: { type: Date, default: null },
+  // FCM device tokens — a user can be logged in on more than one device/
+  // browser, so this is a list, not a single string. A push is sent to
+  // every token here whenever this user gets a new room message or DM.
+  pushTokens: { type: [String], default: [] }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -407,6 +433,40 @@ app.put('/api/me/avatar', dbGuard, authMiddleware, async (req, res) => {
 // Expose the allowed avatar list so the front-end never hardcodes it twice
 app.get('/api/avatar-options', (req, res) => {
   res.json({ options: AVATAR_OPTIONS });
+});
+
+// SAVE PUSH TOKEN (protected) — called once by the Android app right
+// after it registers with Firebase, so we know where to send pushes for
+// this user. $addToSet means calling this again with the same token is
+// harmless (no duplicates pile up).
+app.post('/api/push-token', dbGuard, authMiddleware, async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'A push token is required.' });
+    }
+    await User.updateOne({ _id: req.user.id }, { $addToSet: { pushTokens: token } });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Save push token error:', err);
+    res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+// REMOVE PUSH TOKEN (protected) — call this on logout so a signed-out
+// device stops receiving pushes meant for this account.
+app.delete('/api/push-token', dbGuard, authMiddleware, async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'A push token is required.' });
+    }
+    await User.updateOne({ _id: req.user.id }, { $pull: { pushTokens: token } });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Remove push token error:', err);
+    res.status(500).json({ error: 'Something went wrong.' });
+  }
 });
 
 // UPDATE USERNAME (protected)
@@ -723,6 +783,63 @@ function makeMessageId() {
   return crypto.randomBytes(12).toString('hex');
 }
 
+// Same idea as the client's mediaPreview() in notifications.js — a short
+// line describing the message when there's no text (voice note/photo/video).
+function mediaPreviewServer(m) {
+  if (m.text) return m.text.length > 100 ? m.text.slice(0, 100) + '…' : m.text;
+  if (m.audioData) return '🎤 Voice note';
+  if (m.mediaType === 'video') return '🎬 Video';
+  if (m.mediaType === 'image') return '🖼️ Photo';
+  return 'New message';
+}
+
+// Sends a push through Firebase to every device token belonging to the
+// given user IDs. Safe to call even if Firebase isn't configured yet —
+// it just quietly does nothing (in-app notifications still work).
+async function sendPushToUsers(userIds, { title, body, data }) {
+  if (!firebaseReady || !userIds || !userIds.length) return;
+
+  try {
+    const users = await User.find(
+      { _id: { $in: userIds }, pushTokens: { $exists: true, $ne: [] } },
+      { pushTokens: 1 }
+    );
+
+    const tokens = users.flatMap((u) => u.pushTokens);
+    if (!tokens.length) return;
+
+    const message = {
+      notification: { title, body },
+      // FCM data payloads must be flat string-to-string maps.
+      data: Object.fromEntries(Object.entries(data || {}).map(([k, v]) => [k, String(v)])),
+      tokens
+    };
+
+    const result = await admin.messaging().sendEachForMulticast(message);
+
+    // Prune tokens Firebase reports as dead (app uninstalled, token
+    // expired, etc.) so we stop wasting sends on them.
+    const deadTokens = [];
+    result.responses.forEach((r, i) => {
+      if (!r.success) {
+        const code = r.error && r.error.code;
+        if (
+          code === 'messaging/registration-token-not-registered' ||
+          code === 'messaging/invalid-registration-token'
+        ) {
+          deadTokens.push(tokens[i]);
+        }
+      }
+    });
+
+    if (deadTokens.length) {
+      await User.updateMany({}, { $pull: { pushTokens: { $in: deadTokens } } });
+    }
+  } catch (err) {
+    console.error('Push send error:', err.message);
+  }
+}
+
 io.on('connection', (socket) => {
   let currentRoom = null;
 
@@ -843,6 +960,24 @@ io.on('connection', (socket) => {
       }
 
       io.to(room).emit('chat:message', { room, message: normalizeRoomMessage(doc) });
+
+      // Push notification to everyone who has ever chatted in this room,
+      // except the sender — this is what reaches them even if the app is
+      // fully closed, not just backgrounded. Fire-and-forget: a slow or
+      // failed push should never hold up the chat itself.
+      RoomParticipant.find({ roomId: room }).then((participants) => {
+        const recipientIds = participants
+          .map((p) => p.userId)
+          .filter((id) => String(id) !== String(doc.authorId));
+
+        if (recipientIds.length) {
+          sendPushToUsers(recipientIds, {
+            title: `${author} — ${room.charAt(0).toUpperCase() + room.slice(1)}`,
+            body: mediaPreviewServer(doc),
+            data: { type: 'room', room }
+          });
+        }
+      }).catch((err) => console.error('Room push lookup error:', err));
     } catch (err) {
       console.error('Room message save error:', err);
       socket.emit('chat:error', { message: 'That message could not be sent — please try again.' });
@@ -985,6 +1120,14 @@ io.on('connection', (socket) => {
 
       io.to('user:' + doc.toUserId).emit('dm:message', payload);
       io.to('user:' + doc.fromUserId).emit('dm:message', payload); // other tabs of the sender
+
+      // Push notification to the recipient only — reaches them even if
+      // the app is fully closed.
+      sendPushToUsers([doc.toUserId], {
+        title: socket.username || 'New message',
+        body: mediaPreviewServer({ text: doc.text, audioData: doc.audioData, mediaType: doc.mediaType }),
+        data: { type: 'dm', uid: doc.fromUserId }
+      });
     } catch (err) {
       console.error('DM send error:', err);
     }

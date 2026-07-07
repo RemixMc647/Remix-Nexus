@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "985033287994",
+    "project_id": "remix-nexus",
+    "storage_bucket": "remix-nexus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:985033287994:android:971870f221e4e9b5f98803",
+        "android_client_info": {
+          "package_name": "com.remixmc647.remixnexus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8gkIZc25EZI6QlJitC3mBBeQUlmZoolg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

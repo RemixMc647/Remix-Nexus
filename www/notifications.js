@@ -42,6 +42,59 @@ browser), which is a separate, bigger feature — ask if you want that built.
     Notification.requestPermission().catch(() => {});
   }
 
+  /*==============================
+  REAL PUSH (works even with the app fully closed)
+  ------------------------------
+  Everything above (Web Notification API + this file's socket listeners)
+  only fires while the app is open somewhere, even just backgrounded —
+  there is no JavaScript running at all once the app is fully killed.
+  Reaching the user in that case requires Firebase Cloud Messaging,
+  wired up through the Capacitor Push Notifications plugin, which is
+  what this block does. It's a no-op in a normal desktop browser —
+  window.Capacitor only exists inside the native app.
+  ==============================*/
+  function setupNativePush(){
+    if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
+    const PushNotifications = window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+    if (!PushNotifications) return; // plugin not installed yet
+
+    PushNotifications.requestPermissions().then((result) => {
+      if (result.receive !== 'granted') return;
+      PushNotifications.register();
+    }).catch((err) => console.error('Push permission error:', err));
+
+    // Firebase handed us a device token — tell the backend so it knows
+    // where to send this user's pushes.
+    PushNotifications.addListener('registration', (token) => {
+      fetch(BACKEND_URL + '/api/push-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + AUTH.getToken()
+        },
+        body: JSON.stringify({ token: token.value })
+      }).catch((err) => console.error('Push token save error:', err));
+    });
+
+    PushNotifications.addListener('registrationError', (err) => {
+      console.error('Push registration error:', err);
+    });
+
+    // App was backgrounded/closed, a push arrived, and the user tapped
+    // the system notification — this is what opens the right room or DM,
+    // same as tapping a WhatsApp notification opens that exact chat.
+    PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      const data = (action.notification && action.notification.data) || {};
+      if (data.type === 'room' && data.room) {
+        window.location.href = './Chat.html?room=' + encodeURIComponent(data.room);
+      } else if (data.type === 'dm' && data.uid) {
+        window.location.href = './Contacts.html?uid=' + encodeURIComponent(data.uid);
+      }
+    });
+  }
+
+  setupNativePush();
+
   function getUnreadRooms(){
     try { return JSON.parse(localStorage.getItem('remix-nexusUnreadRooms') || '{}'); } catch { return {}; }
   }
