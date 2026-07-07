@@ -89,3 +89,26 @@
     font-size:13px;
     margin-bottom:20px;
 }
+
+@media(max-width:480px){
+    .search-shell{ width:95%; margin:24px auto 60px; }
+    .search-title{ font-size:26px; }
+
+    .search-input{ height:48px; font-size:14px; padding:0 18px; margin-top:18px; margin-bottom:20px; }
+
+    .result-item{ padding:14px 16px; gap:10px; }
+
+    /* Without min-width:0 a flex child can't shrink below its content
+       size — a long name would push .enter (and the item itself) wider
+       than the screen instead of truncating. */
+    .result-item span.name{
+        font-size:14px;
+        min-width:0;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+    }
+
+    .result-item span.enter{ font-size:12px; flex-shrink:0; }
+    .results-section-title{ font-size:12px; }
+}
