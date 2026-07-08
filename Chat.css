@@ -25,7 +25,7 @@
     .chat-rooms{
         display:flex;
         flex-direction:column;
-
+        overflow:hidden;
     }
 
     .room-list{
@@ -99,6 +99,7 @@
     backdrop-filter:blur(20px);
     border:1px solid rgba(255,255,255,.08);
     border-radius:22px;
+    overflow:hidden;
     display:flex;
     flex-direction:column;
     min-height:560px;
@@ -411,7 +412,7 @@
     font-size:13px;
     color:rgba(255,255,255,.75);
     white-space:nowrap;
-
+    overflow:hidden;
     text-overflow:ellipsis;
 }
 
