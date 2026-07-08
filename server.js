@@ -435,6 +435,23 @@ app.get('/api/avatar-options', (req, res) => {
   res.json({ options: AVATAR_OPTIONS });
 });
 
+// DOWNLOAD THE ANDROID APP — serves the signed release APK sitting in
+// /downloads on this same server. res.download() sets the headers that
+// make the browser save the file instead of trying to open/render it,
+// which is what a plain <a href="..."> link can't reliably guarantee on
+// its own, especially for a cross-origin download link.
+app.get('/download/app', (req, res) => {
+  const apkPath = path.join(__dirname, 'downloads', 'remix-nexus.apk');
+  res.download(apkPath, 'RemixNexus.apk', (err) => {
+    if (err) {
+      console.error('APK download error:', err.message);
+      if (!res.headersSent) {
+        res.status(404).json({ error: 'The app download is not available right now.' });
+      }
+    }
+  });
+});
+
 // SAVE PUSH TOKEN (protected) — called once by the Android app right
 // after it registers with Firebase, so we know where to send pushes for
 // this user. $addToSet means calling this again with the same token is

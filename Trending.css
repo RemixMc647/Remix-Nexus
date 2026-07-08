@@ -394,9 +394,28 @@ body{
    padding — and force any auto-fit grid to a single column so nothing
    can ever be forced wider than the screen. */
 @media(max-width:480px){
+    html, body{
+        height:100dvh;
+        overflow:hidden; /* the phone/webview chrome itself never scrolls — */
+    }
+
+    .nav-main{
+        min-height:0;
+        height:100dvh;
+        overflow-y:auto;         /* — only this inner region does, contained */
+        -webkit-overflow-scrolling:touch;
+    }
+
     body{ overflow-x:hidden; }
 
-    .nav-bar{ width:95%; padding:12px 16px; margin:14px auto; }
+    .nav-bar{
+        width:95%;
+        padding:12px 16px;
+        margin:14px auto;
+        position:sticky;
+        top:0;
+        z-index:50;
+    }
     .logo h2{ font-size:20px; }
     .logo span{ font-size:12px; }
 
@@ -419,6 +438,15 @@ body{
         font-size:14px;
         width:100%;
     }
+
+    .download-app-btn{
+        padding:12px 22px;
+        font-size:14px;
+        width:100%;
+        justify-content:center;
+    }
+
+    .download-app-note{ font-size:12px; }
 
     .music-circle{ width:130px; height:130px; font-size:50px; }
 
@@ -520,4 +548,31 @@ body{
     background:#0066ff;
     box-shadow:0 0 25px rgba(0,102,255,.6);
     transform:translateY(-3px);
+}
+
+/* Download-the-app button — used on GamingHome and Profile */
+.download-app-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:15px 35px;
+    border-radius:50px;
+    background:#0066ff;
+    color:white;
+    font-size:16px;
+    font-weight:600;
+    text-decoration:none;
+    transition:.35s;
+}
+
+.download-app-btn:hover{
+    transform:translateY(-5px);
+    box-shadow:0 0 25px rgba(0,102,255,.8);
+}
+
+.download-app-note{
+    font-size:13px;
+    color:#9c9c9c;
+    margin-top:12px;
+    max-width:500px;
 }
