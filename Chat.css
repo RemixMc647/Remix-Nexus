@@ -625,7 +625,7 @@
 
     body{ overflow-x:hidden; }
 
-    .chat-shell{ width:96%; margin:12px auto 50px; gap:14px; }
+    .chat-shell{ width:96%; margin:0 auto; padding:12px 0 50px; gap:14px; }
 
     .chat-rooms{ padding:14px; }
     .chat-rooms-title{ font-size:14px; margin-bottom:10px; }
