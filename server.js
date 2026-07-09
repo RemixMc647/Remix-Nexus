@@ -29,6 +29,8 @@ try { nodemailer = require('nodemailer'); } catch (err) { /* not installed — t
 // Run: npm install firebase-admin
 let admin = null;
 try { admin = require('firebase-admin'); } catch (err) { /* not installed yet — see setup notes */ }
+console.log('🔍 DEBUG admin type:', typeof admin);
+console.log('🔍 DEBUG admin keys:', admin ? Object.keys(admin) : 'admin is null/undefined');
 
 let firebaseReady = false;
 if (admin && process.env.FIREBASE_SERVICE_ACCOUNT) {
