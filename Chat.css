@@ -25,7 +25,7 @@
     .chat-rooms{
         display:flex;
         flex-direction:column;
-
+        overflow:hidden;
     }
 
     .room-list{
@@ -99,6 +99,7 @@
     backdrop-filter:blur(20px);
     border:1px solid rgba(255,255,255,.08);
     border-radius:22px;
+    overflow:hidden;
     display:flex;
     flex-direction:column;
     min-height:560px;
@@ -411,7 +412,7 @@
     font-size:13px;
     color:rgba(255,255,255,.75);
     white-space:nowrap;
-
+    overflow:hidden;
     text-overflow:ellipsis;
 }
 
@@ -612,20 +613,7 @@
    so the text input gets most of the available width. Targets
    .message-form, which both Chat.html and Contacts.html's DM form use. */
 @media(max-width:480px){
-    html, body{
-        height:100dvh;
-        overflow:hidden; /* the phone/webview chrome itself never scrolls — */
-    }
-
-    .chat-shell{
-        height:100dvh;
-        overflow-y:auto;         /* — only this inner region does, contained */
-        -webkit-overflow-scrolling:touch;
-    }
-
-    body{ overflow-x:hidden; }
-
-    .chat-shell{ width:96%; margin:0 auto; padding:12px 0 50px; gap:14px; }
+    .chat-shell{ width:96%; margin:12px auto 50px; gap:14px; }
 
     .chat-rooms{ padding:14px; }
     .chat-rooms-title{ font-size:14px; margin-bottom:10px; }
@@ -643,6 +631,7 @@
     .chat-header h2{
         font-size:16px;
         min-width:0;
+        overflow:hidden;
         text-overflow:ellipsis;
         white-space:nowrap;
     }
