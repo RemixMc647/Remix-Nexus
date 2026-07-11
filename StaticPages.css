@@ -1,0 +1,134 @@
+/* ===========================
+   REMIX-NEXUS — STATIC CONTENT PAGES
+   Shared by About.html, Contact.html, Terms.html
+   Reuses the same dark/blue-glow aesthetic as the rest of the site.
+=========================== */
+
+.static-shell{
+    width:92%;
+    max-width:900px;
+    margin:50px auto 80px;
+}
+
+.static-card{
+    background:rgba(20,20,25,.75);
+    backdrop-filter:blur(15px);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:22px;
+    padding:40px;
+}
+
+.static-card h1{
+    font-size:32px;
+    margin-bottom:8px;
+}
+
+.static-tag{
+    display:inline-block;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:1px;
+    color:#7da9ff;
+    text-transform:uppercase;
+    margin-bottom:10px;
+}
+
+.static-updated{
+    font-size:13px;
+    color:#8a9bc4;
+    margin-bottom:30px;
+}
+
+.static-card h2{
+    font-size:20px;
+    margin:32px 0 12px;
+    color:#7da9ff;
+}
+
+.static-card h2:first-of-type{
+    margin-top:10px;
+}
+
+.static-card p{
+    font-size:15px;
+    line-height:1.7;
+    color:#dddddd;
+    margin-bottom:14px;
+}
+
+.static-card ul{
+    margin:0 0 14px 20px;
+    padding:0;
+}
+
+.static-card li{
+    font-size:15px;
+    line-height:1.7;
+    color:#dddddd;
+    margin-bottom:8px;
+}
+
+.static-card a{
+    color:#7da9ff;
+    text-decoration:underline;
+}
+
+.static-card a:hover{
+    color:#00b7ff;
+}
+
+.contact-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    margin-top:24px;
+}
+
+.contact-box{
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:16px;
+    padding:22px;
+    text-align:center;
+    transition:.25s;
+}
+
+.contact-box:hover{
+    transform:translateY(-4px);
+    box-shadow:0 0 20px rgba(0,102,255,.35);
+}
+
+.contact-box .contact-icon{
+    font-size:28px;
+    margin-bottom:10px;
+}
+
+.contact-box h3{
+    font-size:15px;
+    margin-bottom:6px;
+}
+
+.contact-box a{
+    font-size:14px;
+    text-decoration:none;
+    color:#a9c6ff;
+}
+
+.contact-box a:hover{
+    color:#00b7ff;
+}
+
+@media(max-width:480px){
+    .static-shell{ width:95%; margin:24px auto 50px; }
+    .static-card{ padding:22px 18px; border-radius:18px; }
+
+    .static-card h1{ font-size:24px; }
+    .static-card h2{ font-size:17px; margin:24px 0 10px; }
+    .static-card p, .static-card li{ font-size:14px; }
+
+    /* minmax(220px,1fr) can be wider than the smallest phone screens once
+       the card's own padding is subtracted — forcing one column removes
+       that risk entirely instead of relying on the math working out. */
+    .contact-grid{ grid-template-columns:1fr; gap:14px; margin-top:18px; }
+    .contact-box{ padding:18px; }
+}

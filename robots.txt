@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://atremix-nexus-194v.onrender.com/sitemap.xml
