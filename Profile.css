@@ -219,7 +219,7 @@
 }
 
 @media(max-width:480px){
-    .profile-shell{ width:100%; margin:24px auto 40px; padding:0 16px; }
+    .profile-shell{ width:95%; margin:24px auto 60px; }
     .profile-card{ padding:22px 18px; border-radius:20px; }
 
     .profile-header{ gap:14px; margin-bottom:20px; }
