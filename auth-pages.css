@@ -125,20 +125,8 @@
 }
 
 @media(max-width:480px){
-  .nav-main{
-    padding:24px 14px;
-    height:100dvh;
-    min-height:100dvh;
-    box-sizing:border-box;
-    overflow:hidden;
-  }
-  .auth-card{
-    padding:22px 18px;
-    border-radius:20px;
-    max-height:100%;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-  }
+  .nav-main{ padding:24px 14px; }
+  .auth-card{ padding:22px 18px; border-radius:20px; }
 
   .page-title{ font-size:24px; }
   .sub{ font-size:13px; }
