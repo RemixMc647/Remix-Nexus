@@ -9,7 +9,7 @@ project is live. Every page loads this file first.
 ==============================*/
 
 // Backend used by all pages for /api calls and Socket.io
-const BACKEND_URL = 'http://remix-nexus-production.up.railway.app';
+const BACKEND_URL = 'https://remix-nexus-production.up.railway.app';
 
 // Frontend origin used by backend CORS (some deployments also embed this into static pages)
 // If your backend reads FRONTEND_ORIGIN from environment variables, you may not need this value.
