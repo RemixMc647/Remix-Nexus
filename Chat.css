@@ -601,16 +601,21 @@
     object-fit:contain;
 }
 
-/* Fullscreen lightbox for expanding a shared photo */
+/* Fullscreen lightbox for expanding a shared photo — hidden by default;
+   Chat.js/Contacts.js add the .open class when a shared image is tapped. */
 .image-lightbox{
     position:fixed;
     inset:0;
     z-index:2000;
-    display:flex;
+    display:none;
     align-items:center;
     justify-content:center;
     background:rgba(0,0,0,.9);
     padding:30px;
+}
+
+.image-lightbox.open{
+    display:flex;
 }
 
 .image-lightbox img{
@@ -848,4 +853,7 @@
     .recording-bar{ padding:14px 16px; gap:10px; }
     .recording-cancel-btn, .recording-stop-btn{ width:36px; height:36px; font-size:14px; }
     .recording-hint{ font-size:12px; }
+
+    .image-lightbox{ padding:14px; }
+    .image-lightbox-close{ top:12px; right:14px; width:38px; height:38px; font-size:16px; }
 }
