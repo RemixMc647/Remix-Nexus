@@ -786,6 +786,72 @@ app.get('/api/dm/:userId', dbGuard, authMiddleware, async (req, res) => {
   }
 });
 
+// ---- STATS — "who's most active right now" ----
+// Public (no login needed) so the Trending page can show it to anyone.
+// Step 1: find whichever room has had the most messages (all RoomMessage
+// docs are already <= 3 days old thanks to the TTL index, so this is
+// naturally "most active recently", not all-time).
+// Step 2: inside that one room, find whoever has sent the most messages.
+app.get('/api/stats/most-active-user', dbGuard, async (req, res) => {
+  try {
+    const topRoom = await RoomMessage.aggregate([
+      { $group: { _id: '$room', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 }
+    ]);
+
+    if (!topRoom.length) {
+      return res.json({ available: false });
+    }
+
+    const roomId = topRoom[0]._id;
+
+    const topAuthor = await RoomMessage.aggregate([
+      { $match: { room: roomId } },
+      { $group: { _id: { author: '$author', authorId: '$authorId' }, count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 }
+    ]);
+
+    if (!topAuthor.length) {
+      return res.json({ available: false });
+    }
+
+    const { author, authorId } = topAuthor[0]._id;
+
+    let avatar = '🎮';
+    if (authorId) {
+      try {
+        const user = await User.findById(authorId);
+        if (user) avatar = user.avatar;
+      } catch (_) { /* not a valid ObjectId, e.g. a legacy/guest message — ignore */ }
+    }
+
+    // Custom rooms have a real display name on record; default rooms only
+    // exist client-side, so fall back to humanizing the id (e.g.
+    // "just-chatting" -> "Just Chatting").
+    let roomName = roomId;
+    const customRoom = await CustomRoom.findOne({ id: roomId });
+    if (customRoom) {
+      roomName = customRoom.name;
+    } else {
+      roomName = roomId.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
+    res.json({
+      available: true,
+      username: author,
+      avatar,
+      room: roomId,
+      roomName,
+      messageCount: topAuthor[0].count
+    });
+  } catch (err) {
+    console.error('Most active user stats error:', err);
+    res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
 // ---- CUSTOM (USER-CREATED) ROOMS ----
 // Anyone logged in can create a room — same idea as creating a group on
 // WhatsApp. Only a site-owner account (see isRoomOwner above) can delete
