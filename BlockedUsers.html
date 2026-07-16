@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blocked Users | Remix Nexus</title>
+
+<link rel="stylesheet" href="Trending.css">
+<link rel="stylesheet" href="Settings.css">
+</head>
+
+<body>
+
+<header class="settings-header">
+    <button onclick="history.back()">←</button>
+    <h2>Blocked Users</h2>
+</header>
+
+<div class="settings-container">
+
+    <div id="blockedLoggedOut" style="display:none; text-align:center; padding:20px;">
+        <p>Log in to manage blocked users.</p>
+    </div>
+
+    <div id="blockedList">
+        <p style="text-align:center; opacity:0.75; padding:20px;">Loading…</p>
+    </div>
+
+</div>
+
+<script src="auth.js"></script>
+<script src="BlockedUsers.js"></script>
+
+</body>
+</html>
