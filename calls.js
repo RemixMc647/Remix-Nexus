@@ -17,6 +17,14 @@ own coturn) to ICE_SERVERS below.
   const ICE_SERVERS = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' }
+    // TURN SERVER GOES HERE once you have one — this is very likely why
+    // calls ring but never connect. STUN alone only works when at least
+    // one side is on a network that allows a direct P2P path; it fails
+    // silently whenever both people are behind NAT that blocks that,
+    // which is common between two different wifi networks or on mobile
+    // data. Free-tier options: metered.ca (easiest), Twilio, or your own
+    // coturn. Once you have credentials, add:
+    // { urls: 'turn:YOUR_TURN_HOST:3478', username: 'YOUR_USER', credential: 'YOUR_PASS' }
   ];
 
   let socket = null;
@@ -430,12 +438,45 @@ own coturn) to ICE_SERVERS below.
     return navigator.mediaDevices.getUserMedia(constraints);
   }
 
-  function makePeerConnection(onIceCandidate, onTrack) {
+  // `onFailed` fires once if ICE never reaches "connected"/"completed"
+  // within CONNECT_TIMEOUT_MS, or if it explicitly reaches "failed"/
+  // "disconnected" and stays there — this is what makes a dead call (rings,
+  // then silently hangs forever with STUN-only + both sides behind NAT)
+  // show up as an actual error instead of nothing happening.
+  const CONNECT_TIMEOUT_MS = 20000;
+
+  function makePeerConnection(onIceCandidate, onTrack, onFailed) {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pc.onicecandidate = (e) => {
       if (e.candidate) onIceCandidate(e.candidate);
     };
     pc.ontrack = (e) => onTrack(e.streams[0]);
+
+    let settled = false;
+    const connectTimeout = setTimeout(() => {
+      if (settled) return;
+      const state = pc.iceConnectionState;
+      if (state !== 'connected' && state !== 'completed') {
+        console.warn('[calls] ICE never connected within timeout (state: ' + state + '). Likely needs a TURN server — see ICE_SERVERS at the top of calls.js.');
+        settled = true;
+        if (onFailed) onFailed('timeout');
+      }
+    }, CONNECT_TIMEOUT_MS);
+
+    pc.oniceconnectionstatechange = () => {
+      console.log('[calls] ICE connection state:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        settled = true;
+        clearTimeout(connectTimeout);
+      } else if (pc.iceConnectionState === 'failed') {
+        if (!settled) {
+          settled = true;
+          clearTimeout(connectTimeout);
+          if (onFailed) onFailed('failed');
+        }
+      }
+    };
+
     return pc;
   }
 
@@ -478,7 +519,13 @@ own coturn) to ICE_SERVERS below.
 
     const pc = makePeerConnection(
       (candidate) => socket.emit('call:signal', { toUserId, callId, data: { kind: 'candidate', candidate } }),
-      (stream) => { remoteVideoEl.srcObject = stream; }
+      (stream) => { remoteVideoEl.srcObject = stream; },
+      () => {
+        if (call && call.callId === callId) {
+          alert("Call couldn't connect — this usually means a TURN server is needed for one of your networks. See the note at the top of calls.js.");
+          endCall(true);
+        }
+      }
     );
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
@@ -526,7 +573,13 @@ own coturn) to ICE_SERVERS below.
 
     const pc = makePeerConnection(
       (candidate) => socket.emit('call:signal', { toUserId: fromUserId, callId, data: { kind: 'candidate', candidate } }),
-      (stream) => { remoteVideoEl.srcObject = stream; }
+      (stream) => { remoteVideoEl.srcObject = stream; },
+      () => {
+        if (call && call.callId === callId) {
+          alert("Call couldn't connect — this usually means a TURN server is needed for one of your networks. See the note at the top of calls.js.");
+          endCall(true);
+        }
+      }
     );
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
