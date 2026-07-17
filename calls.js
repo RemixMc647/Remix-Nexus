@@ -16,15 +16,17 @@ own coturn) to ICE_SERVERS below.
 (function () {
   const ICE_SERVERS = [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
-    // TURN SERVER GOES HERE once you have one — this is very likely why
-    // calls ring but never connect. STUN alone only works when at least
-    // one side is on a network that allows a direct P2P path; it fails
-    // silently whenever both people are behind NAT that blocks that,
-    // which is common between two different wifi networks or on mobile
-    // data. Free-tier options: metered.ca (easiest), Twilio, or your own
-    // coturn. Once you have credentials, add:
-    // { urls: 'turn:YOUR_TURN_HOST:3478', username: 'YOUR_USER', credential: 'YOUR_PASS' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    { urls: 'turn:global.relay.metered.ca:80', username: 'bdb075382d6df379c55ef888', credential: '7xzC1Hi9hgPQZFRm' },
+    { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: 'bdb075382d6df379c55ef888', credential: '7xzC1Hi9hgPQZFRm' },
+    { urls: 'turn:global.relay.metered.ca:443', username: 'bdb075382d6df379c55ef888', credential: '7xzC1Hi9hgPQZFRm' },
+    { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'bdb075382d6df379c55ef888', credential: '7xzC1Hi9hgPQZFRm' }
+    // TURN credentials above are from your Metered dashboard (project
+    // "remix-nexus"). The 80/tcp/443/turns variants aren't redundant —
+    // they're fallbacks so a call can still get through on networks that
+    // block plain UDP or non-standard ports (many corporate/school wifi
+    // setups only allow 80/443). Keep all four TURN entries.
   ];
 
   let socket = null;
