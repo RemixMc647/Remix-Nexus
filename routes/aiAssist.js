@@ -69,7 +69,10 @@ router.post('/api/ai/assist', async (req, res) => {
     }
 
     // Cheaper/faster model for quick reply drafts, fuller model + web search for real questions
-    const model = mode === 'ask' ? 'gemini-2.5-flash' : 'gemini-2.5-flash-lite';
+    // NOTE: gemini-2.5-flash / gemini-2.5-flash-lite were retired by Google (404 NOT_FOUND).
+    // Updated to the current generation. gemini-flash-latest is an alias Google keeps pointed
+    // at their current recommended Flash model, so it won't go stale the next time they retire one.
+    const model = mode === 'ask' ? 'gemini-3.6-flash' : 'gemini-3.5-flash-lite';
 
     const body = {
       system_instruction: {
