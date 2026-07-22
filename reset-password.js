@@ -42,7 +42,7 @@ person set a new password via /api/reset-password.
     showMessage('', false);
 
     try {
-      const res = await fetch('https://remix-nexus-production.up.railway.app/api/reset-password', {
+      const res = await fetch('https://remix-nexus-bgz9.onrender.com/api/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword })
