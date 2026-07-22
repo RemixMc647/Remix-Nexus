@@ -33,78 +33,132 @@ const API_BASE = "https://remix-nexus-bgz9.onrender.com";
 })();
 
 /* ===============================
-   REMIX-NEXUS — LATEST VIDEOS
-   These clips are hosted directly on your own site (as .mp4 files
-   sitting next to this script), so they play right here on the page —
-   nothing links out to YouTube. To add more clips, just drop another
-   .mp4 file next to this one and add an entry below.
+   REMIX-NEXUS — LIVE GAMING NEWS
+   Pulls real, current headlines from around the gaming world (via the
+   backend's /api/news/gaming route — see server.js) instead of showing
+   fixed clips. Refreshes itself every 10 minutes while the page stays
+   open, Discord/Snapchat-Discover style.
 ================================== */
-const YT_CHANNEL_HANDLE = '@remixmc-d6v';
+function timeAgo(dateStr){
+  const then = new Date(dateStr).getTime();
+  if (!then || Number.isNaN(then)) return '';
+  const diffMin = Math.round((Date.now() - then) / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.round(diffHr / 24);
+  return `${diffDay}d ago`;
+}
 
-const VIDEOS = [
-  { file: './bb33d572bdb2d31307897d7ba1242181.mp4', title: 'Minecraft Clip #1', meta: '🎮 Community clip', badge: 'NEW' },
-  { file: './#minecraft (1).mp4', title: 'Minecraft Clip #2', meta: '🎮 Community clip', badge: 'HOT' },
-  { file: './#minecraft (2).mp4', title: 'Minecraft Clip #3', meta: '🎮 Community clip', badge: 'CLIP' },
-];
-
-function videoCardHTML(video, index){
-  const videoId = `clip-${index}`;
-
-  // A raw '#' in a URL marks the start of a fragment identifier, and a raw
-  // space isn't valid in a URL either — so a filename like
-  // './#minecraft.mp4' gets parsed as "go to './', jump to fragment
-  // #minecraft.mp4", and the browser never actually requests the file.
-  // Encoding each path segment (preserving the '/' separators) fixes both
-  // video playback and the "Share" button's copied link.
-  const encodedSrc = video.file ? video.file.split('/').map(encodeURIComponent).join('/') : '';
-
-  const player = video.file
-    ? `<video id="${videoId}" controls preload="metadata" playsinline><source src="${encodedSrc}" type="video/mp4">Your browser doesn't support embedded video. <a href="${encodedSrc}">Download the clip</a> instead.</video>`
-    : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:60px;">▶️</div>`;
-
-  const shareHref = encodedSrc || `https://www.youtube.com/${YT_CHANNEL_HANDLE}/videos`;
+function newsCardHTML(item, index){
+  const badge = index === 0 ? 'BREAKING' : (index === 1 ? 'HOT' : '#' + (index + 1));
+  const thumb = item.image
+    ? `<img src="${item.image}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">`
+    : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:60px;">📰</div>`;
 
   return `
     <div class="video-card">
-      <div class="trending-badge">${video.badge || '#' + (index + 1)}</div>
-      <div class="video-thumb-wrap">${player}</div>
-      <h3 class="video-title">${video.title}</h3>
-      <div class="video-meta">${video.meta}</div>
+      <div class="trending-badge">${badge}</div>
+      <div class="video-thumb-wrap">${thumb}</div>
+      <h3 class="video-title">${item.title}</h3>
+      <div class="video-meta">📰 ${item.source}${item.pubDate ? ' • ' + timeAgo(item.pubDate) : ''}</div>
       <div class="card-buttons">
-        <button class="watch-btn" data-fullscreen="${videoId}">⛶ Fullscreen</button>
-        <button class="share-btn" data-share="${shareHref}">🔗 Share</button>
+        <a class="watch-btn" href="${item.link}" target="_blank" rel="noopener">📰 Read Article</a>
+        <button class="share-btn" data-share="${item.link}">🔗 Share</button>
       </div>
     </div>
   `;
 }
 
-function renderVideos(){
+function renderGamingNews(items){
   const wrap = document.getElementById('videoSection');
   if (!wrap) return;
-  wrap.innerHTML = VIDEOS.map(videoCardHTML).join('');
+
+  if (!items || !items.length) {
+    wrap.innerHTML = `<p class="empty-state">No headlines available right now — check back soon.</p>`;
+    return;
+  }
+
+  wrap.innerHTML = items.map(newsCardHTML).join('');
 
   wrap.addEventListener('click', (e) => {
     const shareBtn = e.target.closest('button[data-share]');
     if (shareBtn) {
       const url = shareBtn.getAttribute('data-share');
-      const absoluteUrl = new URL(url, window.location.href).href;
-      navigator.clipboard?.writeText(absoluteUrl).then(() => {
+      navigator.clipboard?.writeText(url).then(() => {
         shareBtn.textContent = '✅ Copied';
         setTimeout(() => { shareBtn.textContent = '🔗 Share'; }, 1600);
-      }).catch(() => alert('Share this link: ' + absoluteUrl));
-      return;
-    }
-
-    const fullscreenBtn = e.target.closest('button[data-fullscreen]');
-    if (fullscreenBtn) {
-      const vid = document.getElementById(fullscreenBtn.getAttribute('data-fullscreen'));
-      if (vid?.requestFullscreen) vid.requestFullscreen();
-      else if (vid?.webkitEnterFullscreen) vid.webkitEnterFullscreen(); // iOS Safari
+      }).catch(() => alert('Share this link: ' + url));
     }
   });
 }
 
-document.addEventListener('DOMContentLoaded', renderVideos);
+function loadGamingNews(){
+  const wrap = document.getElementById('videoSection');
+  if (wrap && !wrap.dataset.loadedOnce) {
+    wrap.innerHTML = `<p class="empty-state">Loading the latest gaming headlines…</p>`;
+  }
+
+  fetch(API_BASE + '/api/news/gaming')
+    .then((res) => res.json())
+    .then((data) => {
+      renderGamingNews(data && data.available ? data.items : []);
+      if (wrap) wrap.dataset.loadedOnce = 'true';
+    })
+    .catch(() => renderGamingNews([]));
+}
+
+document.addEventListener('DOMContentLoaded', loadGamingNews);
+// Keep it feeling "live" without needing a page refresh.
+setInterval(loadGamingNews, 10 * 60 * 1000);
+
+/* ===============================
+   REMIX-NEXUS — WEEKLY LEADERBOARD
+   Top 3 most active users (by messages sent in the last 7 days), each
+   shown with the one room they were most active in. Pulled from
+   /api/stats/leaderboard — see server.js.
+================================== */
+const RANK_BADGES = ['🥇', '🥈', '🥉'];
+
+function leaderCardHTML(leader, index){
+  return `
+    <div class="artist-card">
+      <h3>${RANK_BADGES[index] || '🏅'} ${leader.avatar} ${escapeHTMLNews(leader.username)}</h3>
+      <span>Most active in <strong>${escapeHTMLNews(leader.roomName)}</strong> — ${leader.weeklyMessageCount} messages this week</span>
+    </div>
+  `;
+}
+
+function escapeHTMLNews(str){
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+function renderLeaderboard(leaders){
+  const grid = document.getElementById('leaderboardGrid');
+  if (!grid) return;
+
+  if (!leaders || !leaders.length) {
+    grid.innerHTML = `<p class="empty-state">No activity yet this week — be the first on the board!</p>`;
+    return;
+  }
+
+  grid.innerHTML = leaders.map(leaderCardHTML).join('');
+}
+
+function loadLeaderboard(){
+  fetch(API_BASE + '/api/stats/leaderboard')
+    .then((res) => res.json())
+    .then((data) => renderLeaderboard(data && data.available ? data.leaders : []))
+    .catch(() => renderLeaderboard([]));
+}
+
+document.addEventListener('DOMContentLoaded', loadLeaderboard);
+// Rolling 7-day window, so refreshing occasionally keeps it current —
+// no need for a hard weekly reset.
+setInterval(loadLeaderboard, 10 * 60 * 1000);
 
 // ===============================
 // NEWSLETTER SUBSCRIBE (Mailchimp)
