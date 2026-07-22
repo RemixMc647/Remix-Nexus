@@ -5,7 +5,7 @@ unblock any of them. Talks to the same Express + Socket.io server
 as the rest of the app.
 ==============================*/
 
-const API_BASE = 'https://remix-nexus-production.up.railway.app';
+const API_BASE = 'https://remix-nexus-bgz9.onrender.com';
 
 const blockedListEl = document.getElementById('blockedList');
 const blockedLoggedOutEl = document.getElementById('blockedLoggedOut');
