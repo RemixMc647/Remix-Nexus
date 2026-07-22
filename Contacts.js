@@ -292,10 +292,53 @@ function formatDuration(seconds){
    time. Desktop always shows both side by side, unaffected — the CSS
    classes below only do anything under Chat.css's 820px breakpoint.
 ----------------------------------------------------------- */
+// Injects the CSS needed for full-screen conversation mode below, once —
+// kept here in JS (instead of Chat.css) so this works immediately without
+// needing a separate CSS deploy. Chat.js injects the same block (guarded
+// by the same id), so whichever page loads first wins — no duplicates.
+(function ensureFullScreenStyles(){
+  if (document.getElementById('chat-fullscreen-style')) return;
+  const style = document.createElement('style');
+  style.id = 'chat-fullscreen-style';
+  style.textContent = `
+    @media (max-width: 820px) {
+      body.conversation-fullscreen .nav-bar,
+      body.conversation-fullscreen .footer {
+        display: none !important;
+      }
+      body.conversation-fullscreen .chat-shell,
+      body.conversation-fullscreen #contacts-shell {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        z-index: 1000;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 function setMobileView(view){
   if (!shellEl) return;
   shellEl.classList.remove('view-list', 'view-conversation');
   shellEl.classList.add(view === 'conversation' ? 'view-conversation' : 'view-list');
+
+  // WhatsApp-style: while a DM is open on mobile, hide the top nav bar
+  // + footer entirely and let the conversation fill the whole screen.
+  // Desktop is unaffected — the @media rule above only applies under 820px.
+  document.body.classList.toggle('conversation-fullscreen', view === 'conversation');
+
+  // The nav bar just changed height (or disappeared), so the panel's
+  // pinned height needs to be recalculated against the new layout.
+  if (typeof adjustChatShellHeight === 'function') {
+    requestAnimationFrame(adjustChatShellHeight);
+  }
 }
 
 if (dmBackBtn){
