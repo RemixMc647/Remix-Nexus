@@ -47,7 +47,7 @@ const AUTH = {
     if (!token) return null;
 
     try {
-      const res = await fetch('https://remix-nexus-production.up.railway.app/api/me', {
+      const res = await fetch('https://remix-nexus-bgz9.onrender.com/api/me', {
         headers: { Authorization: 'Bearer ' + token }
       });
 
