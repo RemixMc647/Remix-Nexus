@@ -51,13 +51,37 @@ function scheduleServerBanner(){
 // socket itself is created later, inside init() below (only once we know
 // the person is logged in) — attachServerStatusBanner() wires these same
 // handlers onto it the moment it exists.
+let hasConnectedOnce = false;
+
 function attachServerStatusBanner(socketInstance){
   if (!socketInstance) return;
-  socketInstance.on('disconnect', scheduleServerBanner);
+  socketInstance.on('connect', () => { hasConnectedOnce = true; hideServerBanner(); });
+  socketInstance.on('disconnect', () => { hasConnectedOnce = false; scheduleServerBanner(); });
   socketInstance.on('connect_error', scheduleServerBanner);
-  socketInstance.on('reconnect_attempt', scheduleServerBanner);
-  socketInstance.on('connect', hideServerBanner);
+  // Reconnection lifecycle events (reconnect_attempt/reconnect_error/etc.)
+  // actually fire on the Manager (socketInstance.io), not the socket
+  // itself — this covers "already connected once, then dropped" cases.
+  socketInstance.io.on('reconnect_attempt', scheduleServerBanner);
+
+  // IMPORTANT: on Render's free tier, a sleeping backend usually doesn't
+  // throw a connection *error* while waking up — it just holds the very
+  // first request open until the container finishes booting, then answers
+  // normally. That means 'connect_error' may never fire for a cold start,
+  // so relying on error events alone misses it entirely. This proactively
+  // shows the banner if we simply haven't connected a few seconds after
+  // the socket was created, which catches that silent-wait case too.
+  setTimeout(() => {
+    if (!hasConnectedOnce) scheduleServerBanner();
+  }, 3000);
 }
+
+// Manual test: open DevTools console on this page and run
+// window.__testServerBanner() to force it visible for a few seconds,
+// without needing to wait for an actual Render cold start.
+window.__testServerBanner = () => {
+  showServerBanner();
+  setTimeout(hideServerBanner, 5000);
+};
 
 const loggedOutEl = document.getElementById('contacts-loggedout');
 const shellEl = document.getElementById('contacts-shell');

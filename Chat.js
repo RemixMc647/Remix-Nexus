@@ -52,10 +52,34 @@ function scheduleServerBanner(){
   bannerShowTimer = setTimeout(showServerBanner, 2000);
 }
 
-socket.on('disconnect', scheduleServerBanner);
+let hasConnectedOnce = false;
+
+socket.on('connect', () => { hasConnectedOnce = true; hideServerBanner(); });
+socket.on('disconnect', () => { hasConnectedOnce = false; scheduleServerBanner(); });
 socket.on('connect_error', scheduleServerBanner);
-socket.on('reconnect_attempt', scheduleServerBanner);
-socket.on('connect', hideServerBanner);
+// Reconnection lifecycle events (reconnect_attempt/reconnect_error/etc.)
+// actually fire on the Manager (socket.io), not the socket itself — this
+// covers the "already connected once, then dropped" case.
+socket.io.on('reconnect_attempt', scheduleServerBanner);
+
+// IMPORTANT: on Render's free tier, a sleeping backend usually doesn't
+// throw a connection *error* while waking up — it just holds the very
+// first request open until the container finishes booting, then answers
+// normally. That means 'connect_error' may never fire for a cold start,
+// so relying on error events alone misses it entirely. This proactively
+// shows the banner if we simply haven't connected a few seconds after
+// page load, which catches that silent-wait case too.
+setTimeout(() => {
+  if (!hasConnectedOnce) scheduleServerBanner();
+}, 3000);
+
+// Manual test: open DevTools console on this page and run
+// window.__testServerBanner() to force it visible for a few seconds,
+// without needing to wait for an actual Render cold start.
+window.__testServerBanner = () => {
+  showServerBanner();
+  setTimeout(hideServerBanner, 5000);
+};
 
 // Marks this as a full-screen, app-style page on phones/tablets — see the
 // mobile rules in Chat.css. Desktop is unaffected.
