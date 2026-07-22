@@ -993,7 +993,119 @@ app.get('/api/stats/most-active-user', dbGuard, async (req, res) => {
   }
 });
 
-// ---- CUSTOM (USER-CREATED) ROOMS ----
+// ---- STATS — weekly leaderboard (top 3 most active users) ----
+// Public (no login needed), same as most-active-user above. Looks at the
+// last 7 days on a rolling basis (not a fixed Mon-Sun reset), so it's
+// always "this week" no matter when someone loads the page. For each of
+// the top 3 users by total messages sent, it also reports the single
+// room they were most active in during that week.
+app.get('/api/stats/leaderboard', dbGuard, async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    // One row per (author, room) combo active this week, busiest combo
+    // first — so the first time we see a given author below is
+    // automatically their single most active room this week.
+    const rows = await RoomMessage.aggregate([
+      { $match: { time: { $gte: since } } },
+      { $group: { _id: { author: '$author', authorId: '$authorId', room: '$room' }, count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    if (!rows.length) {
+      return res.json({ available: false, leaders: [] });
+    }
+
+    const totals = new Map();     // authorKey -> total messages sent this week
+    const topRoomFor = new Map(); // authorKey -> { room, count } (their busiest single room)
+    const authorInfo = new Map(); // authorKey -> { author, authorId }
+
+    for (const row of rows) {
+      const { author, authorId, room } = row._id;
+      const key = authorId || author; // fall back to name for guest messages with no authorId
+      totals.set(key, (totals.get(key) || 0) + row.count);
+      if (!topRoomFor.has(key)) topRoomFor.set(key, { room, count: row.count });
+      if (!authorInfo.has(key)) authorInfo.set(key, { author, authorId });
+    }
+
+    const ranked = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+    // Resolve room ids -> display names once for whichever rooms actually show up.
+    const roomIds = [...new Set(ranked.map(([key]) => topRoomFor.get(key).room))];
+    const customRooms = await CustomRoom.find({ id: { $in: roomIds } });
+    const roomNameMap = new Map(customRooms.map((r) => [r.id, r.name]));
+    function roomDisplayName(roomId) {
+      return roomNameMap.get(roomId) || roomId.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
+    const authorIds = ranked.map(([key]) => authorInfo.get(key).authorId).filter(Boolean);
+    const users = await User.find({ _id: { $in: authorIds } });
+    const avatarMap = new Map(users.map((u) => [String(u._id), u.avatar]));
+
+    const leaders = ranked.map(([key, weeklyMessageCount]) => {
+      const info = authorInfo.get(key);
+      const best = topRoomFor.get(key);
+      return {
+        username: info.author,
+        avatar: (info.authorId && avatarMap.get(info.authorId)) || '🎮',
+        room: best.room,
+        roomName: roomDisplayName(best.room),
+        weeklyMessageCount
+      };
+    });
+
+    res.json({ available: true, since: since.toISOString(), leaders });
+  } catch (err) {
+    console.error('Leaderboard stats error:', err);
+    res.status(500).json({ available: false, leaders: [], error: 'Something went wrong.' });
+  }
+});
+
+// ---- GAMING NEWS — live headlines from around the gaming world ----
+// Pulled from IGN's public RSS feed via rss2json.com's free RSS->JSON
+// bridge (no scraping, no API key required for light traffic). Cached in
+// memory for 30 minutes so a burst of visitors only triggers one real
+// upstream fetch — if that upstream call ever fails, the last good cache
+// is served instead of an error, so the section never looks broken.
+// NOTE: rss2json's free tier rate-limits repeated calls without a key —
+// if you start seeing empty results, sign up free at https://rss2json.com
+// and set RSS2JSON_API_KEY as a Render env var.
+const GAMING_NEWS_FEED_URL = 'https://feeds.ign.com/ign/all';
+const GAMING_NEWS_CACHE_MS = 30 * 60 * 1000; // 30 minutes
+let gamingNewsCache = { items: [], fetchedAt: 0 };
+
+app.get('/api/news/gaming', async (req, res) => {
+  const isStale = Date.now() - gamingNewsCache.fetchedAt > GAMING_NEWS_CACHE_MS;
+
+  if (isStale) {
+    try {
+      const keyParam = process.env.RSS2JSON_API_KEY ? `&api_key=${process.env.RSS2JSON_API_KEY}` : '';
+      const feedUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(GAMING_NEWS_FEED_URL)}&count=6${keyParam}`;
+      const upstream = await fetch(feedUrl);
+      const data = await upstream.json();
+
+      if (data && data.status === 'ok' && Array.isArray(data.items) && data.items.length) {
+        gamingNewsCache = {
+          items: data.items.slice(0, 6).map((item) => ({
+            title: item.title,
+            link: item.link,
+            image: item.thumbnail || (item.enclosure && item.enclosure.link) || '',
+            source: (data.feed && data.feed.title) || 'Gaming News',
+            pubDate: item.pubDate
+          })),
+          fetchedAt: Date.now()
+        };
+      }
+    } catch (err) {
+      console.error('Gaming news fetch error:', err);
+      // fall through and serve whatever's cached (even if stale/empty)
+    }
+  }
+
+  res.json({ available: gamingNewsCache.items.length > 0, items: gamingNewsCache.items });
+});
+
+
 // Anyone logged in can create a room — same idea as creating a group on
 // WhatsApp. Only a site-owner account (see isRoomOwner above) can delete
 // one. Default rooms aren't stored here at all, so they're never at risk.
