@@ -12,6 +12,7 @@ import android.os.IBinder;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,12 +33,17 @@ import io.socket.emitter.Emitter;
  * work), which means Android requires a persistent, low-priority
  * notification to stay visible the whole time this service is alive.
  *
+ * Also listens for incoming call signaling ("call:incoming") and launches
+ * a full-screen call notification via IncomingCallActivity, WhatsApp-style,
+ * even when the device is locked.
+ *
  * Started/stopped from JS via ChatNotificationPlugin.
  */
 public class ChatForegroundService extends Service {
 
     public static final String CHANNEL_ID_STATUS = "chat_service_status";
     public static final String CHANNEL_ID_MESSAGES = "chat_messages";
+    public static final String CHANNEL_ID_CALLS = "incoming_calls";
     private static final int STATUS_NOTIFICATION_ID = 1001;
 
     // Intent extras used when starting this service
@@ -45,6 +51,12 @@ public class ChatForegroundService extends Service {
     public static final String EXTRA_TOKEN = "token";
     public static final String EXTRA_USER_ID = "userId";
     public static final String EXTRA_ROOMS = "rooms"; // JSON array of room id strings
+
+    // Used when IncomingCallActivity declines a call natively, without the
+    // webview/JS layer needing to be running.
+    public static final String ACTION_DECLINE_CALL = "com.remixmc647.remixnexus.ACTION_DECLINE_CALL";
+    public static final String EXTRA_CALL_ID = "callId";
+    public static final String EXTRA_TO_USER_ID = "toUserId";
 
     private Socket socket;
     private String myUserId;
@@ -60,6 +72,11 @@ public class ChatForegroundService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
 
+        if (ACTION_DECLINE_CALL.equals(intent.getAction())) {
+            emitCallDecline(intent.getStringExtra(EXTRA_TO_USER_ID), intent.getStringExtra(EXTRA_CALL_ID));
+            return START_NOT_STICKY;
+        }
+
         String backendUrl = intent.getStringExtra(EXTRA_BACKEND_URL);
         String token = intent.getStringExtra(EXTRA_TOKEN);
         myUserId = intent.getStringExtra(EXTRA_USER_ID);
@@ -72,6 +89,24 @@ public class ChatForegroundService extends Service {
         // will try to restart it automatically (with a null Intent), rather
         // than leaving chat silently disconnected.
         return START_STICKY;
+    }
+
+    /**
+     * Called when the user taps Decline on IncomingCallActivity. Emits
+     * "call:decline" over the socket already held by this service — works
+     * even if the app's webview/JS layer isn't currently running.
+     */
+    private void emitCallDecline(String toUserId, String callId) {
+        if (socket == null || toUserId == null || callId == null) return;
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("toUserId", toUserId);
+            payload.put("callId", callId);
+            socket.emit("call:decline", payload);
+        } catch (JSONException ignored) { }
+
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) manager.cancel(callId.hashCode());
     }
 
     private void connectSocket(String backendUrl, String token, String roomsJson) {
@@ -95,8 +130,9 @@ public class ChatForegroundService extends Service {
             socket.on(Socket.EVENT_DISCONNECT, args -> updateStatusNotification("Reconnecting…"));
             socket.on(Socket.EVENT_CONNECT_ERROR, args -> updateStatusNotification("Connection error — retrying…"));
 
-            socket.on("chat:message", this::handleIncomingMessage);
-            socket.on("dm:message", this::handleIncomingDmMessage);
+            socket.on("chat:message", handleIncomingMessage);
+            socket.on("call:invite", handleIncomingCall);
+            socket.on("call:ended", handleCallEnded);
 
             socket.connect();
         } catch (URISyntaxException e) {
@@ -144,57 +180,64 @@ public class ChatForegroundService extends Service {
         } catch (Exception ignored) { }
     };
 
-    private final Emitter.Listener handleIncomingDmMessage = args -> {
+    /**
+     * Fired on the server's "call:invite" event (server.js ~line 2871–2889),
+     * relayed to this user when someone calls them. Payload shape:
+     *   { callId, type: "voice"|"video", fromUserId, fromUsername, fromAvatar }
+     */
+    private final Emitter.Listener handleIncomingCall = args -> {
         if (args.length == 0) return;
         try {
-            JSONObject payload = (JSONObject) args[0];
-
-            String fromUserId = payload.optString("fromUserId", null);
-            // Don't notify ourselves about DMs we sent from another device/tab.
-            if (myUserId != null && fromUserId != null && fromUserId.equals(myUserId)) return;
-
-            // Prefer a display name if the server includes one on the payload;
-            // fall back gracefully if it doesn't.
-            String sender = payload.optString("fromUsername", null);
-            if (sender == null || sender.isEmpty()) sender = payload.optString("author", "New message");
-
-            String text = payload.optString("text", "");
-            String preview;
-            if (!text.isEmpty()) {
-                preview = text.length() > 100 ? text.substring(0, 100) + "…" : text;
-            } else if (payload.has("audio") && !payload.isNull("audio")) {
-                preview = "🎤 Voice note";
-            } else if (payload.has("media") && !payload.isNull("media")) {
-                JSONObject media = payload.optJSONObject("media");
-                preview = (media != null && "video".equals(media.optString("type"))) ? "🎬 Video" : "🖼️ Photo";
-            } else {
-                preview = "New message";
-            }
-
-            showDmNotification(sender, fromUserId, preview);
+            JSONObject data = (JSONObject) args[0];
+            String callId = data.optString("callId", "");
+            String callerName = data.optString("fromUsername", "Unknown");
+            String callerUserId = data.optString("fromUserId", "");
+            String callType = data.optString("type", "voice");
+            showIncomingCallNotification(callerName, callId, callerUserId, callType);
         } catch (Exception ignored) { }
     };
 
-    private void showDmNotification(String sender, String fromUserId, String preview) {
+    /**
+     * Server emits "call:ended" (server.js ~line 2901-2904) if the caller
+     * hangs up before this device answers. Cancels the notification and
+     * tells IncomingCallActivity to close itself if it's on screen.
+     */
+    private final Emitter.Listener handleCallEnded = args -> {
+        if (args.length == 0) return;
+        try {
+            JSONObject data = (JSONObject) args[0];
+            String callId = data.optString("callId", "");
+            if (callId.isEmpty()) return;
+
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) manager.cancel(callId.hashCode());
+
+            Intent cancelIntent = new Intent("com.remixmc647.remixnexus.CALL_ENDED");
+            cancelIntent.putExtra("callId", callId);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(cancelIntent);
+        } catch (Exception ignored) { }
+    };
+
+    private void showMessageNotification(String author, String room, String preview) {
         Intent openIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
         PendingIntent pendingIntent = null;
         if (openIntent != null) {
             openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             pendingIntent = PendingIntent.getActivity(
-                this, ("dm:" + fromUserId).hashCode(), openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                    this, room.hashCode(), openIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
         }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_MESSAGES)
-            .setSmallIcon(getApplicationInfo().icon)
-            .setContentTitle(sender)
-            .setContentText(preview)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            // Groups by conversation so repeated DMs from the same person
-            // replace/stack sensibly instead of flooding the notification shade.
-            .setGroup("dm:" + fromUserId);
+                .setSmallIcon(getApplicationInfo().icon)
+                .setContentTitle(author)
+                .setContentText(preview)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                // Groups by room so repeated messages in the same room replace/stack
+                // sensibly instead of flooding the notification shade.
+                .setGroup("room:" + room);
 
         if (pendingIntent != null) builder.setContentIntent(pendingIntent);
 
@@ -204,32 +247,40 @@ public class ChatForegroundService extends Service {
         }
     }
 
-    private void showMessageNotification(String author, String room, String preview) {
-        Intent openIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        PendingIntent pendingIntent = null;
-        if (openIntent != null) {
-            openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            pendingIntent = PendingIntent.getActivity(
-                this, room.hashCode(), openIntent,
+    /**
+     * Launches a full-screen, lock-screen-aware call notification, WhatsApp
+     * style, by pointing setFullScreenIntent() at IncomingCallActivity.
+     * Also passes callerUserId + callType through so IncomingCallActivity's
+     * Accept/Decline buttons can emit "call:signal" / "call:decline" back
+     * to the correct toUserId/callId pair.
+     */
+    private void showIncomingCallNotification(String callerName, String callId, String callerUserId, String callType) {
+        Intent fullScreenIntent = new Intent(this, IncomingCallActivity.class);
+        fullScreenIntent.putExtra("callerName", callerName);
+        fullScreenIntent.putExtra("callId", callId);
+        fullScreenIntent.putExtra("callerUserId", callerUserId);
+        fullScreenIntent.putExtra("callType", callType);
+        fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+                this, callId.hashCode(), fullScreenIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-        }
+        );
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_MESSAGES)
-            .setSmallIcon(getApplicationInfo().icon)
-            .setContentTitle(author)
-            .setContentText(preview)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            // Groups by room so repeated messages in the same room replace/stack
-            // sensibly instead of flooding the notification shade.
-            .setGroup("room:" + room);
+        String contentText = "video".equals(callType) ? "Incoming video call" : "Incoming voice call";
 
-        if (pendingIntent != null) builder.setContentIntent(pendingIntent);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_CALLS)
+                .setSmallIcon(getApplicationInfo().icon)
+                .setContentTitle(callerName)
+                .setContentText(contentText)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setFullScreenIntent(fullScreenPendingIntent, true)
+                .setAutoCancel(true);
 
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
-            manager.notify(notificationIdCounter++, builder.build());
+            manager.notify(callId.hashCode(), builder.build());
         }
     }
 
@@ -239,26 +290,33 @@ public class ChatForegroundService extends Service {
         if (manager == null) return;
 
         NotificationChannel statusChannel = new NotificationChannel(
-            CHANNEL_ID_STATUS, "Chat connection status", NotificationManager.IMPORTANCE_MIN
+                CHANNEL_ID_STATUS, "Chat connection status", NotificationManager.IMPORTANCE_MIN
         );
         statusChannel.setDescription("Keeps chat connected in the background");
         manager.createNotificationChannel(statusChannel);
 
         NotificationChannel messagesChannel = new NotificationChannel(
-            CHANNEL_ID_MESSAGES, "New chat messages", NotificationManager.IMPORTANCE_HIGH
+                CHANNEL_ID_MESSAGES, "New chat messages", NotificationManager.IMPORTANCE_HIGH
         );
         messagesChannel.setDescription("Alerts for new chat messages");
         manager.createNotificationChannel(messagesChannel);
+
+        NotificationChannel callsChannel = new NotificationChannel(
+                CHANNEL_ID_CALLS, "Incoming calls", NotificationManager.IMPORTANCE_HIGH
+        );
+        callsChannel.setDescription("Alerts for incoming voice/video calls");
+        callsChannel.setBypassDnd(true);
+        manager.createNotificationChannel(callsChannel);
     }
 
     private Notification buildStatusNotification(String statusText) {
         return new NotificationCompat.Builder(this, CHANNEL_ID_STATUS)
-            .setSmallIcon(getApplicationInfo().icon)
-            .setContentTitle("Remix Nexus")
-            .setContentText(statusText)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setOngoing(true)
-            .build();
+                .setSmallIcon(getApplicationInfo().icon)
+                .setContentTitle("Remix Nexus")
+                .setContentText(statusText)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setOngoing(true)
+                .build();
     }
 
     private void updateStatusNotification(String statusText) {
