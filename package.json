@@ -1,8 +1,8 @@
 {
-  "name": "remix-nexus-gaming-society",
+  "name": "remix-nexus",
   "version": "1.0.0",
   "private": true,
-  "main": "server.js",
+  "main": "electron-main.js",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
