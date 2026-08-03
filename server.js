@@ -228,7 +228,18 @@ app.get('/download/app', (req, res) => {
   sendBuildFile(res, APK_LOCAL_PATH, 'RemixNexus.apk', 'Android');
 });
 
+// The Windows installer is too large to comfortably live in the repo or
+// on Render's disk, so it's hosted as a GitHub Release asset instead.
+// Set WINDOWS_DOWNLOAD_URL in your .env to the release asset URL, e.g.:
+//   https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus.Setup.1.0.0.exe
+// If that's not set (e.g. local dev), fall back to looking for a built
+// .exe in dist/ on disk, same as before.
+const WINDOWS_DOWNLOAD_URL = process.env.WINDOWS_DOWNLOAD_URL;
+
 app.get('/download/windows', (req, res) => {
+  if (WINDOWS_DOWNLOAD_URL) {
+    return res.redirect(WINDOWS_DOWNLOAD_URL);
+  }
   const exePath = findBuildFile(DIST_DIR, /\.exe$/i);
   sendBuildFile(res, exePath, 'RemixNexus-Setup.exe', 'Windows');
 });
