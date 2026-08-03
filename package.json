@@ -48,7 +48,7 @@
   "build": {
     "appId": "com.remix.nexus",
     "productName": "Remix Nexus",
-    "icon": "build/64bca3b4-63c3-4f2d-a8c3-3c75abc4b9de.png",
+    "icon": "build/icons/icon.ico",
     "directories": {
       "output": "dist"
     },
@@ -60,6 +60,15 @@
     ],
     "extraResources": [
        ".env"
-    ]
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icons/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icons/icon-linux-512.png",
+      "category": "Game"
+    }
   }
 }
