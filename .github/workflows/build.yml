@@ -3,7 +3,12 @@ name: Build Electron App
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # lets you trigger it manually from the Actions tab
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # required so electron-builder can create releases
 
 jobs:
   build-linux:
@@ -21,7 +26,9 @@ jobs:
         run: npm install
 
       - name: Build Linux AppImage
-        run: npm run build:linux
+        run: npm run build:linux -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -44,7 +51,9 @@ jobs:
         run: npm install
 
       - name: Build Windows installer
-        run: npm run build:win
+        run: npm run build:win -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
