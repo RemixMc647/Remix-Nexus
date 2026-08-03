@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1176167350648115"
+ crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | Remix Nexus</title>
+
+<link rel="stylesheet" href="Trending.css">
+<link rel="stylesheet" href="Admin.css">
+</head>
+
+<body>
+
+<header class="settings-header">
+    <button onclick="history.back()">←</button>
+    <h2>🛡️ Admin Dashboard</h2>
+</header>
+
+<div id="adminGate" class="admin-gate" style="display:none;">
+  <p>This page is only available to the site owner.</p>
+</div>
+
+<div id="adminContainer" class="admin-container" style="display:none;">
+
+  <div class="admin-tabs">
+    <button type="button" class="admin-tab active" data-tab="users">Users</button>
+    <button type="button" class="admin-tab" data-tab="reports">Reports <span id="openReportsBadge" class="admin-badge" style="display:none;">0</span></button>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="usersTab" class="admin-tab-panel">
+    <input id="userSearchInput" class="admin-search" type="text" placeholder="Search by username or email…">
+    <div id="usersList" class="admin-list"></div>
+  </div>
+
+  <!-- REPORTS TAB -->
+  <div id="reportsTab" class="admin-tab-panel" style="display:none;">
+    <div class="admin-filter-row">
+      <button type="button" class="admin-filter-btn active" data-status="open">Open</button>
+      <button type="button" class="admin-filter-btn" data-status="resolved">Resolved</button>
+      <button type="button" class="admin-filter-btn" data-status="dismissed">Dismissed</button>
+      <button type="button" class="admin-filter-btn" data-status="all">All</button>
+    </div>
+    <div id="reportsList" class="admin-list"></div>
+  </div>
+
+</div>
+<footer class="footer">
+    <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
+    <p>Play • Chat • Watch</p>
+    <div class="footer-links">
+        <a href="./index.html">Home</a>
+        <a href="./Trending.html">Live</a>
+        <a href="./Chat.html">Chat</a>
+         <a href="./Contacts.html">Contacts</a>
+        <a href="./Search.html">Search</a>
+        <a href="./Profile.html">Profile</a>
+        <a href="./About.html">About</a>
+        <a href="./Contact.html">Contact</a>
+        <a href="./Terms.html">Terms of Service</a>
+        <a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener">▶ YouTube</a>
+        <a href="./Privacy.html">🔒 Privacy Policy</a>
+    </div>
+    <small>© 2026 𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 Gaming Society. All Rights Reserved.</small>
+</footer>
+<script src="auth.js"></script>
+<script src="Admin.js"></script>
+
+</body>
+</html>

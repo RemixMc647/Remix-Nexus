@@ -1,0 +1,47 @@
+/*==============================
+REMIXMC — SHARED ROOM LIST
+Used by both Chat.html and Search.html so they never
+drift out of sync with each other.
+==============================*/
+
+const DEFAULT_ROOMS = [
+  { id: 'lounge', name: '📙 Just Chatting Lounge' },
+  { id: 'minecraft', name: '🧱 Minecraft' },
+  { id: 'roblox', name: '🔲 Roblox' },
+  { id: 'fortnite', name: '🪂 Fortnite Squads' },
+  { id: 'cod', name: '🔫 Call of Duty' },
+  { id: 'freefire', name: '🔥 Free Fire' },
+  { id: 'pubg', name: '🥽 PUB-G' },
+  { id: 'gta', name: '🚗 GTA' },
+  { id: 'amongus', name: '🚀 Among Us' },
+  { id: 'valorant', name: '🎯 Valorant' },
+  { id: 'lol', name: '🐉 League of Legends' },
+  { id: 'wildrift', name: '⚔️ Wild Rift' },
+  { id: 'apex', name: '🐾 Apex Legends' },
+  { id: 'overwatch', name: '🛡️ Overwatch 2' },
+  { id: 'csgo', name: '💣 Counter-Strike 2' },
+  { id: 'r6', name: '🧨 Rainbow Six Siege' },
+  { id: 'dota2', name: '🗡️ Dota 2' },
+  { id: 'rocketleague', name: '🚙 Rocket League' },
+  { id: 'fifa', name: '⚽ EA FC' },
+  { id: 'nba2k', name: '🏀 NBA 2K' },
+  { id: 'genshin', name: '⚡ Genshin Impact' },
+  { id: 'honkai', name: '🚂 Honkai: Star Rail' },
+  { id: 'clashroyale', name: '👑 Clash Royale' },
+  { id: 'coc', name: '🏰 Clash of Clans' },
+  { id: 'brawlstars', name: '⭐ Brawl Stars' },
+  { id: 'mlbb', name: '🌟 Mobile Legends' },
+  { id: 'codm', name: '📱 Call of Duty Mobile' },
+  { id: 'bloodstrike', name: '🩸 Blood Strike' },
+  { id: 'wow', name: '🐺 World of Warcraft' },
+  { id: 'valheim', name: '🪓 Valheim' },
+  { id: 'palworld', name: '🐾 Palworld' },
+  { id: 'terraria', name: '⛏️ Terraria' },
+  { id: 'fallguys', name: '🤸🏻‍♀️ Fall Guys' },
+  { id: 'stumbleguys', name: '🏃 Stumble Guys' },
+  { id: 'subwaysurfers', name: '🚇 Subway Surfers' },
+  { id: 'candycrush', name: '🍬 Candy Crush' },
+  { id: '8ballpool', name: '🎱 8 Ball Pool' },
+  { id: 'chess', name: '♟️ Chess.com' },
+   { id: 'dls 2026', name: '⚽ D.L.S 2026' },
+];

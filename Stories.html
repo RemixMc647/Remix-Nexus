@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1176167350648115"
+ crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Stories</title>
+
+    <link rel="stylesheet" href="./Trending.css">
+    <link rel="stylesheet" href="./Chat.css">
+    <link rel="stylesheet" href="./Stories.css">
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+      .story-viewer-footer-row {
+        position: absolute;
+        bottom: 18px;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        z-index: 5;
+      }
+      .story-like-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0,0,0,0.5);
+        border: none;
+        border-radius: 20px;
+        color: #fff;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+      }
+      .story-like-btn.liked #storyLikeIcon { filter: none; }
+    </style>
+</head>
+
+<body>
+
+<div class="background-glow"></div>
+
+<header class="nav-bar" style="width:92%; max-width:1300px; margin:25px auto;">
+    <div class="logo">
+        <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
+        <span>Gaming Society</span>
+    </div>
+
+    <div class="buttons1">
+        <a href="./index.html" class="href"><button class="button1" title="Home">🏠</button></a>
+        <a href="./Trending.html" class="href"><button class="button2" title="Live">🔥</button></a>
+        <a href="./Chat.html" class="href"><button class="button3" title="Chat">💬</button></a>
+        <a href="./Contacts.html" class="href"><button class="button3" title="Contacts">👥</button></a>
+        <a href="./Stories.html" class="href" aria-current="page"><button class="button3" title="Stories">📸</button></a>
+        <a href="./Profile.html" class="href"><button class="button4" title="Profile">👤</button></a>
+    </div>
+</header>
+
+<section class="stories-page">
+
+  <div class="story-tray" id="storyTray">
+    <!-- "Your Story" tile is always first, rendered by Stories.js -->
+  </div>
+
+  <div id="storiesEmptyState" class="stories-empty" style="display:none;">
+    <p>No stories yet. Be the first — tap the ➕ to post one that disappears in 24 hours.</p>
+  </div>
+
+</section>
+
+<!-- Hidden file input used for both "post a story" and re-used for the upload preview -->
+<input id="storyFileInput" type="file" accept="image/*,video/*" hidden>
+
+<!-- FULL-SCREEN STORY VIEWER -->
+<div id="storyViewer" class="story-viewer" style="display:none;">
+  <div class="story-progress-row" id="storyProgressRow"></div>
+
+  <div class="story-viewer-header">
+    <div class="story-viewer-user">
+      <span id="storyViewerAvatar" class="story-viewer-avatar">🎮</span>
+      <span id="storyViewerUsername" class="story-viewer-username"></span>
+      <span id="storyViewerTime" class="story-viewer-time"></span>
+    </div>
+    <div class="story-viewer-actions">
+      <button type="button" id="storyReportBtn" class="story-icon-btn" title="Report this story">🚩</button>
+      <button type="button" id="storyDeleteBtn" class="story-icon-btn" title="Delete this story" style="display:none;">🗑️</button>
+      <button type="button" id="storyCloseBtn" class="story-icon-btn" title="Close" aria-label="Close">✕</button>
+    </div>
+  </div>
+
+  <div class="story-viewer-media" id="storyViewerMedia"></div>
+
+  <button type="button" id="storyPrevZone" class="story-tap-zone story-tap-left" aria-label="Previous story"></button>
+  <button type="button" id="storyNextZone" class="story-tap-zone story-tap-right" aria-label="Next story"></button>
+
+  <div id="storyCaption" class="story-caption" style="display:none;"></div>
+
+  <div class="story-viewer-footer-row">
+    <button type="button" id="storyLikeBtn" class="story-like-btn" title="Like this story">
+      <span id="storyLikeIcon">🤍</span> <span id="storyLikeCount">0</span>
+    </button>
+    <button type="button" id="storyViewersBtn" class="story-viewers-btn" style="display:none;">
+      👁️ <span id="storyViewersCount">0</span> viewed
+    </button>
+  </div>
+</div>
+
+<!-- VIEWERS LIST SHEET (own stories only) -->
+<div id="storyViewersSheet" class="story-viewers-sheet" style="display:none;">
+  <div class="story-viewers-sheet-inner">
+    <div class="story-viewers-sheet-header">
+      <h3>Viewed by</h3>
+      <button type="button" id="storyViewersCloseBtn">✕</button>
+    </div>
+    <div id="storyViewersList" class="story-viewers-list"></div>
+    <div class="story-viewers-sheet-header" style="margin-top:16px;">
+      <h3>❤️ Liked by</h3>
+    </div>
+    <div id="storyLikersList" class="story-viewers-list"></div>
+  </div>
+</div>
+
+<!-- UPLOAD / CAPTION MODAL -->
+<div id="storyUploadModal" class="story-upload-modal" style="display:none;">
+  <div class="story-upload-inner">
+    <button type="button" id="storyUploadCancelBtn" class="story-icon-btn story-upload-cancel">✕</button>
+    <div id="storyUploadPreview" class="story-upload-preview"></div>
+    <input id="storyCaptionInput" type="text" maxlength="200" placeholder="Add a caption (optional)…">
+    <button type="button" id="storyPostBtn" class="story-post-btn">Post to your story</button>
+  </div>
+</div>
+
+<footer class="footer">
+    <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
+    <p>Play • Chat • Watch</p>
+    <div class="footer-links">
+        <a href="./index.html">Home</a>
+        <a href="./Trending.html">Live</a>
+        <a href="./Chat.html">Chat</a>
+        <a href="./Contacts.html">Contacts</a>
+        <a href="./Stories.html">Stories</a>
+        <a href="./Profile.html">Profile</a>
+        <a href="./About.html">About</a>
+        <a href="./Contact.html">Contact</a>
+        <a href="./Terms.html">Terms of Service</a>
+        <a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener">▶ YouTube</a>
+        <a href="./Privacy.html">🔒 Privacy Policy</a>
+    </div>
+    <small>© 2026 𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 Gaming Society. All Rights Reserved.</small>
+</footer>
+
+<script src="./config.js"></script>
+<script src="./auth.js"></script>
+<script src="./Stories.js"></script>
+<script src="/js/pwa-register.js"></script>
+</body>
+</html>

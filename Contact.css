@@ -1,0 +1,177 @@
+/*==============================
+REMIX-NEXUS — CONTACT PAGE STYLES
+Matches the dark neon / glassmorphism language used across
+Profile.html and Trending.html.
+==============================*/
+
+.contact-shell {
+  width: 92%;
+  max-width: 1100px;
+  margin: 20px auto 60px;
+}
+
+.contact-intro {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.contact-eyebrow {
+  display: inline-block;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a7bff;
+  background: rgba(138, 123, 255, 0.12);
+  border: 1px solid rgba(138, 123, 255, 0.3);
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.contact-intro h1 {
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  margin: 0 0 10px;
+  background: linear-gradient(90deg, #7f5bff, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.contact-intro p {
+  color: #b9b9c9;
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contact-card,
+.contact-side-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 18px;
+  padding: 28px;
+}
+
+.contact-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.contact-side-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.contact-side-card p {
+  color: #a8a8ba;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 0.85rem;
+  color: #c6c6d6;
+  font-weight: 500;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #7f5bff;
+  box-shadow: 0 0 0 3px rgba(127, 91, 255, 0.25);
+}
+
+.form-field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%23b9b9c9' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.contact-submit-btn {
+  align-self: flex-start;
+  background: linear-gradient(90deg, #7f5bff, #00d4ff);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 13px 28px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.contact-submit-btn:hover {
+  transform: translateY(-1px);
+}
+
+.contact-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.contact-status {
+  min-height: 1.2em;
+  font-size: 0.9rem;
+  margin: 0;
+}

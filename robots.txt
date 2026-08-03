@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://remix-nexus-tygt.onrender.com/sitemap.xml

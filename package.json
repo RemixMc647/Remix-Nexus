@@ -1,0 +1,65 @@
+{
+  "name": "remix-nexus-gaming-society",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "electron:start": "electron electron-main.js",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/push-notifications": "^8.1.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^14.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.0",
+    "nodemailer": "^9.0.3",
+    "resend": "^6.18.0",
+    "socket.io": "^4.7.5"
+  },
+  "description": "This project is split into two pieces that get deployed separately:",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RemixMc647/Remix-Nexus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RemixMc647/Remix-Nexus/issues"
+  },
+  "homepage": "https://github.com/RemixMc647/Remix-Nexus#readme",
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.remix.nexus",
+    "productName": "Remix Nexus",
+    "icon": "build/64bca3b4-63c3-4f2d-a8c3-3c75abc4b9de.png",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "*.html",
+       "*.css",
+       "*.js",
+       "node_modules/"
+    ],
+    "extraResources": [
+       ".env"
+    ]
+  }
+}

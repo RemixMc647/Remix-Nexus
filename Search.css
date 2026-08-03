@@ -1,0 +1,114 @@
+/* ===========================
+   REMIXMC — SEARCH PAGE
+=========================== */
+
+.search-shell{
+    width:92%;
+    max-width:800px;
+    margin:40px auto 100px;
+    text-align:center;
+}
+
+.search-title{
+    font-size:38px;
+    font-weight:800;
+    margin-bottom:8px;
+}
+
+.search-input{
+    width:100%;
+    height:58px;
+    margin-top:25px;
+    margin-bottom:30px;
+    border-radius:30px;
+    border:2px solid rgba(0,102,255,.3);
+    background:rgba(20,20,25,.75);
+    color:white;
+    padding:0 24px;
+    font-size:16px;
+    outline:none;
+    transition:.25s;
+}
+
+.search-input:focus{
+    border-color:#0066ff;
+    box-shadow:0 0 25px rgba(0,102,255,.4);
+}
+
+.results-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    text-align:left;
+}
+
+.result-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:18px 22px;
+    border-radius:18px;
+    background:rgba(20,20,25,.75);
+    border:1px solid rgba(255,255,255,.08);
+    text-decoration:none;
+    color:white;
+    transition:.25s;
+}
+
+.result-item:hover{
+    transform:translateY(-4px);
+    box-shadow:0 0 25px rgba(0,102,255,.4);
+}
+
+.result-item span.name{
+    font-size:16px;
+    font-weight:600;
+}
+
+.result-item span.enter{
+    font-size:13px;
+    color:#7da9ff;
+}
+
+.results-section-title{
+    font-size:14px;
+    font-weight:700;
+    color:#7da9ff;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    margin:18px 0 4px;
+}
+
+.results-section-title:first-child{
+    margin-top:0;
+}
+
+.search-contacts-hint{
+    text-align:center;
+    color:#9fb3d9;
+    font-size:13px;
+    margin-bottom:20px;
+}
+
+@media(max-width:480px){
+    .search-shell{ width:95%; margin:24px auto 60px; }
+    .search-title{ font-size:26px; }
+
+    .search-input{ height:48px; font-size:14px; padding:0 18px; margin-top:18px; margin-bottom:20px; }
+
+    .result-item{ padding:14px 16px; gap:10px; }
+
+    /* Without min-width:0 a flex child can't shrink below its content
+       size — a long name would push .enter (and the item itself) wider
+       than the screen instead of truncating. */
+    .result-item span.name{
+        font-size:14px;
+        min-width:0;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+    }
+
+    .result-item span.enter{ font-size:12px; flex-shrink:0; }
+    .results-section-title{ font-size:12px; }
+}
