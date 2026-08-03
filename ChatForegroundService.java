@@ -276,6 +276,17 @@ public class ChatForegroundService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setFullScreenIntent(fullScreenPendingIntent, true)
+                .setContentIntent(fullScreenPendingIntent)
+                // Public: shows caller name/text on the lock screen instead of
+                // "Notification hidden" (depends on the user's lock screen
+                // privacy setting, but this requests the more visible option).
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                // Ongoing: can't be swiped away while ringing, same as a real
+                // phone call notification.
+                .setOngoing(true)
+                // Auto-clears after 45s so a missed/answered-elsewhere call
+                // doesn't leave a stuck notification if call:ended is missed.
+                .setTimeoutAfter(45_000)
                 .setAutoCancel(true);
 
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
