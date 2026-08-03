@@ -17,6 +17,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
+const { scheduleAutoCleanup } = require('./autoCleanup');
 
 // Resend — HTTP-based email API. Used instead of Nodemailer/SMTP because
 // Render's free tier blocks outbound SMTP ports (25, 465, 587), which makes
@@ -242,7 +243,29 @@ app.get('/download/linux', (req, res) => {
 // ---- DATABASE ----
 if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
+    .then(() => {
+      console.log('✅ Connected to MongoDB');
+
+      // ---- AUTO-CLEANUP: trims oldest messages when storage gets full ----
+      // Only ever deletes from the message collections below — never touches
+      // users, auth, blocks, or any other account data. Runs an initial
+      // check immediately, then re-checks every hour.
+      scheduleAutoCleanup(
+        mongoose.connection.db,
+        {
+          maxStorageMB: 512,       // your Atlas free-tier cap
+          triggerPercent: 85,      // start cleanup once 85% full
+          targetPercent: 70,       // stop once back down to 70%
+          batchSize: 500,
+          dryRun: false,           // set to true first to see what it WOULD delete
+          collections: [
+            { name: 'directmessages', dateField: 'time' },
+            { name: 'roommessages', dateField: 'time' },
+          ],
+        },
+        60 * 60 * 1000 // check every hour
+      );
+    })
     .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 }
 
