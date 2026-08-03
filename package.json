@@ -54,12 +54,13 @@
     },
     "files": [
       "*.html",
-       "*.css",
-       "*.js",
-       "node_modules/"
+      "*.css",
+      "*.js",
+      "build/icons/**",
+      "node_modules/"
     ],
     "extraResources": [
-       ".env"
+      ".env"
     ],
     "win": {
       "target": "nsis",
@@ -69,7 +70,7 @@
       "target": "AppImage",
       "icon": "build/icons/icon-linux-512.png",
       "category": "Game",
-       "desktop": { "entry": { "StartupWMClass": "remix-nexus" } }
+      "desktop": { "entry": { "StartupWMClass": "remix-nexus" } }
     }
   }
-}  
+}
