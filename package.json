@@ -68,7 +68,8 @@
     "linux": {
       "target": "AppImage",
       "icon": "build/icons/icon-linux-512.png",
-      "category": "Game"
+      "category": "Game",
+       "desktop": { "entry": { "StartupWMClass": "remix-nexus" } }
     }
   }
 }
