@@ -1,4 +1,4 @@
-    // ===============================================================
+// ===============================================================
 // REMIX-NEXUS — UNIFIED BACKEND
 // One server that:
 //   1) Serves the whole front-end (everything in /public)
@@ -222,33 +222,119 @@ function sendBuildFile(res, filePath, downloadName, platformLabel) {
   res.download(filePath, downloadName);
 }
 
-const APK_LOCAL_PATH = path.join(DOWNLOADS_DIR, 'RemixNexus.apk');
+// Optional manual override, same as WINDOWS_DOWNLOAD_URL / LINUX_DOWNLOAD_URL
+// below — set APK_DOWNLOAD_URL in .env to pin a specific release asset.
+const APK_DOWNLOAD_URL = process.env.APK_DOWNLOAD_URL;
 
 app.get('/download/app', (req, res) => {
-  sendBuildFile(res, APK_LOCAL_PATH, 'RemixNexus.apk', 'Android');
+  if (APK_DOWNLOAD_URL) {
+    return res.redirect(APK_DOWNLOAD_URL);
+  }
+  // If build.yml doesn't publish an .apk to GitHub Releases (it doesn't,
+  // as of now — only Windows/Linux), this just falls straight through to
+  // the local file check below, same as it always has.
+  return redirectToLatestAsset(req, res, {
+    pattern: /\.apk$/i,
+    platformLabel: 'Android',
+    localDir: DOWNLOADS_DIR,
+    localFilename: 'RemixNexus.apk'
+  });
 });
 
-// The Windows installer is too large to comfortably live in the repo or
-// on Render's disk, so it's hosted as a GitHub Release asset instead.
-// Set WINDOWS_DOWNLOAD_URL in your .env to the release asset URL, e.g.:
-//   https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus.Setup.1.0.0.exe
-// If that's not set (e.g. local dev), fall back to looking for a built
-// .exe in dist/ on disk, same as before.
+// The Windows/Linux builds are too large to comfortably live in the repo
+// or on Render's disk, so they're hosted as GitHub Release assets instead.
+// build.yml (--publish always) creates a new release + assets on every
+// version tag. Rather than hardcoding a URL that goes stale on every
+// release, we ask the GitHub API for whatever the LATEST release actually
+// contains and redirect there — no env var to update, ever.
+//
+// Manual override: if WINDOWS_DOWNLOAD_URL / LINUX_DOWNLOAD_URL are set in
+// .env, those win (handy for pinning to a specific version or working
+// around a bad latest release).
 const WINDOWS_DOWNLOAD_URL = process.env.WINDOWS_DOWNLOAD_URL;
+const LINUX_DOWNLOAD_URL = process.env.LINUX_DOWNLOAD_URL;
+
+// repo field is "git+https://github.com/OWNER/REPO.git" in package.json
+const GITHUB_REPO = 'RemixMc647/Remix-Nexus';
+
+// Unauthenticated GitHub API calls are capped at 60/hour per IP, which a
+// live download button would blow through fast. Caching the release
+// response for a few minutes keeps normal traffic well under that even
+// without a token. Optional: set GITHUB_TOKEN (any classic PAT, no scopes
+// needed for a public repo) to raise the cap to 5,000/hour.
+const RELEASE_CACHE_TTL_MS = 5 * 60 * 1000;
+let releaseCache = { assets: null, fetchedAt: 0 };
+
+async function getLatestReleaseAssets() {
+  const now = Date.now();
+  if (releaseCache.assets && (now - releaseCache.fetchedAt) < RELEASE_CACHE_TTL_MS) {
+    return releaseCache.assets;
+  }
+  const headers = {
+    'Accept': 'application/vnd.github+json',
+    'User-Agent': 'remix-nexus-server'
+  };
+  if (process.env.GITHUB_TOKEN) {
+    headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
+  }
+  const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, { headers });
+  if (!resp.ok) {
+    throw new Error(`GitHub API returned ${resp.status}`);
+  }
+  const json = await resp.json();
+  const assets = json.assets || [];
+  releaseCache = { assets, fetchedAt: now };
+  return assets;
+}
+
+// Finds the newest release asset matching `pattern` and redirects to its
+// direct download URL. Falls back to a locally-built file on disk (old
+// behavior) if the GitHub API call fails, so a GitHub outage or rate
+// limit doesn't take the download button down entirely if you happen to
+// also have a build sitting in dist/ or downloads/.
+async function redirectToLatestAsset(req, res, { pattern, platformLabel, localDir, localFilename }) {
+  try {
+    const assets = await getLatestReleaseAssets();
+    const match = assets.find(a => pattern.test(a.name));
+    if (match) {
+      return res.redirect(match.browser_download_url);
+    }
+    console.warn(`No ${platformLabel} asset found on the latest GitHub release.`);
+  } catch (err) {
+    console.error(`Failed to fetch latest ${platformLabel} release from GitHub:`, err.message);
+  }
+  // Fallback: local disk lookup
+  const localPath = findBuildFile(localDir, pattern);
+  if (localPath) {
+    return sendBuildFile(res, localPath, localFilename, platformLabel);
+  }
+  res.status(404).send(
+    `The ${platformLabel} build isn't available right now. Check back soon!`
+  );
+}
 
 app.get('/download/windows', (req, res) => {
   if (WINDOWS_DOWNLOAD_URL) {
     return res.redirect(WINDOWS_DOWNLOAD_URL);
   }
-  const exePath = findBuildFile(DIST_DIR, /\.exe$/i);
-  sendBuildFile(res, exePath, 'RemixNexus-Setup.exe', 'Windows');
+  return redirectToLatestAsset(req, res, {
+    pattern: /\.exe$/i,
+    platformLabel: 'Windows',
+    localDir: DIST_DIR,
+    localFilename: 'RemixNexus-Setup.exe'
+  });
 });
 
 app.get('/download/linux', (req, res) => {
-  const linuxPath =
-    findBuildFile(DOWNLOADS_DIR, /\.appimage$/i) ||
-    findBuildFile(DIST_DIR, /\.appimage$/i);
-  sendBuildFile(res, linuxPath, 'RemixNexus.AppImage', 'Linux');
+  if (LINUX_DOWNLOAD_URL) {
+    return res.redirect(LINUX_DOWNLOAD_URL);
+  }
+  return redirectToLatestAsset(req, res, {
+    pattern: /\.appimage$/i,
+    platformLabel: 'Linux',
+    localDir: DOWNLOADS_DIR,
+    localFilename: 'RemixNexus.AppImage'
+  });
 });
 
 // ---- DATABASE ----
@@ -3283,4 +3369,3 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
   console.log(`🎮 𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 server running on http://localhost:${PORT}`);
 });
-
