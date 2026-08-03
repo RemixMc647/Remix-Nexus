@@ -68,7 +68,9 @@
     "linux": {
       "target": "AppImage",
       "icon": "build/icons/icon-linux-512.png",
-      "category": "Game"
+      "category": "Game",
+      "desktopName": "remix-nexus.desktop",
+      "synopsis": "Remix Nexus gaming chat app"
     }
   }
 }  
