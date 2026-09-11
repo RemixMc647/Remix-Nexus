@@ -912,7 +912,12 @@ function renderRooms(){
     const isPinned = pinnedChats.includes(roomChatId);
     const isMuted = mutedChats.includes(roomChatId);
     const isArchived = archivedChats.includes(roomChatId);
-    const deleteBtn = (isCustom && isSiteOwner)
+    // Site owner (RemixMc) can delete ANY custom room. Everyone else can
+    // only delete a custom room they personally created — compared by
+    // verified user id, never by display name (see getMyUserId()).
+    const isMyOwnRoom = isCustom && r.createdBy && r.createdBy === getMyUserId();
+    const canDeleteRoom = isCustom && (isSiteOwner || isMyOwnRoom);
+    const deleteBtn = canDeleteRoom
       ? `<button type="button" class="room-item-delete" data-room="${escapeHTML(r.id)}" title="Delete this room">🗑</button>`
       : '';
     const pinIcon = isPinned ? '<span class="room-item-icon" title="Pinned">📌</span>' : '';
