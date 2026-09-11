@@ -1,5 +1,9 @@
 {
   "appId": "com.remixmc647.remixnexus",
   "appName": "Remix Nexus",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "url": "https://remix-nexus-tygt.onrender.com",
+    "cleartext": false
+  }
 }
