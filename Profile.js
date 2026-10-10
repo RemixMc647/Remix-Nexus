@@ -46,7 +46,172 @@ function renderUser(user){
   infoUsername.textContent = user.username;
   infoEmail.textContent = user.email;
   infoJoined.textContent = user.createdAt ? formatJoinDate(user.createdAt) : '—';
+  currentUser = user;
+  applyBanner(user);
 }
+
+/*==============================
+PROFILE BANNER (YouTube-style cover picture)
+- the user picks any picture; it is centre-cropped and shrunk to
+  1200x400 so it stays small and loads fast
+- it is always saved on this device (instant)
+- it is also sent to the server (PUT /api/me/banner). If your server
+  doesn't have that route yet, the banner simply stays on this device.
+==============================*/
+let currentUser = null;
+
+const profileHeader = document.getElementById('profileHeader');
+const bannerFileInput = document.getElementById('bannerFileInput');
+const bannerChangeBtn = document.getElementById('bannerChangeBtn');
+const bannerRemoveBtn = document.getElementById('bannerRemoveBtn');
+const bannerMessage = document.getElementById('bannerMessage');
+
+function bannerKey(user){
+  const id = user && (user._id || user.id || user.username);
+  return id ? 'remixNexusBanner:' + id : null;
+}
+
+function getStoredBanner(user){
+  if (user && user.banner) return user.banner;       // saved on the server
+  const key = bannerKey(user);
+  try { return key ? (localStorage.getItem(key) || '') : ''; } catch (e) { return ''; }
+}
+
+function applyBanner(user){
+  if (!profileHeader) return;
+  const src = getStoredBanner(user);
+  if (src) {
+    profileHeader.style.setProperty('--banner-img', 'url("' + src + '")');
+  } else {
+    profileHeader.style.removeProperty('--banner-img');
+  }
+  if (bannerRemoveBtn) bannerRemoveBtn.style.display = src ? '' : 'none';
+}
+
+function bannerSay(text, color){
+  if (!bannerMessage) return;
+  bannerMessage.textContent = text;
+  bannerMessage.style.color = color || '#bdbdbd';
+}
+
+// picture -> centre-cropped 1200x400 JPEG (small file, any phone photo works)
+function fileToBannerDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const W = 1200, H = 400;
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(W / img.width, H / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      } catch (err) {
+        URL.revokeObjectURL(url);
+        reject(err);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Could not read that picture.'));
+    };
+    img.src = url;
+  });
+}
+
+async function sendBannerToServer(banner){
+  try {
+    const res = await fetch('https://remix-nexus-bgz9.onrender.com/api/me/banner', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + AUTH.getToken()
+      },
+      body: JSON.stringify({ banner })
+    });
+    if (!res.ok) return null;
+    let data = {};
+    try { data = await res.json(); } catch (e) { /* not JSON */ }
+    return data.user || {};
+  } catch (err) {
+    return null;                       // server unreachable / route missing
+  }
+}
+
+if (bannerChangeBtn && bannerFileInput) {
+  bannerChangeBtn.addEventListener('click', () => bannerFileInput.click());
+
+  bannerFileInput.addEventListener('change', async () => {
+    const file = bannerFileInput.files && bannerFileInput.files[0];
+    bannerFileInput.value = '';                       // lets them pick the same file again
+    if (!file) return;
+
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+      bannerSay('Please choose a picture (JPG, PNG or WebP).', '#ff5b5b');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      bannerSay('That picture is too big. Please pick one under 15 MB.', '#ff5b5b');
+      return;
+    }
+
+    bannerSay('Saving banner…');
+
+    try {
+      const dataUrl = await fileToBannerDataUrl(file);
+      const user = currentUser || (AUTH.getUser && AUTH.getUser());
+      const key = bannerKey(user);
+
+      if (key) {
+        try {
+          localStorage.setItem(key, dataUrl);
+        } catch (e) {
+          bannerSay('Not enough space on this device to save the banner.', '#ff5b5b');
+          return;
+        }
+      }
+
+      // show it straight away
+      profileHeader.style.setProperty('--banner-img', 'url("' + dataUrl + '")');
+      bannerRemoveBtn.style.display = '';
+
+      const serverUser = await sendBannerToServer(dataUrl);
+      if (serverUser) {
+        if (serverUser.username) {
+          localStorage.setItem(AUTH.USER_KEY, JSON.stringify(serverUser));
+          currentUser = serverUser;
+        }
+        bannerSay('Banner saved to your account!', '#00e676');
+      } else {
+        bannerSay('Banner saved on this device.', '#00e676');
+      }
+    } catch (err) {
+      bannerSay(err.message || 'Could not use that picture.', '#ff5b5b');
+    }
+  });
+}
+
+if (bannerRemoveBtn) {
+  bannerRemoveBtn.addEventListener('click', async () => {
+    const user = currentUser || (AUTH.getUser && AUTH.getUser());
+    const key = bannerKey(user);
+    try { if (key) localStorage.removeItem(key); } catch (e) { /* ignore */ }
+
+    if (user) user.banner = '';
+    profileHeader.style.removeProperty('--banner-img');
+    bannerRemoveBtn.style.display = 'none';
+    bannerSay('Banner removed.', '#00e676');
+
+    sendBannerToServer('');            // best effort, ignore the result
+  });
+}
+
 
 async function loadAvatarPicker(currentAvatar){
   try {
