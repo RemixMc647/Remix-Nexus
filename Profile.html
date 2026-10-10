@@ -42,13 +42,14 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1176167350648115"
      crossorigin="anonymous"></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#000000">
     <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Profile</title>
 
     <link rel="stylesheet" href="./Trending.css">
     <link rel="stylesheet" href="./Profile.css">
+    <link rel="stylesheet" href="./Discord-Pages.css">
     <link rel="icon" href="./icon-linux-512.png" type="image/png">
 
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
@@ -57,12 +58,12 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="page-profile">
 
 <div class="background-glow"></div>
 
-<header class="nav-bar" style="width:92%; max-width:1300px; margin:25px auto;">
-    <div class="logo">
+<header class="nav-bar">
+    <div class="logo" title="Remix Nexus">
         <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
         <span>Gaming Society</span>
     </div>
@@ -128,24 +129,24 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
       <p id="avatarMessage" class="message"></p>
     </div>
 
-    <div class="account-settings-section">
-      <h3>Change Username</h3>
+    <details class="account-settings-section">
+      <summary>Change Username</summary>
       <form id="usernameForm" class="inline-form">
         <input type="text" id="newUsernameInput" placeholder="New username" minlength="3" required>
         <button type="submit" class="save-btn">Update Username</button>
       </form>
       <p id="usernameMessage" class="message"></p>
-    </div>
+    </details>
 
-    <div class="account-settings-section">
-      <h3>Change Password</h3>
+    <details class="account-settings-section">
+      <summary>Change Password</summary>
       <form id="passwordForm" class="inline-form">
         <input type="password" id="currentPasswordInput" placeholder="Current password" required>
         <input type="password" id="newPasswordInput" placeholder="New password (min 6 characters)" minlength="6" required>
         <button type="submit" class="save-btn">Update Password</button>
       </form>
       <p id="passwordMessage" class="message"></p>
-    </div>
+    </details>
 <a href="Settings.html" class="settings-btn">
     ⚙️ Settings
 </a>
@@ -154,12 +155,13 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
 </section>
 <section class="download-banner">
   <div class="download-banner-icon">📲</div>
-  <h2>Get Remix Nexus on your device</h2>
-  <p>Take the squad chats with you. Download the app and never miss a message.</p>
+  <div class="download-banner-text">
+    <h2>Get Remix Nexus on your device</h2>
+    <p>Take the squad chats with you. Download the app and never miss a message.</p>
+  </div>
   <a href="./download.html" class="download-btn" title="Download Remix Nexus for Android, Windows, or Linux">
     <span class="download-btn-icon">⬇️</span>Download App
   </a>
-</div>
 </section>
 
 <footer class="footer">
