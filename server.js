@@ -2511,3 +2511,5 @@ async function sendPushToUser(userId, { title, body, data = {}, channelId, prior
     const deadTokens = [];
     response.responses.forEach((r, i) => {
       const
+
+      require('./nexus-ai').init({ io, RoomMessage, makeMessageId });
