@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1176167350648115"
 crossorigin="anonymous"></script>
 <meta name="description"
@@ -52,177 +52,11 @@ content="https://remix-nexus-tygt.onrender.com/remix-nexus-controller-art.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-<style>
-/* Display face for headlines only — Poppins stays the body/UI voice everywhere else */
-.hero h1, .section-title, .feature-card h3, .artist-header h2, .newsletter h2, .live-ticker{
-    font-family:'Space Grotesk', 'Poppins', sans-serif;
-}
-
-/* SIGNATURE ELEMENT: live squad-room ticker, sits under the nav like a server browser list.
-   Track is duplicated once in the markup so the -50% scroll loops seamlessly. */
-.live-ticker-wrap{
-    width:92%;
-    max-width:1300px;
-    margin:18px auto 0;
-    overflow:hidden;
-    border-radius:16px;
-    background:rgba(20,20,25,.75);
-    backdrop-filter:blur(18px);
-    border:1px solid rgba(255,255,255,.08);
-    -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-    mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-}
-
-.live-ticker{
-    display:flex;
-    width:max-content;
-    gap:36px;
-    padding:12px 24px;
-    animation:tickerScroll 26s linear infinite;
-    font-size:13px;
-    font-weight:600;
-    letter-spacing:.02em;
-    color:#cfd8ea;
-    white-space:nowrap;
-}
-
-.live-ticker span{ display:inline-flex; align-items:center; gap:8px; }
-
-.live-dot{
-    width:7px; height:7px; border-radius:50%;
-    background:#00e676;
-    box-shadow:0 0 8px #00e676;
-    animation:dotPulse 1.6s ease-in-out infinite;
-    flex-shrink:0;
-}
-
-@keyframes tickerScroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
-@keyframes dotPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
-
-@media (prefers-reduced-motion: reduce){
-    .live-ticker{ animation:none; }
-    .live-dot{ animation:none; }
-}
-
-/* WHY REMIX NEXUS — real feature copy, doubles as content depth for the page */
-.feature-grid{
-    width:92%;
-    max-width:1300px;
-    margin:70px auto 0;
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-    gap:25px;
-}
-
-.feature-card{
-    background:rgba(20,20,25,.75);
-    backdrop-filter:blur(18px);
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:22px;
-    padding:30px;
-    transition:.35s;
-}
-
-.feature-card:hover{ transform:translateY(-6px); box-shadow:0 0 30px rgba(0,102,255,.35); }
-
-.feature-icon{
-    width:46px; height:46px;
-    border-radius:14px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:22px;
-    background:linear-gradient(135deg,#0066ff,#00b7ff);
-    margin-bottom:16px;
-}
-
-.feature-card h3{ font-size:19px; font-weight:600; margin-bottom:10px; }
-.feature-card p{ font-size:14px; line-height:1.7; color:#a9a9a9; }
-
-/* Page-specific: squad room cards on the homepage */
-.squad-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-    gap:25px;
-    margin-top:30px;
-}
-
-.squad-card{
-    position:relative;
-    background:rgba(20,20,25,.75);
-    backdrop-filter:blur(20px);
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:22px;
-    padding:26px;
-    text-align:center;
-    transition:.35s;
-    text-decoration:none;
-    color:white;
-    display:block;
-}
-
-.squad-card:hover{
-    transform:translateY(-8px);
-    box-shadow:0 0 30px rgba(0,102,255,.5);
-}
-
-.squad-card{ border-top:3px solid var(--squad-accent, #0066ff); }
-.squad-card[data-accent="minecraft"]{ --squad-accent:#5cb85c; }
-.squad-card[data-accent="roblox"]{ --squad-accent:#e63946; }
-.squad-card[data-accent="fortnite"]{ --squad-accent:#a663f7; }
-.squad-card[data-accent="cod"]{ --squad-accent:#ff9f1c; }
-.squad-card[data-accent="freefire"]{ --squad-accent:#ff5b5b; }
-.squad-card[data-accent="pubg"]{ --squad-accent:#f4d35e; }
-.squad-card[data-accent="gta"]{ --squad-accent:#00e676; }
-.squad-card[data-accent="amongus"]{ --squad-accent:#00b7ff; }
-
-.squad-icon{
-    width:70px;
-    height:70px;
-    margin:0 auto 16px;
-    border-radius:18px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:32px;
-    background:linear-gradient(135deg,#0066ff,#00b7ff);
-}
-
-.squad-card h3{
-    font-size:18px;
-    margin-bottom:6px;
-}
-
-.squad-card p{
-    font-size:13px;
-    color:#a9a9a9;
-}
-
-.stats{
-    width:92%;
-    max-width:1300px;
-    margin:80px auto;
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:25px;
-}
-
-.stat-box{
-    padding:32px;
-    text-align:center;
-    border-radius:22px;
-    background:rgba(20,20,25,.75);
-    border:1px solid rgba(255,255,255,.08);
-    backdrop-filter:blur(15px);
-    transition:.3s;
-}
-
-.stat-box:hover{ transform:translateY(-8px); box-shadow:0 0 30px rgba(0,102,255,.4); }
-.stat-box h2{ font-size:38px; color:#7da9ff; margin-bottom:8px; }
-.stat-box p{ font-size:16px; color:#dddddd; }
-</style>
+<link rel="stylesheet" href="./Home.css">
 
 </head>
 
-<body>
+<body class="page-home">
 
 <div class="background-glow"></div>
 
@@ -270,31 +104,72 @@ content="https://remix-nexus-tygt.onrender.com/remix-nexus-controller-art.png">
 </div>
 </div>
 
-<section class="hero">
+<main class="home">
 
-<div class="hero-left">
+<div class="home-grid">
 
-<div class="hero-tag">🟢 LIVE 24/7 — GAMING SOCIETY</div>
-
-<h1>Find Your Squad.<br>Never Grind Alone.</h1>
-
-<p>
-A live community hub for Roblox, Minecraft, Fortnite, Call of Duty,
-Free Fire, PUBG, GTA, and Among Us players. Jump into a squad's chat
-room, catch our newest uploads, and always have someone to play with.
-</p>
-
-<div class="hero-buttons">
-<a href="./Chat.html"><button class="explore-btn">💬 Join a Chat Room</button></a>
-<a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener"><button class="charts-btn">▶ Subscribe on YouTube</button></a>
- <a href="./download.html" class="download-btn" title="Download App"><Button class="download-btn">Download App</Button></a>
+<!-- HERO banner (to add a picture: style="--hero-img:url('./images/hero.jpg')") -->
+<section class="home-hero">
+<div class="hero-text">
+<span class="hero-kicker">Remix Nexus • Gaming Society</span>
+<h1>Find Your Squad. Never Grind Alone.</h1>
+<p>A live community hub for Roblox, Minecraft, Fortnite, Call of Duty, Free Fire, PUBG, GTA and Among Us players. Jump into a squad's chat room, catch our newest uploads, and always have someone to play with.</p>
+<div class="hero-online"><i class="live-dot"></i> Live 24/7 — squad rooms open now</div>
+<div class="hero-actions">
+<a href="./Chat.html" class="hero-btn primary">💬 Join a Chat Room</a>
+<a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener" class="hero-btn light">▶ Subscribe on YouTube</a>
+<a href="./download.html" class="download-btn" title="Download App">⬇️ Download App</a>
 </div>
-
-<div class="hero-right">
-<div class="music-circle">🎮</div>
 </div>
-
+<div class="hero-art" aria-hidden="true">🎮</div>
 </section>
+
+<!-- SIDE: rooms banner + stats -->
+<aside class="home-side">
+<a class="side-banner" href="./Chat.html">
+<span>Squad rooms are open: <b>8 live rooms</b></span><span>→</span>
+</a>
+<div class="side-card">
+<h3>Community at a glance</h3>
+<div class="stat-grid">
+<div class="stat-mini"><strong>9</strong><span>Games</span></div>
+<div class="stat-mini"><strong>24/7</strong><span>Live Chat</span></div>
+<div class="stat-mini"><strong>FREE</strong><span>To Join</span></div>
+<div class="stat-mini"><strong>∞</strong><span>Squads</span></div>
+</div>
+</div>
+</aside>
+
+<!-- ROOM CARDS (3 per row). To add a picture to a card: style="--img:url('./images/minecraft.jpg')" -->
+<section class="home-articles">
+<h2 class="block-title">🕹️ Squad Rooms</h2>
+<div class="room-grid">
+<a class="room-card" data-accent="minecraft" href="./Chat.html?room=minecraft"><span class="room-emoji">🧱</span><h3>Minecraft</h3><p>Builders, survivalists &amp; redstone nerds</p></a>
+<a class="room-card" data-accent="roblox" href="./Chat.html?room=roblox"><span class="room-emoji">🔲</span><h3>Roblox</h3><p>Ranked grinding &amp; clutch plays</p></a>
+<a class="room-card" data-accent="fortnite" href="./Chat.html?room=fortnite"><span class="room-emoji">🪂</span><h3>Fortnite</h3><p>Squad up, drop in, win the lobby</p></a>
+<a class="room-card" data-accent="cod" href="./Chat.html?room=cod"><span class="room-emoji">🔫</span><h3>Call of Duty</h3><p>Loadouts, clips, and lobby talk</p></a>
+<a class="room-card" data-accent="freefire" href="./Chat.html?room=freefire"><span class="room-emoji">🔥</span><h3>Free Fire</h3><p>Battle royale, mobile squad style</p></a>
+<a class="room-card" data-accent="pubg" href="./Chat.html?room=pubg"><span class="room-emoji">🥽</span><h3>PUBG</h3><p>Chicken dinner strategy talk</p></a>
+<a class="room-card" data-accent="gta" href="./Chat.html?room=gta"><span class="room-emoji">🚗</span><h3>GTA</h3><p>Heists, freeroam, and chaos</p></a>
+<a class="room-card" data-accent="amongus" href="./Chat.html?room=amongus"><span class="room-emoji">🚀</span><h3>Among Us</h3><p>Trust no one. Vote wisely.</p></a>
+<a class="room-card create" href="./Chat.html"><span class="room-emoji">➕</span><h3>Your own room</h3><p>Create a custom room for your squad</p></a>
+</div>
+</section>
+
+<!-- SIDE 2: trailer + community -->
+<aside class="home-side2">
+<h3>Trailer</h3>
+<a class="trailer-card" href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener" title="Watch RemixMC on YouTube">
+<span class="play">▶</span><span class="trailer-label">Latest from RemixMC</span>
+</a>
+<h3>Our community</h3>
+<a class="community-card" href="./Chat.html">
+<div class="community-top">💬 Join the squad chats</div>
+<div class="community-row"><div><strong>Remix Nexus</strong><small>Live rooms, 24/7</small></div><span class="community-btn">Join</span></div>
+</a>
+</aside>
+
+</div>
 
 <div class="feature-grid">
 
@@ -306,48 +181,21 @@ room, catch our newest uploads, and always have someone to play with.
 
 <div class="feature-card">
 <div class="feature-icon">🎮</div>
-<h3>Built for the games people actually play</h3>
-<p>Minecraft, Roblox, Fortnite, Call of Duty, Free Fire, PUBG, GTA, and Among Us each have a dedicated room, so you're talking strategy with people who play the same game, not scrolling past ten others.</p>
+<h3>Built for the games people play</h3>
+<p>Minecraft, Roblox, Fortnite, Call of Duty, Free Fire, PUBG, GTA, and Among Us each have a dedicated room, so you're talking strategy with people who play the same game.</p>
 </div>
 
 <div class="feature-card">
 <div class="feature-icon">📱</div>
-<h3>Works on your phone, no install needed</h3>
+<h3>Works on your phone, no install</h3>
 <p>Remix Nexus runs in the browser on desktop and mobile, with an optional Android app for push notifications when someone in your squad messages you.</p>
 </div>
 
 </div>
 
-<div class="main-bar">
-
-<h2 class="section-title">🕹️ Squad Rooms</h2>
-<p class="section-subtitle">Pick a game, jump into its live chat</p>
-
-<div class="squad-grid">
-
-<a class="squad-card" data-accent="minecraft" href="./Chat.html?room=minecraft"><div class="squad-icon">🧱</div><h3>Minecraft</h3><p>Builders, survivalists &amp; redstone nerds</p></a>
-<a class="squad-card" data-accent="roblox" href="./Chat.html?room=roblox"><div class="squad-icon">🔲</div><h3>Roblox</h3><p>Ranked grinding &amp; clutch plays</p></a>
-<a class="squad-card" data-accent="fortnite" href="./Chat.html?room=fortnite"><div class="squad-icon">🪂</div><h3>Fortnite</h3><p>Squad up, drop in, win the lobby</p></a>
-<a class="squad-card" data-accent="cod" href="./Chat.html?room=cod"><div class="squad-icon">🔫</div><h3>Call of Duty</h3><p>Loadouts, clips, and lobby talk</p></a>
-<a class="squad-card" data-accent="freefire" href="./Chat.html?room=freefire"><div class="squad-icon">🔥</div><h3>Free Fire</h3><p>Battle royale, mobile squad style</p></a>
-<a class="squad-card" data-accent="pubg" href="./Chat.html?room=pubg"><div class="squad-icon">🥽</div><h3>PUBG</h3><p>Chicken dinner strategy talk</p></a>
-<a class="squad-card" data-accent="gta" href="./Chat.html?room=gta"><div class="squad-icon">🚗</div><h3>GTA</h3><p>Heists, freeroam, and chaos</p></a>
-<a class="squad-card" data-accent="amongus" href="./Chat.html?room=amongus"><div class="squad-icon">🚀</div><h3>Among Us</h3><p>Trust no one. Vote wisely.</p></a>
-
-</div>
-
-<section class="stats">
-<div class="stat-box"><h2>9</h2><p>Games</p></div>
-<div class="stat-box"><h2>24/7</h2><p>Live Chat</p></div>
-<div class="stat-box"><h2>FREE</h2><p>To Join</p></div>
-<div class="stat-box"><h2>∞</h2><p>Squads</p></div>
-</section>
-
 <section class="newsletter">
-
 <h2>Stay Updated</h2>
 <p>Get notified when new videos drop or new squad rooms open.</p>
-
 <div class="newsletter-box">
 <form id="newsletter-form" action="https://onrender.us7.list-manage.com/subscribe/post?u=76d393e5ac339e2d4c5cc14bb&amp;id=833148d7d1&amp;f_id=001ccde4f0" method="post" target="_blank" novalidate>
 <input type="email" name="EMAIL" id="newsletter-email" placeholder="Enter your email" required>
@@ -356,14 +204,13 @@ room, catch our newest uploads, and always have someone to play with.
 </div>
 <button type="submit">Subscribe</button>
 </form>
-<p id="newsletter-message" style="width:100%; margin-top:15px; font-size:15px;"></p>
-</div>
-
-</section>
-
+<p id="newsletter-message" style="width:100%;"></p>
 </div>
 </section>
-</section>
+
+</main>
+
+</div>
 
 <footer class="footer">
     <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
