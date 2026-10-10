@@ -54,6 +54,17 @@ content="https://remix-nexus-tygt.onrender.com/remix-nexus-controller-art.png">
 
 <link rel="stylesheet" href="./Home.css">
 
+<style>
+/* Room-card photos: images sit in the site root (./minecraft.jpg etc.) */
+.room-card{position:relative;overflow:hidden;}
+.room-card .room-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;transition:transform .4s ease;}
+.room-card:hover .room-photo{transform:scale(1.06);}
+.room-card:has(.room-photo)::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.05) 25%,rgba(0,0,0,.88) 100%);pointer-events:none;}
+.room-card:has(.room-photo){min-height:170px;display:flex;flex-direction:column;justify-content:flex-end;}
+.room-card:has(.room-photo) > :not(.room-photo){position:relative;z-index:2;}
+.room-card:has(.room-photo) .room-emoji{display:none;}
+.room-card:has(.room-photo) h3,.room-card:has(.room-photo) p{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8);}
+</style>
 </head>
 
 <body class="page-home">
@@ -144,14 +155,14 @@ content="https://remix-nexus-tygt.onrender.com/remix-nexus-controller-art.png">
 <section class="home-articles">
 <h2 class="block-title">🕹️ Squad Rooms</h2>
 <div class="room-grid">
-<a class="room-card" data-accent="minecraft" href="./Chat.html?room=minecraft"><span class="room-emoji">🧱</span><h3>Minecraft</h3><p>Builders, survivalists &amp; redstone nerds</p></a>
-<a class="room-card" data-accent="roblox" href="./Chat.html?room=roblox"><span class="room-emoji">🔲</span><h3>Roblox</h3><p>Ranked grinding &amp; clutch plays</p></a>
-<a class="room-card" data-accent="fortnite" href="./Chat.html?room=fortnite"><span class="room-emoji">🪂</span><h3>Fortnite</h3><p>Squad up, drop in, win the lobby</p></a>
-<a class="room-card" data-accent="cod" href="./Chat.html?room=cod"><span class="room-emoji">🔫</span><h3>Call of Duty</h3><p>Loadouts, clips, and lobby talk</p></a>
-<a class="room-card" data-accent="freefire" href="./Chat.html?room=freefire"><span class="room-emoji">🔥</span><h3>Free Fire</h3><p>Battle royale, mobile squad style</p></a>
-<a class="room-card" data-accent="pubg" href="./Chat.html?room=pubg"><span class="room-emoji">🥽</span><h3>PUBG</h3><p>Chicken dinner strategy talk</p></a>
-<a class="room-card" data-accent="gta" href="./Chat.html?room=gta"><span class="room-emoji">🚗</span><h3>GTA</h3><p>Heists, freeroam, and chaos</p></a>
-<a class="room-card" data-accent="amongus" href="./Chat.html?room=amongus"><span class="room-emoji">🚀</span><h3>Among Us</h3><p>Trust no one. Vote wisely.</p></a>
+<a class="room-card" data-accent="minecraft" href="./Chat.html?room=minecraft"><img class="room-photo" src="./minecraft.jpg" alt="" loading="lazy"><span class="room-emoji">🧱</span><h3>Minecraft</h3><p>Builders, survivalists &amp; redstone nerds</p></a>
+<a class="room-card" data-accent="roblox" href="./Chat.html?room=roblox"><img class="room-photo" src="./roblox.jpg" alt="" loading="lazy"><span class="room-emoji">🔲</span><h3>Roblox</h3><p>Ranked grinding &amp; clutch plays</p></a>
+<a class="room-card" data-accent="fortnite" href="./Chat.html?room=fortnite"><img class="room-photo" src="./fortnite.webp" alt="" loading="lazy"><span class="room-emoji">🪂</span><h3>Fortnite</h3><p>Squad up, drop in, win the lobby</p></a>
+<a class="room-card" data-accent="cod" href="./Chat.html?room=cod"><img class="room-photo" src="./cod.jpg" alt="" loading="lazy"><span class="room-emoji">🔫</span><h3>Call of Duty</h3><p>Loadouts, clips, and lobby talk</p></a>
+<a class="room-card" data-accent="freefire" href="./Chat.html?room=freefire"><img class="room-photo" src="./freefire.jpg" alt="" loading="lazy"><span class="room-emoji">🔥</span><h3>Free Fire</h3><p>Battle royale, mobile squad style</p></a>
+<a class="room-card" data-accent="pubg" href="./Chat.html?room=pubg"><img class="room-photo" src="./pubg.png" alt="" loading="lazy"><span class="room-emoji">🥽</span><h3>PUBG</h3><p>Chicken dinner strategy talk</p></a>
+<a class="room-card" data-accent="gta" href="./Chat.html?room=gta"><img class="room-photo" src="./gta.jpg" alt="" loading="lazy"><span class="room-emoji">🚗</span><h3>GTA</h3><p>Heists, freeroam, and chaos</p></a>
+<a class="room-card" data-accent="amongus" href="./Chat.html?room=amongus"><img class="room-photo" src="./amongus.jpg" alt="" loading="lazy"><span class="room-emoji">🚀</span><h3>Among Us</h3><p>Trust no one. Vote wisely.</p></a>
 <a class="room-card create" href="./Chat.html"><span class="room-emoji">➕</span><h3>Your own room</h3><p>Create a custom room for your squad</p></a>
 </div>
 </section>
