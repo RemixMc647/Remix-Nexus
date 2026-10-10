@@ -38,6 +38,27 @@ content="website">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      /* Back to Settings */
+      .contact-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0 8px 8px 0;
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: #10141f;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #e8ecf7;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        vertical-align: middle;
+        transition: background 0.15s ease;
+      }
+      .contact-back-btn:hover,
+      .contact-back-btn:focus-visible { background: #0066ff; border-color: #0066ff; color: #fff; }
+    </style>
 </head>
 <body class="page-contact">
 
@@ -63,6 +84,7 @@ content="website">
 
   <!-- Channel-style header (like "# live-gaming-news" on the Live page) -->
   <div class="contact-intro">
+    <a href="./Settings.html" class="contact-back-btn" aria-label="Back to Settings">&larr; Settings</a>
     <span class="contact-eyebrow">🎮 Say Something</span>
     <h1>Contact Us</h1>
     <p>Bug reports, feature ideas, partnership pitches, or just want to say hi — this goes straight to the team.</p>
