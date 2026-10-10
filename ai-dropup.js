@@ -1,67 +1,87 @@
-// ===== AI drop-up button (✨) =====
+// ===== Nexus AI drop-up button (✨) — Chat + Contacts =====
+// Single source of truth: Chat.js and Contacts.js no longer contain their
+// own copy of this. The panel is attached to <body> (position: fixed) so no
+// parent with overflow:hidden / transforms / z-index can ever clip or hide it,
+// and it stays above the full-screen conversation view on phones.
 (function initAiDropup() {
+  if (window.__nexusAiDropupReady) return;
+
   const form = document.querySelector('.message-form');
   if (!form || form.querySelector('.ai-btn')) return;
+  window.__nexusAiDropupReady = true;
+
   const input = form.querySelector('input[type="text"]');
 
-  // --- styles ---
+  // ---------- styles ----------
   const css = document.createElement('style');
+  css.id = 'nexus-ai-style';
   css.textContent = `
-    .message-form { position: relative; }
     .message-form .ai-btn {
-      width: 50px; height: 50px; padding: 0; flex-shrink: 0;
-      border-radius: 50%; background: rgba(255,255,255,.08);
-      font-size: 20px; transition: .25s;
+      width: 36px; height: 36px; padding: 0; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 0; border-radius: 8px; background: transparent;
+      font-size: 18px; line-height: 1; cursor: pointer;
+      transition: background .15s ease, transform .15s ease;
     }
-    .message-form .ai-btn.open {
-      background: #0066ff; transform: rotate(20deg) scale(1.08);
-    }
-    @media (max-width: 640px) {
-      .message-form .ai-btn { width: 38px; height: 38px; font-size: 16px; }
-    }
+    .message-form .ai-btn:hover { background: #171c2b; }
+    .message-form .ai-btn.open { background: #0066ff; transform: rotate(15deg) scale(1.05); }
+
     .ai-panel {
-      position: absolute; left: 16px; right: 16px; bottom: calc(100% + 8px);
-      z-index: 20; color: #fff; padding: 14px; border-radius: 18px;
-      background: rgba(20,20,25,.97);
-      border: 1px solid rgba(0,102,255,.35);
-      box-shadow: 0 -8px 30px rgba(0,0,0,.5);
-      transform-origin: bottom left;
-      opacity: 0; transform: translateY(14px) scale(.97);
+      position: fixed; z-index: 3000; box-sizing: border-box;
+      max-width: calc(100vw - 16px); overflow-y: auto;
+      padding: 14px; border-radius: 12px; color: #e8ecf7;
+      font-family: 'Poppins', system-ui, sans-serif;
+      background: #0a0d16; border: 1px solid rgba(0,102,255,.45);
+      box-shadow: 0 -8px 30px rgba(0,0,0,.6);
+      opacity: 0; transform: translateY(10px) scale(.98); transform-origin: bottom left;
       visibility: hidden; pointer-events: none;
-      transition: opacity .25s ease, transform .25s ease, visibility 0s linear .25s;
+      transition: opacity .18s ease, transform .18s ease, visibility 0s linear .18s;
     }
     .ai-panel.open {
       opacity: 1; transform: none; visibility: visible; pointer-events: auto;
-      transition: opacity .25s ease, transform .25s ease, visibility 0s;
+      transition: opacity .18s ease, transform .18s ease, visibility 0s;
     }
-    .ai-panel-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
-    .ai-panel-title small { display: block; font-weight: 400; font-size: 12px; opacity: .65; }
-    .ai-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .ai-panel-title { font-weight: 700; font-size: 15px; }
+    .ai-panel-title small { display: block; margin-top: 2px; font-weight: 400; font-size: 12px; color: #8a96b5; }
+    .ai-note {
+      display: none; margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+      background: rgba(245,166,35,.12); color: #f7b955; font-size: 12px;
+    }
+    .ai-panel.locked .ai-note { display: block; }
+    .ai-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .ai-panel .ai-chip {
-      height: auto; padding: 8px 14px; border-radius: 20px;
-      background: rgba(0,102,255,.18); border: 1px solid rgba(0,102,255,.4);
-      color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+      padding: 8px 14px; border-radius: 20px; cursor: pointer;
+      background: rgba(0,102,255,.16); border: 1px solid rgba(0,102,255,.45);
+      color: #fff; font-family: inherit; font-size: 13px; font-weight: 600;
+      transition: background .12s ease;
     }
+    .ai-panel .ai-chip:hover { background: rgba(0,102,255,.4); }
+    .ai-panel.locked .ai-chip { opacity: .4; cursor: not-allowed; }
   `;
   document.head.appendChild(css);
 
-  // --- button ---
+  // ---------- button ----------
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'ai-btn';
   btn.title = 'Nexus AI';
-  btn.textContent = '✨';
+  btn.setAttribute('aria-label', 'Nexus AI');
+  btn.setAttribute('aria-haspopup', 'true');
   btn.setAttribute('aria-expanded', 'false');
+  btn.textContent = '✨';
   const attach = form.querySelector('.attach-btn');
   if (attach) attach.after(btn); else form.prepend(btn);
 
-  // --- drop-up panel ---
+  // ---------- panel (lives on <body>) ----------
   const panel = document.createElement('div');
   panel.className = 'ai-panel';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-label', 'Nexus AI');
   panel.innerHTML = `
     <div class="ai-panel-title">✨ Nexus AI
       <small>Pick one, or type @ai before your own question</small>
     </div>
+    <div class="ai-note">Open a conversation first, then ask Nexus AI.</div>
     <div class="ai-chips">
       <button type="button" class="ai-chip" data-p="Tell me a joke">😂 Tell me a joke</button>
       <button type="button" class="ai-chip" data-p="Give me a quick gaming tip">🎮 Gaming tip</button>
@@ -69,32 +89,74 @@
       <button type="button" class="ai-chip" data-p="Tell me a fun gaming fact">🧠 Fun fact</button>
       <button type="button" class="ai-chip" data-p="">✍️ Ask my own</button>
     </div>`;
-  form.appendChild(panel);
+  document.body.appendChild(panel);
 
-  // --- open / close ---
+  // ---------- positioning ----------
+  function place() {
+    const r = form.getBoundingClientRect();
+    const vh = document.documentElement.clientHeight;
+    const width = Math.min(r.width, 440);
+    panel.style.width = width + 'px';
+    panel.style.left = Math.max(8, r.left) + 'px';
+    panel.style.bottom = Math.max(8, vh - r.top + 8) + 'px';
+    panel.style.maxHeight = Math.max(140, r.top - 16) + 'px';
+  }
+
+  function isOpen() { return panel.classList.contains('open'); }
+
   function setOpen(open) {
+    if (open) {
+      place();
+      panel.classList.toggle('locked', !!(input && input.disabled));
+    }
     panel.classList.toggle('open', open);
     btn.classList.toggle('open', open);
     btn.setAttribute('aria-expanded', String(open));
   }
+
   btn.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    setOpen(!panel.classList.contains('open'));
-  });
-  document.addEventListener('click', (e) => {
-    if (!panel.contains(e.target) && !btn.contains(e.target)) setOpen(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') setOpen(false);
+    setOpen(!isOpen());
   });
 
-  // --- chips fill the input with "@ai ..." ---
+  document.addEventListener('click', (e) => {
+    if (isOpen() && !panel.contains(e.target) && !btn.contains(e.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) setOpen(false);
+  });
+  window.addEventListener('resize', () => { if (isOpen()) place(); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => { if (isOpen()) place(); });
+  }
+
+  // ---------- chips ----------
+  function submitForm() {
+    if (typeof form.requestSubmit === 'function') {
+      form.requestSubmit();
+    } else {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }
+  }
+
   panel.addEventListener('click', (e) => {
     const chip = e.target.closest('.ai-chip');
-    if (!chip || !input) return;
-    input.value = '@ai ' + chip.dataset.p;
+    if (!chip || !input || input.disabled) return;
+
+    const prompt = chip.dataset.p || '';
+    input.value = '@ai ' + prompt;
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.focus();
     setOpen(false);
+
+    if (prompt) {
+      // ready-made question → send it straight away
+      submitForm();
+    } else {
+      // "Ask my own" → leave "@ai " in the box and let them type
+      input.focus();
+      const end = input.value.length;
+      try { input.setSelectionRange(end, end); } catch (_) { /* ignore */ }
+    }
   });
 })();
