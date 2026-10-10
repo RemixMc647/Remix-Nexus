@@ -41,7 +41,7 @@ content="Join Remix Nexus - Gaming Community">
 content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b9de.png">
     
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#000000">
     <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Chat</title>
@@ -49,6 +49,7 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
     <link rel="stylesheet" href="./Trending.css">
     <link rel="stylesheet" href="./Chat.css">
     <link rel="stylesheet" href="./Calls.css">
+    <link rel="stylesheet" href="./Discord.css">
 
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
 
@@ -58,121 +59,6 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
 
     <!-- Socket.io client is now loaded dynamically from BACKEND_URL below -->
 
-    <style>
-      /* Server-status banner — shown when the Render backend is asleep/
-         reconnecting, hidden the moment the socket connects. Sits in normal
-         document flow (not fixed) so it just pushes the nav bar down while
-         visible, instead of overlapping it. */
-      #serverStatusBanner {
-        display: none;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        box-sizing: border-box;
-        padding: 10px 16px;
-        background: linear-gradient(90deg, #f5a623, #f7b955);
-        color: #1a1a1a;
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
-        font-weight: 600;
-        text-align: center;
-      }
-      #serverStatusBanner.visible { display: flex; }
-      #serverStatusBanner .server-banner-spinner {
-        width: 14px;
-        height: 14px;
-        flex-shrink: 0;
-        border: 2px solid rgba(0,0,0,0.3);
-        border-top-color: #1a1a1a;
-        border-radius: 50%;
-        animation: server-banner-spin 0.8s linear infinite;
-      }
-      @keyframes server-banner-spin { to { transform: rotate(360deg); } }
-
-      /* Message search — WhatsApp-style: a bar under the header, matches
-         highlighted inline, current match ringed and scrolled into view. */
-      .chat-search-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: rgba(255,255,255,0.06);
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-      }
-      .chat-search-bar#chatSearchBar.display-flex { display: flex; }
-      #chatSearchInput {
-        flex: 1;
-        min-width: 0;
-        background: rgba(0,0,0,0.25);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 8px;
-        color: inherit;
-        padding: 6px 10px;
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
-      }
-      .chat-search-count {
-        font-size: 12px;
-        opacity: 0.7;
-        white-space: nowrap;
-        min-width: 38px;
-        text-align: center;
-      }
-      .chat-search-nav-btn {
-        background: none;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-        font-size: 15px;
-        padding: 4px 6px;
-        opacity: 0.85;
-      }
-      .chat-search-nav-btn:hover { opacity: 1; }
-      .msg mark, .msg-quote mark {
-        background: #f5c518;
-        color: #1a1a1a;
-        border-radius: 3px;
-        padding: 0 2px;
-      }
-      .msg mark.current-match, .msg-quote mark.current-match {
-        background: #ff8a00;
-      }
-      .msg-row.search-current .msg {
-        outline: 2px solid #ff8a00;
-        outline-offset: 2px;
-      }
-
-      /* Keyboard-aware layout — keeps the message input pinned above the
-         on-screen keyboard on mobile (WhatsApp-style). keyboard-fix.js sets
-         --app-height and an inline height on .chat-shell to match the real
-         visible viewport, which shrinks when the keyboard opens; the rules
-         below make sure the input rides up with it instead of being
-         covered. */
-      html, body {
-        height: 100%;
-        overflow: hidden;
-      }
-      .chat-shell {
-        height: 100vh;
-        height: var(--app-height, 100dvh);
-        overflow: hidden;
-      }
-      .chat-main {
-        min-height: 0;
-      }
-      .messages {
-        min-height: 0;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .message-form,
-      .reply-preview,
-      #recordingBar,
-      .chat-search-bar {
-        flex-shrink: 0;
-      }
-    </style>
 
 </head>
 
@@ -185,8 +71,8 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
 
 <div class="background-glow"></div>
 
-<header class="nav-bar" style="width:92%; max-width:1300px; margin:25px auto;">
-    <div class="logo">
+<header class="nav-bar">
+    <div class="logo" title="Remix Nexus">
         <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
         <span>Gaming Society</span>
     </div>
