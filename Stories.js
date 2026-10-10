@@ -19,7 +19,8 @@ if (!window.AUTH || !AUTH.isLoggedIn || !AUTH.isLoggedIn()) {
 
 const me = window.AUTH && AUTH.isLoggedIn && AUTH.isLoggedIn() ? AUTH.getUser() : null;
 const MAX_IMAGE_DATA_URL_LENGTH = 6_000_000;
-const MAX_VIDEO_DATA_URL_LENGTH = 16_000_000;
+const MAX_VIDEO_SECONDS = 60;                 // hard 1-minute limit (server re-checks it)
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;    // Cloudinary free plan max video size
 const STORY_DURATION_MS = 5000; // how long an image stays up before auto-advancing
 
 let feed = [];          // [{ userId, username, avatar, hasUnseen, stories: [...] }]
@@ -44,6 +45,54 @@ function blobToDataURL(blob) {
 
 function authHeaders() {
   return { Authorization: 'Bearer ' + (window.AUTH ? AUTH.getToken() : '') };
+}
+
+
+/* -----------------------------------------------------------
+   VIDEO UPLOAD — videos go straight from the phone to Cloudinary
+   (free cloud storage); only a small reference is sent to our server.
+----------------------------------------------------------- */
+function getVideoDuration(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(v.duration); };
+    v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('unreadable')); };
+    v.src = url;
+  });
+}
+
+async function uploadVideoToCloud(file, onProgress) {
+  const sigRes = await fetch(API_BASE + '/api/stories/upload-signature', {
+    method: 'POST',
+    headers: authHeaders()
+  });
+  const sig = await sigRes.json().catch(() => ({}));
+  if (!sigRes.ok) throw new Error(sig.error || 'Could not start the video upload.');
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('api_key', sig.apiKey);
+  form.append('timestamp', sig.timestamp);
+  form.append('tags', sig.tags);
+  form.append('signature', sig.signature);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + sig.cloudName + '/video/upload');
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable && onProgress) onProgress(Math.round((ev.loaded / ev.total) * 100));
+    };
+    xhr.onload = () => {
+      let json = {};
+      try { json = JSON.parse(xhr.responseText); } catch (_) {}
+      if (xhr.status >= 200 && xhr.status < 300 && json.public_id) resolve(json.public_id);
+      else reject(new Error((json.error && json.error.message) || 'Video upload failed. Please try again.'));
+    };
+    xhr.onerror = () => reject(new Error('Network error while uploading the video.'));
+    xhr.send(form);
+  });
 }
 
 function escapeHtml(str) {
@@ -716,7 +765,16 @@ $('storyViewersCloseBtn').onclick = () => {
 /* -----------------------------------------------------------
    POSTING — photo / video
 ----------------------------------------------------------- */
-let pendingDataUrl = null;
+let pendingDataUrl = null;   // photos: base64 data URL
+let pendingFile = null;      // videos: the raw file, uploaded straight to Cloudinary
+let pendingPreviewUrl = null;
+
+function clearPending() {
+  pendingDataUrl = null;
+  pendingFile = null;
+  if (pendingPreviewUrl) { URL.revokeObjectURL(pendingPreviewUrl); pendingPreviewUrl = null; }
+  $('storyUploadPreview').innerHTML = '';
+}
 
 function pickMedia() { $('storyFileInput').click(); }
 document.querySelectorAll('.js-add-media').forEach(b => b.addEventListener('click', pickMedia));
@@ -733,44 +791,58 @@ $('storyFileInput').addEventListener('change', async (e) => {
     return;
   }
 
-  const dataUrl = await blobToDataURL(file);
-  const limit = isVideo ? MAX_VIDEO_DATA_URL_LENGTH : MAX_IMAGE_DATA_URL_LENGTH;
-  if (dataUrl.length > limit) {
-    alert(isVideo
-      ? 'That video is too large — try a shorter or lower-resolution clip.'
-      : 'That image is too large — try a smaller file.');
-    return;
+  clearPending();
+  const preview = $('storyUploadPreview');
+  const el = document.createElement(isVideo ? 'video' : 'img');
+
+  if (isVideo) {
+    // 1-minute limit is checked BEFORE uploading anything.
+    let duration;
+    try { duration = await getVideoDuration(file); }
+    catch (err) { alert('Could not read that video. Try a different file.'); return; }
+    if (!isFinite(duration) || duration > MAX_VIDEO_SECONDS) {
+      alert('Story videos can be at most 1 minute long. Please trim it and try again.');
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      alert('That video is too large (100MB max) — try a shorter or lower-resolution clip.');
+      return;
+    }
+    pendingFile = file;
+    pendingPreviewUrl = URL.createObjectURL(file);
+    el.src = pendingPreviewUrl;
+    el.controls = true; el.autoplay = true; el.muted = true; el.playsInline = true;
+  } else {
+    const dataUrl = await blobToDataURL(file);
+    if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+      alert('That image is too large — try a smaller file.');
+      return;
+    }
+    pendingDataUrl = dataUrl;
+    el.src = dataUrl;
   }
 
-  pendingDataUrl = dataUrl;
-
-  const preview = $('storyUploadPreview');
-  preview.innerHTML = '';
-  const el = document.createElement(isVideo ? 'video' : 'img');
-  el.src = dataUrl;
-  if (isVideo) { el.controls = true; el.autoplay = true; el.muted = true; }
   preview.appendChild(el);
-
   $('storyCaptionInput').value = '';
   $('storyUploadModal').style.display = 'flex';
 });
 
 $('storyUploadCancelBtn').onclick = () => {
-  pendingDataUrl = null;
-  $('storyUploadPreview').innerHTML = '';
+  clearPending();
   $('storyUploadModal').style.display = 'none';
 };
 
-async function submitStory(dataUrl, caption, btn, idleLabel) {
+// `payload` is { mediaData } for photos/text, or { mediaPublicId } for videos.
+async function submitStory(payload, caption, btn, idleLabel) {
   btn.disabled = true;
   btn.textContent = 'Posting…';
   try {
     const res = await fetch(API_BASE + '/api/stories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ mediaData: dataUrl, caption })
+      body: JSON.stringify({ ...payload, caption })
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Could not post your story.');
     await loadStories();
     return true;
@@ -784,11 +856,28 @@ async function submitStory(dataUrl, caption, btn, idleLabel) {
 }
 
 $('storyPostBtn').onclick = async () => {
-  if (!pendingDataUrl) return;
-  const ok = await submitStory(pendingDataUrl, $('storyCaptionInput').value, $('storyPostBtn'), 'Post to your story');
+  if (!pendingDataUrl && !pendingFile) return;
+  const btn = $('storyPostBtn');
+  const idle = 'Post to your story';
+  let payload;
+
+  if (pendingFile) {
+    btn.disabled = true;
+    try {
+      payload = { mediaPublicId: await uploadVideoToCloud(pendingFile, (pct) => { btn.textContent = 'Uploading ' + pct + '%'; }) };
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = idle;
+      alert(err.message || 'Video upload failed. Please try again.');
+      return;
+    }
+  } else {
+    payload = { mediaData: pendingDataUrl };
+  }
+
+  const ok = await submitStory(payload, $('storyCaptionInput').value, btn, idle);
   if (ok) {
-    pendingDataUrl = null;
-    $('storyUploadPreview').innerHTML = '';
+    clearPending();
     $('storyUploadModal').style.display = 'none';
   }
 };
@@ -928,7 +1017,7 @@ $('storyTextPostBtn').onclick = async () => {
   }
   btn.disabled = false;
 
-  const ok = await submitStory(dataUrl, '', btn, 'Post text status');
+  const ok = await submitStory({ mediaData: dataUrl }, '', btn, 'Post text status');
   if (ok) closeTextComposer();
 };
 
