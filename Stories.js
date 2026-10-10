@@ -14,7 +14,8 @@ if (!window.AUTH || !AUTH.isLoggedIn || !AUTH.isLoggedIn()) {
 
 const me = window.AUTH ? AUTH.getUser() : null;
 const MAX_IMAGE_DATA_URL_LENGTH = 6_000_000;
-const MAX_VIDEO_DATA_URL_LENGTH = 16_000_000;
+const MAX_VIDEO_SECONDS = 60;                    // hard 1-minute limit (server re-checks this)
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;       // Cloudinary free plan max video size
 
 let feed = [];          // [{ userId, username, avatar, hasUnseen, stories: [...] }]
 let activeGroup = null; // the feed entry currently open in the viewer
@@ -28,6 +29,55 @@ function blobToDataURL(blob) {
     reader.onloadend = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
+  });
+}
+
+// Reads a video file's real length in seconds without uploading it.
+function getVideoDuration(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(v.duration); };
+    v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('unreadable')); };
+    v.src = url;
+  });
+}
+
+// Uploads a video straight to Cloudinary (free cloud storage) using a
+// signed permission from our server. Calls onProgress(0-100) as it goes.
+async function uploadVideoToCloud(file, onProgress) {
+  const sigRes = await fetch(API_BASE + '/api/stories/upload-signature', {
+    method: 'POST',
+    headers: authHeaders()
+  });
+  const sig = await sigRes.json();
+  if (!sigRes.ok) throw new Error(sig.error || 'Could not start the video upload.');
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('api_key', sig.apiKey);
+  form.append('timestamp', sig.timestamp);
+  form.append('tags', sig.tags);
+  form.append('signature', sig.signature);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + sig.cloudName + '/video/upload');
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable && onProgress) onProgress(Math.round((ev.loaded / ev.total) * 100));
+    };
+    xhr.onload = () => {
+      let json = {};
+      try { json = JSON.parse(xhr.responseText); } catch (_) {}
+      if (xhr.status >= 200 && xhr.status < 300 && json.public_id) {
+        resolve(json.public_id);
+      } else {
+        reject(new Error((json.error && json.error.message) || 'Video upload failed. Please try again.'));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error while uploading the video.'));
+    xhr.send(form);
   });
 }
 
@@ -172,6 +222,8 @@ function showStory() {
     mediaEl.playsInline = true;
     mediaEl.muted = false;
     mediaEl.onended = () => nextStory();
+    // Safety net: never play past one minute, even if a longer file slipped in.
+    mediaEl.ontimeupdate = () => { if (mediaEl.currentTime >= MAX_VIDEO_SECONDS) nextStory(); };
   } else {
     mediaEl = document.createElement('img');
     mediaEl.src = story.mediaData;
@@ -357,8 +409,17 @@ document.getElementById('storyViewersCloseBtn').onclick = () => {
 /* -----------------------------------------------------------
    UPLOAD FLOW
 ----------------------------------------------------------- */
-let pendingDataUrl = null;
+let pendingDataUrl = null;   // photos: base64 data URL
+let pendingFile = null;      // videos: the raw file (uploaded straight to cloud storage)
 let pendingIsVideo = false;
+let pendingPreviewUrl = null;
+
+function clearPending() {
+  pendingDataUrl = null;
+  pendingFile = null;
+  pendingIsVideo = false;
+  if (pendingPreviewUrl) { URL.revokeObjectURL(pendingPreviewUrl); pendingPreviewUrl = null; }
+}
 
 document.getElementById('storyFileInput').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
@@ -372,22 +433,45 @@ document.getElementById('storyFileInput').addEventListener('change', async (e) =
     return;
   }
 
-  const dataUrl = await blobToDataURL(file);
-  const limit = isVideo ? MAX_VIDEO_DATA_URL_LENGTH : MAX_IMAGE_DATA_URL_LENGTH;
-  if (dataUrl.length > limit) {
-    alert(isVideo
-      ? 'That video is too large — try a shorter or lower-resolution clip.'
-      : 'That image is too large — try a smaller file.');
-    return;
+  clearPending();
+  let previewSrc;
+
+  if (isVideo) {
+    // Enforce the 1-minute limit BEFORE anything is uploaded.
+    let duration;
+    try {
+      duration = await getVideoDuration(file);
+    } catch (err) {
+      alert('Could not read that video. Try a different file.');
+      return;
+    }
+    if (!isFinite(duration) || duration > MAX_VIDEO_SECONDS) {
+      alert('Story videos can be at most 1 minute long. Please trim it and try again.');
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      alert('That video is too large (100MB max) — try a shorter or lower-resolution clip.');
+      return;
+    }
+    pendingFile = file;
+    pendingPreviewUrl = URL.createObjectURL(file);
+    previewSrc = pendingPreviewUrl;
+  } else {
+    const dataUrl = await blobToDataURL(file);
+    if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+      alert('That image is too large — try a smaller file.');
+      return;
+    }
+    pendingDataUrl = dataUrl;
+    previewSrc = dataUrl;
   }
 
-  pendingDataUrl = dataUrl;
   pendingIsVideo = isVideo;
 
   const preview = document.getElementById('storyUploadPreview');
   preview.innerHTML = '';
   const el = document.createElement(isVideo ? 'video' : 'img');
-  el.src = dataUrl;
+  el.src = previewSrc;
   if (isVideo) { el.controls = true; el.autoplay = true; el.muted = true; }
   preview.appendChild(el);
 
@@ -396,29 +480,38 @@ document.getElementById('storyFileInput').addEventListener('change', async (e) =
 });
 
 document.getElementById('storyUploadCancelBtn').onclick = () => {
-  pendingDataUrl = null;
+  clearPending();
   document.getElementById('storyUploadModal').style.display = 'none';
 };
 
 document.getElementById('storyPostBtn').onclick = async () => {
-  if (!pendingDataUrl) return;
+  if (!pendingDataUrl && !pendingFile) return;
   const postBtn = document.getElementById('storyPostBtn');
   postBtn.disabled = true;
   postBtn.textContent = 'Posting…';
 
   try {
+    const payload = { caption: document.getElementById('storyCaptionInput').value };
+
+    if (pendingIsVideo) {
+      // Videos go straight to cloud storage first, then we save the story.
+      payload.mediaPublicId = await uploadVideoToCloud(pendingFile, (pct) => {
+        postBtn.textContent = 'Uploading ' + pct + '%';
+      });
+      postBtn.textContent = 'Posting…';
+    } else {
+      payload.mediaData = pendingDataUrl;
+    }
+
     const res = await fetch(API_BASE + '/api/stories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({
-        mediaData: pendingDataUrl,
-        caption: document.getElementById('storyCaptionInput').value
-      })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Could not post your story.');
 
-    pendingDataUrl = null;
+    clearPending();
     document.getElementById('storyUploadModal').style.display = 'none';
     await loadStories();
   } catch (err) {
