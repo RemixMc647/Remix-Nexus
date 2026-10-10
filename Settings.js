@@ -1,3 +1,29 @@
+// Show the user's banner picture (set on the Profile page) on the
+// profile card at the top of Settings. Display only.
+function paintProfileBanner(src) {
+  try {
+    const art = document.querySelector('.profile-banner .banner-art');
+    if (!art || !src) return;
+    art.style.setProperty('background-image', 'url("' + src + '")', 'important');
+    art.style.setProperty('background-size', 'cover', 'important');
+    art.style.setProperty('background-position', 'center', 'important');
+  } catch (e) { /* keep the default blue banner */ }
+}
+
+(function showProfileBanner() {
+  try {
+    if (!window.AUTH || !AUTH.getUser) return;
+    const u = AUTH.getUser();
+    if (!u) return;
+    let src = u.banner || '';
+    if (!src) {
+      const id = u._id || u.id || u.username;
+      if (id) src = localStorage.getItem('remixNexusBanner:' + id) || '';
+    }
+    paintProfileBanner(src);
+  } catch (e) { /* ignore */ }
+})();
+
 // Only the owner account sees the Admin Dashboard link — /api/me only
 // ever reports isOwner:true on your OWN account's response, so this
 // can't be spoofed by editing localStorage.
@@ -11,6 +37,8 @@
     if (res.ok && data.user && data.user.isOwner) {
       document.getElementById('adminCard').style.display = 'flex';
     }
+    // banner saved on the server (e.g. set from another device)
+    if (res.ok && data.user && data.user.banner) paintProfileBanner(data.user.banner);
   } catch (err) {
     // Server unreachable — just leave the card hidden, no big deal.
   }
