@@ -10,8 +10,8 @@
     <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Stories</title>
 
     <link rel="stylesheet" href="./Trending.css">
-    <link rel="stylesheet" href="./Chat.css">
     <link rel="stylesheet" href="./Stories.css">
+    <link rel="stylesheet" href="./Discord-Pages.css">
 <link rel="icon" href="./icon-linux-512.png" type="image/png">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
 
@@ -48,73 +48,163 @@
     </style>
 </head>
 
-<body>
+<body class="page-stories">
 
 <div class="background-glow"></div>
 
-<header class="nav-bar" style="width:92%; max-width:1300px; margin:25px auto;">
-    <div class="logo">
-        <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
-        <span>Gaming Society</span>
+<!-- shared gradient used by the status rings -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="nxRing" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00b7ff"/>
+      <stop offset="1" stop-color="#0066ff"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="nav-main">
+
+<div class="background1"></div>
+
+<nav class="nav-bar">
+
+<div class="logo" title="Remix Nexus">
+    <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
+    <span>Gaming Society</span>
+</div>
+
+<div class="buttons1">
+    <a href="./index.html" class="href"><button class="button1" title="Home">🏠</button></a>
+    <a href="./Trending.html" class="href"><button class="button2" title="Live">🔥</button></a>
+    <a href="./Chat.html" class="href"><button class="button3" title="Chat">💬</button></a>
+    <a href="./Contacts.html" class="href"><button class="button3" title="Contacts">👥</button></a>
+    <a href="./Stories.html" class="href" aria-current="page"><button class="button3" title="Stories">📸</button></a>
+    <a href="./Search.html" class="href"><button class="button3" title="Search">🔎</button></a>
+    <a href="./Profile.html" class="href"><button class="button4" title="Profile">👤</button></a>
+</div>
+
+</nav>
+
+<main class="stories-app">
+
+  <!-- ============ LEFT: status list (Discord channel list + WhatsApp Status) ============ -->
+  <aside class="st-side">
+
+    <div class="st-side-head">
+      <h2>📸 Status</h2>
+      <div class="st-head-actions">
+        <button type="button" class="st-icon-btn js-add-text" title="Text status">✏️</button>
+        <button type="button" class="st-icon-btn js-add-media" title="Photo / video status">📷</button>
+      </div>
     </div>
 
-    <div class="buttons1">
-        <a href="./index.html" class="href"><button class="button1" title="Home">🏠</button></a>
-        <a href="./Trending.html" class="href"><button class="button2" title="Live">🔥</button></a>
-        <a href="./Chat.html" class="href"><button class="button3" title="Chat">💬</button></a>
-        <a href="./Contacts.html" class="href"><button class="button3" title="Contacts">👥</button></a>
-        <a href="./Stories.html" class="href" aria-current="page"><button class="button3" title="Stories">📸</button></a>
-        <a href="./Profile.html" class="href"><button class="button4" title="Profile">👤</button></a>
+    <div class="st-search">
+      <input id="storySearch" type="text" autocomplete="off" placeholder="Search status…">
     </div>
-</header>
 
-<section class="stories-page">
+    <div class="st-tabs" id="storyTabs">
+      <button type="button" class="st-tab active" data-filter="all">All</button>
+      <button type="button" class="st-tab" data-filter="unseen">Unseen <span id="unseenBadge" class="st-badge-count" style="display:none;">0</span></button>
+    </div>
 
-  <div class="story-tray" id="storyTray">
-    <!-- "Your Story" tile is always first, rendered by Stories.js -->
-  </div>
+    <div class="st-list" id="storyList"></div>
 
-  <div id="storiesEmptyState" class="stories-empty" style="display:none;">
-    <p>No stories yet. Be the first — tap the ➕ to post one that disappears in 24 hours.</p>
-  </div>
+  </aside>
 
-</section>
+  <!-- ============ RIGHT: wall (Snapchat Discover style) ============ -->
+  <section class="st-main">
 
-<!-- Hidden file input used for both "post a story" and re-used for the upload preview -->
+    <header class="st-main-head">
+      <span class="st-hash">#</span>
+      <h1>stories</h1>
+      <span class="st-topic">Photos, videos &amp; text that disappear in 24 hours</span>
+      <div class="st-main-actions">
+        <button type="button" class="st-pill js-add-text">✏️ Text</button>
+        <button type="button" class="st-pill primary js-add-media">📷 Photo / Video</button>
+      </div>
+    </header>
+
+    <div class="st-scroll">
+
+      <!-- phone: Snapchat / Instagram style ring tray -->
+      <div class="story-tray" id="storyTray"></div>
+
+      <div class="st-wall" id="storyWall"></div>
+
+      <div id="storiesEmptyState" class="stories-empty" style="display:none;">
+        <div class="stories-empty-icon">📸</div>
+        <p>No stories yet. Be the first — post one that disappears in 24 hours.</p>
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+</div>
+
+<!-- phone floating buttons (WhatsApp style) -->
+<div class="st-fab-wrap">
+  <button type="button" class="st-fab small js-add-text" title="Text status">✏️</button>
+  <button type="button" class="st-fab js-add-media" title="Add to your story">📷</button>
+</div>
+
+<!-- Hidden file input used for both "post a story" and the upload preview -->
 <input id="storyFileInput" type="file" accept="image/*,video/*" hidden>
 
 <!-- FULL-SCREEN STORY VIEWER -->
 <div id="storyViewer" class="story-viewer" style="display:none;">
-  <div class="story-progress-row" id="storyProgressRow"></div>
 
-  <div class="story-viewer-header">
-    <div class="story-viewer-user">
-      <span id="storyViewerAvatar" class="story-viewer-avatar">🎮</span>
-      <span id="storyViewerUsername" class="story-viewer-username"></span>
-      <span id="storyViewerTime" class="story-viewer-time"></span>
+  <div id="storyViewerBg" class="sv-bg"></div>
+
+  <button type="button" id="storyPrevArrow" class="sv-arrow sv-arrow-left" aria-label="Previous">‹</button>
+
+  <div class="sv-card" id="storyCard">
+
+    <div class="story-viewer-media" id="storyViewerMedia"></div>
+
+    <div class="sv-top">
+      <div class="story-progress-row" id="storyProgressRow"></div>
+
+      <div class="story-viewer-header">
+        <div class="story-viewer-user">
+          <span id="storyViewerAvatar" class="story-viewer-avatar">🎮</span>
+          <span class="sv-user-text">
+            <span id="storyViewerUsername" class="story-viewer-username"></span>
+            <span id="storyViewerTime" class="story-viewer-time"></span>
+          </span>
+        </div>
+        <div class="story-viewer-actions">
+          <button type="button" id="storyReportBtn" class="story-icon-btn" title="Report this story">🚩</button>
+          <button type="button" id="storyDeleteBtn" class="story-icon-btn" title="Delete this story" style="display:none;">🗑️</button>
+          <button type="button" id="storyCloseBtn" class="story-icon-btn" title="Close (Esc)" aria-label="Close">✕</button>
+        </div>
+      </div>
     </div>
-    <div class="story-viewer-actions">
-      <button type="button" id="storyReportBtn" class="story-icon-btn" title="Report this story">🚩</button>
-      <button type="button" id="storyDeleteBtn" class="story-icon-btn" title="Delete this story" style="display:none;">🗑️</button>
-      <button type="button" id="storyCloseBtn" class="story-icon-btn" title="Close" aria-label="Close">✕</button>
+
+    <button type="button" id="storyPrevZone" class="story-tap-zone story-tap-left" aria-label="Previous story"></button>
+    <button type="button" id="storyNextZone" class="story-tap-zone story-tap-right" aria-label="Next story"></button>
+
+    <div id="storyPauseIndicator" class="sv-paused" style="display:none;">⏸</div>
+
+    <div id="storyCaption" class="story-caption" style="display:none;"></div>
+
+    <div class="story-viewer-footer-row">
+      <a id="storyReplyBtn" class="story-reply-btn" href="#" style="display:none;">💬 Reply to <span id="storyReplyName"></span></a>
+      <button type="button" id="storyViewersBtn" class="story-viewers-btn" style="display:none;">
+        👁️ <span id="storyViewersCount">0</span> viewed
+      </button>
+      <button type="button" id="storyLikeBtn" class="story-like-btn" title="Like (or double-tap)">
+        <span id="storyLikeIcon">🤍</span> <span id="storyLikeCount">0</span>
+      </button>
     </div>
+
   </div>
 
-  <div class="story-viewer-media" id="storyViewerMedia"></div>
+  <button type="button" id="storyNextArrow" class="sv-arrow sv-arrow-right" aria-label="Next">›</button>
 
-  <button type="button" id="storyPrevZone" class="story-tap-zone story-tap-left" aria-label="Previous story"></button>
-  <button type="button" id="storyNextZone" class="story-tap-zone story-tap-right" aria-label="Next story"></button>
-
-  <div id="storyCaption" class="story-caption" style="display:none;"></div>
-
-  <div class="story-viewer-footer-row">
-    <button type="button" id="storyLikeBtn" class="story-like-btn" title="Like this story">
-      <span id="storyLikeIcon">🤍</span> <span id="storyLikeCount">0</span>
-    </button>
-    <button type="button" id="storyViewersBtn" class="story-viewers-btn" style="display:none;">
-      👁️ <span id="storyViewersCount">0</span> viewed
-    </button>
-  </div>
+  <div class="sv-hint">← → switch &nbsp;•&nbsp; Space / hold to pause &nbsp;•&nbsp; double-tap to like &nbsp;•&nbsp; Esc to close</div>
 </div>
 
 <!-- VIEWERS LIST SHEET (own stories only) -->
@@ -122,7 +212,7 @@
   <div class="story-viewers-sheet-inner">
     <div class="story-viewers-sheet-header">
       <h3>Viewed by</h3>
-      <button type="button" id="storyViewersCloseBtn">✕</button>
+      <button type="button" id="storyViewersCloseBtn" aria-label="Close">✕</button>
     </div>
     <div id="storyViewersList" class="story-viewers-list"></div>
     <div class="story-viewers-sheet-header" style="margin-top:16px;">
@@ -132,7 +222,7 @@
   </div>
 </div>
 
-<!-- UPLOAD / CAPTION MODAL -->
+<!-- UPLOAD / CAPTION MODAL (photo or video) -->
 <div id="storyUploadModal" class="story-upload-modal" style="display:none;">
   <div class="story-upload-inner">
     <button type="button" id="storyUploadCancelBtn" class="story-icon-btn story-upload-cancel">✕</button>
@@ -142,24 +232,23 @@
   </div>
 </div>
 
-<footer class="footer">
-    <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
-    <p>Play &bull; Chat &bull; Watch</p>
-    <div class="footer-links">
-        <a href="./index.html">Home</a>
-        <a href="./Trending.html">Live</a>
-        <a href="./Chat.html">Chat</a>
-         <a href="./Contacts.html">Contacts</a>
-        <a href="./Search.html">Search</a>
-        <a href="./Profile.html">Profile</a>
-        <a href="./About.html">About</a>
-        <a href="./Contact.html">Contact</a>
-        <a href="./Terms.html">Terms of Service</a>
-        <a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener">▶ YouTube</a>
-        <a href="./Privacy.html">🔒 Privacy Policy</a>
+<!-- TEXT STATUS COMPOSER -->
+<div id="storyTextModal" class="story-text-modal" style="display:none;">
+  <div class="story-text-inner">
+    <div class="story-text-stage" id="storyTextStage">
+      <button type="button" id="storyTextCancelBtn" class="story-icon-btn st-text-close" aria-label="Close">✕</button>
+      <div class="st-text-tools">
+        <button type="button" id="storyTextFontBtn" class="story-icon-btn" title="Change font">Aa</button>
+        <button type="button" id="storyTextBgBtn" class="story-icon-btn" title="Change colour">🎨</button>
+      </div>
+      <textarea id="storyTextInput" maxlength="180" placeholder="Type a status"></textarea>
     </div>
-    <small>&copy; 2026 𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 Gaming Society. All Rights Reserved.</small>
-</footer>
+    <div class="st-text-swatches" id="storyTextSwatches"></div>
+    <button type="button" id="storyTextPostBtn" class="story-post-btn">Post text status</button>
+  </div>
+</div>
+
+
 <script src="./config.js"></script>
 <script src="./auth.js"></script>
 <script src="./Stories.js"></script>
