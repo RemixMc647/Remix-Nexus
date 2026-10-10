@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1176167350648115"
-     crossorigin="anonymous"></script>
+ crossorigin="anonymous"></script>
     <meta name="description"
 content="Remix Nexus is a gaming community where gamers connect, chat, discover games and build friendships.">
 
@@ -39,140 +39,23 @@ content="Join Remix Nexus - Gaming Community">
 
 <meta name="twitter:image"
 content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b9de.png">
-    
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#000000">
-    <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Chat</title>
-<link rel="icon" href="./icon-linux-512.png" type="image/png">
+    <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Contacts</title>
+
     <link rel="stylesheet" href="./Trending.css">
     <link rel="stylesheet" href="./Chat.css">
+    <link rel="stylesheet" href="./Contacts.css">
     <link rel="stylesheet" href="./Calls.css">
+    <link rel="stylesheet" href="./Discord.css">
 
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
-
+<link rel="icon" href="./icon-linux-512.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Socket.io client is now loaded dynamically from BACKEND_URL below -->
-
-    <style>
-      /* Server-status banner — shown when the Render backend is asleep/
-         reconnecting, hidden the moment the socket connects. Sits in normal
-         document flow (not fixed) so it just pushes the nav bar down while
-         visible, instead of overlapping it. */
-      #serverStatusBanner {
-        display: none;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        box-sizing: border-box;
-        padding: 10px 16px;
-        background: linear-gradient(90deg, #f5a623, #f7b955);
-        color: #1a1a1a;
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
-        font-weight: 600;
-        text-align: center;
-      }
-      #serverStatusBanner.visible { display: flex; }
-      #serverStatusBanner .server-banner-spinner {
-        width: 14px;
-        height: 14px;
-        flex-shrink: 0;
-        border: 2px solid rgba(0,0,0,0.3);
-        border-top-color: #1a1a1a;
-        border-radius: 50%;
-        animation: server-banner-spin 0.8s linear infinite;
-      }
-      @keyframes server-banner-spin { to { transform: rotate(360deg); } }
-
-      /* Message search — WhatsApp-style: a bar under the header, matches
-         highlighted inline, current match ringed and scrolled into view. */
-      .chat-search-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: rgba(255,255,255,0.06);
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-      }
-      .chat-search-bar#chatSearchBar.display-flex { display: flex; }
-      #chatSearchInput {
-        flex: 1;
-        min-width: 0;
-        background: rgba(0,0,0,0.25);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 8px;
-        color: inherit;
-        padding: 6px 10px;
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
-      }
-      .chat-search-count {
-        font-size: 12px;
-        opacity: 0.7;
-        white-space: nowrap;
-        min-width: 38px;
-        text-align: center;
-      }
-      .chat-search-nav-btn {
-        background: none;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-        font-size: 15px;
-        padding: 4px 6px;
-        opacity: 0.85;
-      }
-      .chat-search-nav-btn:hover { opacity: 1; }
-      .msg mark, .msg-quote mark {
-        background: #f5c518;
-        color: #1a1a1a;
-        border-radius: 3px;
-        padding: 0 2px;
-      }
-      .msg mark.current-match, .msg-quote mark.current-match {
-        background: #ff8a00;
-      }
-      .msg-row.search-current .msg {
-        outline: 2px solid #ff8a00;
-        outline-offset: 2px;
-      }
-
-      /* Keyboard-aware layout — keeps the message input pinned above the
-         on-screen keyboard on mobile (WhatsApp-style). keyboard-fix.js sets
-         --app-height and an inline height on .chat-shell to match the real
-         visible viewport, which shrinks when the keyboard opens; the rules
-         below make sure the input rides up with it instead of being
-         covered. */
-      html, body {
-        height: 100%;
-        overflow: hidden;
-      }
-      .chat-shell {
-        height: 100vh;
-        height: var(--app-height, 100dvh);
-        overflow: hidden;
-      }
-      .chat-main {
-        min-height: 0;
-      }
-      .messages {
-        min-height: 0;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .message-form,
-      .reply-preview,
-      #recordingBar,
-      .chat-search-bar {
-        flex-shrink: 0;
-      }
-    </style>
 
 </head>
 
@@ -180,13 +63,13 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
 
 <div id="serverStatusBanner" role="status" aria-live="polite">
   <span class="server-banner-spinner"></span>
-  <span id="serverStatusBannerText">Waking up the server, this can take up to a minute…</span>
+  <span id="serverStatusBannerText">Waking up the server, this can take up to a minute&hellip;</span>
 </div>
 
 <div class="background-glow"></div>
 
-<header class="nav-bar" style="width:92%; max-width:1300px; margin:25px auto;">
-    <div class="logo">
+<header class="nav-bar">
+    <div class="logo" title="Remix Nexus">
         <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
         <span>Gaming Society</span>
     </div>
@@ -194,73 +77,101 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
     <div class="buttons1">
 <a href="./index.html" class="href"><button class="button1" title="Home">🏠</button></a>
         <a href="./Trending.html" class="href"><button class="button2" title="Live">🔥</button></a>
-        <a href="./Chat.html" class="href" aria-current="page"><button class="button3" title="Chat">💬</button></a>
-        <a href="./Contacts.html" class="href"><button class="button3" title="Contacts">👥</button></a>
+        <a href="./Chat.html" class="href"><button class="button3" title="Chat">💬</button></a>
+        <a href="./Contacts.html" class="href" aria-current="page"><button class="button3" title="Contacts">👥</button></a>
         <a href="./Stories.html" class="href"><button class="button3" title="Stories">📸</button></a>
         <a href="./Search.html" class="href"><button class="button3" title="Search">🔎</button></a>
         <a href="./Profile.html" class="href"><button class="button4" title="Profile">👤</button></a>
     </div>
 </header>
 
-<section class="chat-shell">
+<!-- Shown if you're not logged in -->
+<div id="contacts-loggedout" class="profile-card" style="display:none; width:92%; max-width:600px; margin:40px auto; text-align:center;">
+  <div class="loggedout-icon">🔒</div>
+  <h2>You're not logged in</h2>
+  <p>Log in to see your contacts and send private messages.</p>
+  <div class="loggedout-actions">
+<a class="ghost-btn" href="./Login.html">Log In</a>
+    <a class="ghost-btn" href="./Signup.html" style="background:#0066ff;">Sign Up</a>
+  </div>
+</div>
+
+<section id="contacts-shell" class="chat-shell" style="display:none;">
 
   <aside class="chat-rooms">
     <div class="chat-rooms-title-row">
-      <h2 class="chat-rooms-title">Rooms</h2>
-      <button type="button" id="createRoomBtn" class="create-room-btn" title="Create a new room">➕ New</button>
+      <h2 class="chat-rooms-title">Contacts</h2>
+      <button type="button" id="groupCallToggleBtn" class="create-room-btn" title="Start a group call">👥📞</button>
     </div>
-    <div id="roomList" class="room-list"></div>
+    <div id="contactList" class="room-list">
+      <p class="empty-state">Loading contacts&hellip;</p>
+    </div>
+    <div id="groupCallBar" class="group-call-bar" style="display:none;">
+      <span id="groupCallSelectedCount">0 selected</span>
+      <button type="button" id="groupCallVoiceBtn" class="chat-search-nav-btn" title="Start voice group call">📞</button>
+      <button type="button" id="groupCallVideoBtn" class="chat-search-nav-btn" title="Start video group call">🎥</button>
+      <button type="button" id="groupCallCancelBtn" class="chat-search-nav-btn" title="Cancel">✕</button>
+    </div>
   </aside>
 
   <main class="chat-main">
     <div class="chat-header">
-      <button type="button" id="backToRoomsBtn" class="back-btn" title="Back to rooms" aria-label="Back to rooms">←</button>
-      <h2 id="activeRoomName">Just Chatting Lounge</h2>
-      <div class="call-buttons" id="roomCallButtons">
-        <button type="button" id="roomVoiceCallBtn" class="call-btn" title="Start a voice call with this room">📞</button>
-        <button type="button" id="roomVideoCallBtn" class="call-btn" title="Start a video call with this room">🎥</button>
+      <button type="button" id="dmBackBtn" class="back-btn" title="Back to contacts" aria-label="Back to contacts">&larr;</button>
+      <div class="chat-header-profile">
+        <span id="activeContactAvatar" class="chat-header-avatar" style="display:none;"></span>
+        <div>
+          <h2 id="activeContactName">Select a contact</h2>
+          <span id="activeContactJoined" class="chat-header-subtext"></span>
+        </div>
       </div>
-      <button type="button" id="searchToggleBtn" class="back-btn" title="Search messages" aria-label="Search messages">🔎</button>
-      <span id="connectionBadge" class="pill-badge">Connecting…</span>
+      <div class="call-buttons" id="dmCallButtons" style="display:none;">
+        <button type="button" id="dmVoiceCallBtn" class="call-btn" title="Voice call">📞</button>
+        <button type="button" id="dmVideoCallBtn" class="call-btn" title="Video call">🎥</button>
+        <button type="button" id="dmSearchToggleBtn" class="call-btn" title="Search messages">🔎</button>
+        <button type="button" id="dmBlockBtn" class="call-btn" title="Block this user" style="display:none;">🚫</button>
+      </div>
+      <span id="dmConnectionBadge" class="pill-badge">Connecting&hellip;</span>
     </div>
 
-    <div id="chatSearchBar" class="chat-search-bar" style="display:none;">
-      <input type="text" id="chatSearchInput" placeholder="Search messages in this room…" autocomplete="off">
-      <span id="chatSearchCount" class="chat-search-count">0/0</span>
-      <button type="button" id="chatSearchPrevBtn" class="chat-search-nav-btn" title="Previous match">↑</button>
-      <button type="button" id="chatSearchNextBtn" class="chat-search-nav-btn" title="Next match">↓</button>
-      <button type="button" id="chatSearchCloseBtn" class="chat-search-nav-btn" title="Close search">✕</button>
+    <div id="dmSearchBar" class="chat-search-bar" style="display:none;">
+      <input type="text" id="dmSearchInput" placeholder="Search this conversation…" autocomplete="off">
+      <span id="dmSearchCount" class="chat-search-count">0/0</span>
+      <button type="button" id="dmSearchPrevBtn" class="chat-search-nav-btn" title="Previous match">↑</button>
+      <button type="button" id="dmSearchNextBtn" class="chat-search-nav-btn" title="Next match">↓</button>
+      <button type="button" id="dmSearchCloseBtn" class="chat-search-nav-btn" title="Close search">✕</button>
     </div>
 
-    <div id="messages" class="messages" aria-live="polite"></div>
+    <div id="dmMessages" class="messages" aria-live="polite">
+      <p class="empty-state">Pick someone from the list to start chatting privately.</p>
+    </div>
 
-    <div id="replyPreview" class="reply-preview" style="display:none;">
+    <div id="dmReplyPreview" class="reply-preview" style="display:none;">
       <div class="reply-preview-content">
-        <span class="reply-preview-label">Replying to <b id="replyPreviewAuthor"></b></span>
-        <p id="replyPreviewText"></p>
+        <span class="reply-preview-label">Replying to <b id="dmReplyPreviewAuthor"></b></span>
+        <p id="dmReplyPreviewText"></p>
       </div>
-      <button id="cancelReplyBtn" type="button" title="Cancel reply">✕</button>
+      <button id="dmCancelReplyBtn" type="button" title="Cancel reply">✕</button>
     </div>
 
-    <form id="messageForm" class="message-form" autocomplete="off">
-      <button type="button" id="attachBtn" class="attach-btn" title="Send a photo or video">➕</button>
-      <input id="mediaInput" type="file" accept="image/*,video/*" hidden>
-      <input id="messageInput" type="text" placeholder="Say something to the squad…" maxlength="500">
-      <button type="button" id="voiceBtn" class="voice-btn" title="Record a voice note">🎤</button>
-      <button type="submit">Send</button>
+    <form id="dmMessageForm" class="message-form" autocomplete="off">
+      <button type="button" id="dmAttachBtn" class="attach-btn" title="Send a photo or video" disabled>➕</button>
+      <input id="dmMediaInput" type="file" accept="image/*,video/*" hidden>
+      <input id="dmMessageInput" type="text" placeholder="Message this person privately&hellip;" maxlength="1000" required disabled>
+      <button type="button" id="dmVoiceBtn" class="voice-btn" title="Record a voice note" disabled>🎤</button>
+      <button type="submit" disabled>Send</button>
     </form>
 
-    <div id="recordingBar" class="recording-bar">
+    <div id="dmRecordingBar" class="recording-bar">
       <span class="recording-dot"></span>
-      <span id="recordingTimer" class="recording-timer">0:00</span>
-      <span class="recording-hint">Recording voice note…</span>
-      <button type="button" id="cancelRecordingBtn" class="recording-cancel-btn" title="Cancel">✕</button>
-      <button type="button" id="stopRecordingBtn" class="recording-stop-btn" title="Stop &amp; send">⏹</button>
+      <span id="dmRecordingTimer" class="recording-timer">0:00</span>
+      <span class="recording-hint">Recording voice note&hellip;</span>
+      <button type="button" id="dmCancelRecordingBtn" class="recording-cancel-btn" title="Cancel">✕</button>
+      <button type="button" id="dmStopRecordingBtn" class="recording-stop-btn" title="Stop &amp; send">⏹</button>
     </div>
   </main>
 
 </section>
-
+     
 <div id="imageLightbox" class="image-lightbox" style="display:none;">
   <button type="button" id="imageLightboxClose" class="image-lightbox-close" title="Close" aria-label="Close">✕</button>
   <img id="imageLightboxImg" src="" alt="Shared image, expanded view">
@@ -287,10 +198,9 @@ content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b
 <script>document.write('<script src="' + BACKEND_URL + '/socket.io/socket.io.js"><\/script>')</script>
 <script src="./auth.js"></script>
 <script src="./push-notifications.js"></script>
-<script src="./rooms.js"></script>
 <script src="./chat-notifications.js"></script>
 <script src="./calls.js"></script>
-<script src="./Chat.js"></script>
+<script src="./Contacts.js"></script>
     <script src="./keyboard-fix.js"></script>
     <script src="./ai-dropup.js"></script>
     <script src="/js/pwa-register.js"></script>
