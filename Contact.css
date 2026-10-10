@@ -1,177 +1,221 @@
-/*==============================
-REMIX-NEXUS — CONTACT PAGE STYLES
-Matches the dark neon / glassmorphism language used across
-Profile.html and Trending.html.
-==============================*/
+/* =====================================================================
+   REMIX NEXUS — CONTACT PAGE (Discord style, compact like WhatsApp)
+   Loads AFTER Trending.css, Profile.css and Discord-Pages.css, so the nav
+   becomes the slim left icon rail on desktop and the bottom tab bar on
+   phones. Black + blue theme. Normal page scrolling.
+   ===================================================================== */
 
-.contact-shell {
-  width: 92%;
-  max-width: 1100px;
-  margin: 20px auto 60px;
+body.page-contact{
+  font-size: 13px;               /* compact, "zoomed out" */
 }
 
+.contact-shell {
+  width: calc(100% - 28px);
+  max-width: 980px;
+  margin: 14px auto 24px;
+  box-sizing: border-box;
+}
+
+/* ---------- Channel-style header ---------- */
 .contact-intro {
-  text-align: center;
-  margin-bottom: 36px;
+  text-align: left;
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--nx-line, rgba(255,255,255,.07));
+  background: linear-gradient(135deg, rgba(0,102,255,.30), rgba(10,13,22,.95));
 }
 
 .contact-eyebrow {
   display: inline-block;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
   text-transform: uppercase;
-  color: #8a7bff;
-  background: rgba(138, 123, 255, 0.12);
-  border: 1px solid rgba(138, 123, 255, 0.3);
-  padding: 6px 14px;
-  border-radius: 999px;
-  margin-bottom: 14px;
+  color: var(--nx-blue-soft, #6fa8ff);
+  background: rgba(0,102,255,.16);
+  border: 1px solid rgba(0,102,255,.35);
+  padding: 3px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
 }
 
 .contact-intro h1 {
-  font-size: clamp(2rem, 5vw, 2.8rem);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  font-size: 20px;
   font-weight: 700;
-  margin: 0 0 10px;
-  background: linear-gradient(90deg, #7f5bff, #00d4ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--nx-text, #e8ecf7);
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+}
+.contact-intro h1::before {
+  content: "#";
+  color: var(--nx-muted, #8a96b5);
+  font-weight: 600;
 }
 
 .contact-intro p {
-  color: #b9b9c9;
-  max-width: 520px;
-  margin: 0 auto;
+  max-width: 560px;
+  margin: 0;
+  font-size: 12.5px;
   line-height: 1.5;
+  color: #c3cbe0;
 }
 
+/* ---------- Layout ---------- */
 .contact-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
 @media (max-width: 800px) {
-  .contact-grid {
-    grid-template-columns: 1fr;
-  }
+  .contact-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ---------- Cards ---------- */
 .contact-card,
 .contact-side-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 18px;
-  padding: 28px;
+  background: var(--nx-bg-3, #10141f);
+  border: 1px solid var(--nx-line, rgba(255,255,255,.07));
+  border-radius: 12px;
+  padding: 14px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-sizing: border-box;
 }
 
 .contact-side {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 10px;
 }
 
+/* Discord "embed" look: blue accent bar on the left */
+.contact-side-card {
+  border-left: 3px solid var(--nx-blue, #0066ff);
+}
 .contact-side-card h3 {
-  margin: 0 0 8px;
-  font-size: 1.05rem;
-  color: #fff;
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--nx-text, #e8ecf7);
 }
-
 .contact-side-card p {
-  color: #a8a8ba;
-  font-size: 0.92rem;
+  margin: 0 0 10px;
+  font-size: 12px;
   line-height: 1.5;
-  margin: 0 0 14px;
+  color: var(--nx-muted, #8a96b5);
+}
+.contact-side-card p:last-child { margin-bottom: 0; }
+.contact-side-card .ghost-btn {
+  display: inline-block;
+  padding: 7px 14px;
+  font-size: 12px;
+  border-radius: 8px;
 }
 
+/* ---------- Form ---------- */
 .contact-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 10px;
 }
 
 @media (max-width: 560px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
+  .form-row { grid-template-columns: 1fr; }
 }
 
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
 }
 
 .form-field label {
-  font-size: 0.85rem;
-  color: #c6c6d6;
-  font-weight: 500;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--nx-muted, #8a96b5);
 }
 
 .form-field input,
 .form-field select,
 .form-field textarea {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  padding: 12px 14px;
-  color: #fff;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--nx-bg-1, #05070d);
+  border: 1px solid var(--nx-line, rgba(255,255,255,.07));
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: var(--nx-text, #e8ecf7);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 13px;
   resize: vertical;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
+.form-field textarea { min-height: 110px; }
+
+.form-field input::placeholder,
+.form-field textarea::placeholder { color: #5d6785; }
 
 .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
   outline: none;
-  border-color: #7f5bff;
-  box-shadow: 0 0 0 3px rgba(127, 91, 255, 0.25);
+  border-color: var(--nx-blue, #0066ff);
+  box-shadow: 0 0 0 3px rgba(0,102,255,.25);
 }
 
 .form-field select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%23b9b9c9' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%238a96b5' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 14px center;
-  padding-right: 36px;
+  background-position: right 12px center;
+  padding-right: 32px;
 }
+.form-field select option { background: #10141f; color: #e8ecf7; }
 
 .contact-submit-btn {
   align-self: flex-start;
-  background: linear-gradient(90deg, #7f5bff, #00d4ff);
+  background: var(--nx-blue, #0066ff);
   border: none;
   color: #fff;
   font-weight: 600;
-  font-size: 0.95rem;
-  padding: 13px 28px;
-  border-radius: 999px;
+  font-size: 13px;
+  padding: 9px 20px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition: background .15s ease, transform .15s ease, opacity .15s ease;
 }
-
-.contact-submit-btn:hover {
-  transform: translateY(-1px);
-}
-
+.contact-submit-btn:hover { background: #1a75ff; }
+.contact-submit-btn:active { transform: scale(.98); }
 .contact-submit-btn:disabled {
-  opacity: 0.6;
+  opacity: .6;
   cursor: not-allowed;
   transform: none;
 }
 
 .contact-status {
   min-height: 1.2em;
-  font-size: 0.9rem;
+  font-size: 12px;
   margin: 0;
+}
+
+@media (max-width: 480px) {
+  .contact-submit-btn { width: 100%; align-self: stretch; }
 }
