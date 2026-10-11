@@ -98,7 +98,7 @@ async function uploadVideoToCloud(file, onProgress) {
     xhr.onload = () => {
       let json = {};
       try { json = JSON.parse(xhr.responseText); } catch (_) {}
-      if (xhr.status >= 200 && xhr.status < 300 && json.public_id) resolve(json.public_id);
+      if (xhr.status >= 200 && xhr.status < 300 && json.public_id) resolve({ publicId: json.public_id, duration: Number(json.duration) || 0 });
       else reject(new Error((json.error && json.error.message) || 'Video upload failed. Please try again.'));
     };
     xhr.onerror = () => reject(new Error('Network error while uploading the video.'));
@@ -832,11 +832,13 @@ $('storyViewersCloseBtn').onclick = () => {
 ----------------------------------------------------------- */
 let pendingDataUrl = null;   // photos: base64 data URL
 let pendingFile = null;      // videos: the raw file, uploaded straight to Cloudinary
+let pendingDuration = 0;     // videos: length in seconds as measured by this phone
 let pendingPreviewUrl = null;
 
 function clearPending() {
   pendingDataUrl = null;
   pendingFile = null;
+  pendingDuration = 0;
   if (pendingPreviewUrl) { URL.revokeObjectURL(pendingPreviewUrl); pendingPreviewUrl = null; }
   $('storyUploadPreview').innerHTML = '';
 }
@@ -876,6 +878,7 @@ $('storyFileInput').addEventListener('change', async (e) => {
       return;
     }
     pendingFile = file;
+    pendingDuration = isFinite(duration) ? duration : 0;
     pendingPreviewUrl = URL.createObjectURL(file);
     el.src = pendingPreviewUrl;
     el.controls = true; el.muted = false; el.playsInline = true;   // tap play to hear it with sound
@@ -931,7 +934,8 @@ $('storyPostBtn').onclick = async () => {
   if (pendingFile) {
     btn.disabled = true;
     try {
-      payload = { mediaPublicId: await uploadVideoToCloud(pendingFile, (pct) => { btn.textContent = 'Uploading ' + pct + '%'; }) };
+      const up = await uploadVideoToCloud(pendingFile, (pct) => { btn.textContent = 'Uploading ' + pct + '%'; });
+      payload = { mediaPublicId: up.publicId, mediaDuration: up.duration || pendingDuration || 0 };
     } catch (err) {
       btn.disabled = false;
       btn.textContent = idle;
