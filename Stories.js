@@ -398,12 +398,63 @@ let curStory = null;
 
 const isPaused = () => pauseReasons.size > 0;
 
+/* ---- sound ----
+   Browsers (especially phones) sometimes refuse to play a video WITH sound
+   until you tap. We try with sound first; if blocked we play muted and show
+   a "Tap for sound" button instead of staying silent with no explanation. */
+let soundOn = true;   // remembered for the whole session
+
+function getSoundBtn() {
+  let b = $('storySoundBtn');
+  if (!b) {
+    b = document.createElement('button');
+    b.id = 'storySoundBtn';
+    b.type = 'button';
+    b.style.cssText = 'position:absolute;top:72px;right:12px;z-index:30;display:none;' +
+      'padding:8px 12px;border:0;border-radius:999px;background:rgba(0,0,0,.65);' +
+      'color:#fff;font:600 13px/1 inherit;font-family:inherit;cursor:pointer;';
+    b.onclick = (e) => {
+      e.stopPropagation();
+      if (!curMedia || curMedia.tagName !== 'VIDEO') return;
+      curMedia.muted = !curMedia.muted;
+      soundOn = !curMedia.muted;
+      updateSoundBtn();
+      if (curMedia.paused && !isPaused()) curMedia.play().catch(() => {});
+    };
+    // don't let the tap zones treat a tap on this button as next/previous
+    b.addEventListener('pointerdown', (e) => e.stopPropagation());
+    b.addEventListener('pointerup', (e) => e.stopPropagation());
+    ($('storyCard') || $('storyViewer')).appendChild(b);
+  }
+  return b;
+}
+
+function updateSoundBtn() {
+  const b = getSoundBtn();
+  if (!curMedia || curMedia.tagName !== 'VIDEO') { b.style.display = 'none'; return; }
+  b.style.display = 'block';
+  b.textContent = curMedia.muted ? '🔇 Tap for sound' : '🔊 Sound on';
+}
+
+function playVideo(el) {
+  el.muted = !soundOn;
+  const p = el.play();
+  if (p && p.catch) {
+    p.catch(() => {
+      // Blocked with sound → play muted so the story still plays.
+      el.muted = true;
+      el.play().catch(() => {});
+      updateSoundBtn();
+    });
+  }
+}
+
 function applyPause() {
   const showIcon = pauseReasons.has('hold') || pauseReasons.has('key');
   $('storyPauseIndicator').style.display = showIcon ? 'flex' : 'none';
   if (curMedia && curMedia.tagName === 'VIDEO') {
     if (isPaused()) curMedia.pause();
-    else curMedia.play().catch(() => {});
+    else playVideo(curMedia);
   }
 }
 function pauseStory(reason) { pauseReasons.add(reason); applyPause(); }
@@ -527,7 +578,8 @@ function showStory() {
     mediaEl.src = story.mediaData;
     mediaEl.autoplay = true;
     mediaEl.playsInline = true;
-    mediaEl.muted = false;
+    mediaEl.muted = !soundOn;
+    mediaEl.volume = 1;
     mediaEl.onended = () => nextStory();
     mediaReady = true;
   } else {
@@ -538,6 +590,7 @@ function showStory() {
   }
   curMedia = mediaEl;
   mediaBox.appendChild(mediaEl);
+  updateSoundBtn();
 
   // Mark viewed (no-op server-side for your own stories).
   fetch(API_BASE + '/api/stories/' + story.id + '/view', {
@@ -594,6 +647,7 @@ function closeViewer() {
   activeGroup = null;
   curStory = null;
   curMedia = null;
+  updateSoundBtn();
   loadStories(); // refresh unseen-ring state
 }
 
@@ -824,7 +878,7 @@ $('storyFileInput').addEventListener('change', async (e) => {
     pendingFile = file;
     pendingPreviewUrl = URL.createObjectURL(file);
     el.src = pendingPreviewUrl;
-    el.controls = true; el.autoplay = true; el.muted = true; el.playsInline = true;
+    el.controls = true; el.muted = false; el.playsInline = true;   // tap play to hear it with sound
   } else {
     const dataUrl = await blobToDataURL(file);
     if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
