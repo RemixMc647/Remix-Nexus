@@ -56,7 +56,7 @@ person set a new password via /api/reset-password.
       }
 
       showMessage('Password updated! Redirecting to log in…', false);
-      setTimeout(() => { window.location.href = './index.html'; }, 1200);
+      setTimeout(() => { window.location.href = './Login.html'; }, 1200);
 
     } catch (err) {
       console.error('Reset password error:', err);
