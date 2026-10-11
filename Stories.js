@@ -57,7 +57,18 @@ function getVideoDuration(file) {
     const url = URL.createObjectURL(file);
     const v = document.createElement('video');
     v.preload = 'metadata';
-    v.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(v.duration); };
+    const done = (val) => { URL.revokeObjectURL(url); resolve(val); };
+    v.onloadedmetadata = () => {
+      // Some phone videos report Infinity/NaN until the browser seeks to the
+      // end. Force that seek so we get the real length.
+      if (!isFinite(v.duration)) {
+        v.ontimeupdate = () => { v.ontimeupdate = null; done(v.duration); };
+        try { v.currentTime = 1e101; } catch (_) { done(v.duration); }
+        setTimeout(() => done(v.duration), 3000);   // never hang
+      } else {
+        done(v.duration);
+      }
+    };
     v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('unreadable')); };
     v.src = url;
   });
@@ -800,7 +811,9 @@ $('storyFileInput').addEventListener('change', async (e) => {
     let duration;
     try { duration = await getVideoDuration(file); }
     catch (err) { alert('Could not read that video. Try a different file.'); return; }
-    if (!isFinite(duration) || duration > MAX_VIDEO_SECONDS) {
+    // Only block when we KNOW it is too long. If the phone can't tell us the
+    // length, let it upload — the server re-checks the real length anyway.
+    if (isFinite(duration) && duration > MAX_VIDEO_SECONDS + 0.5) {
       alert('Story videos can be at most 1 minute long. Please trim it and try again.');
       return;
     }
