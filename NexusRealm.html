@@ -67,7 +67,7 @@
       <form id="challenge-form" class="glass-card form-grid">
         <h3>＋ Create a challenge</h3>
         <label>Game
-          <select name="game" required><option value="">Choose a game</option><option>Minecraft</option><option>PUBG</option><option>Roblox</option><option>Fortnite</option><option>Free Fire</option><option>Call of Duty</option><option>GTA</option><option>Among Us</option><option>Other</option></select>
+          <select name="game" required><option value="">Choose a game</option></select>
         </label>
         <label>Opponent username
           <input name="opponent" maxlength="32" placeholder="Optional — leave empty for an open match" autocomplete="off">
@@ -118,12 +118,15 @@
       <form id="world-form" class="glass-card form-grid">
         <h3>＋ Publish a discovery</h3>
         <label class="full">Title<input name="title" maxlength="90" required placeholder="My floating island base"></label>
-        <label>Game<select name="game" required><option>Minecraft</option><option>Roblox</option><option>PUBG</option><option>Fortnite</option><option>Other</option></select></label>
+        <label>Game<select name="game" required><option value="">Choose a game</option></select></label>
         <label>Category<select name="category"><option>Build</option><option>World / map</option><option>Experience</option><option>Mod</option><option>Secret / tip</option><option>Other</option></select></label>
-        <label class="full">Image URL (optional)<input name="imageUrl" type="url" maxlength="500" placeholder="https://…"></label>
-        <label class="full">World / video / game link (optional)<input name="link" type="url" maxlength="500" placeholder="https://…"></label>
+        <label class="full">Photo or video <span class="muted small">(video: 1 minute max)</span>
+          <input id="world-file" name="media" type="file" accept="image/*,video/*" required>
+        </label>
+        <div class="full world-preview" id="world-preview" hidden></div>
         <label class="full">Description<textarea name="description" maxlength="900" placeholder="What makes this worth exploring?"></textarea></label>
         <button class="btn btn-primary full" type="submit">Publish world</button>
+        <p class="muted small full">Photos and videos only — no links. Every post disappears after 24 hours and also shows in <b>Stories → Nexus Worlds</b>.</p>
       </form>
       <div id="world-list" class="world-grid"></div>
     </div>
