@@ -4,7 +4,7 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1176167350648115"
      crossorigin="anonymous"></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Download Remix Nexus for Android, Windows, or Linux.">
     <meta name="robots" content="index, follow">
     <meta property="og:title" content="Remix Nexus">
@@ -16,274 +16,361 @@
     <meta name="theme-color" content="#000000">
     <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Download</title>
 
-    <link rel="stylesheet" href="./Trending.css">
     <link rel="icon" href="./icon-linux-512.png" type="image/png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-      /* Page-specific: download cards, framed like a console "select your
-         platform" screen — spec-plate details in mono type (cartridge-label
-         feel), HUD corner brackets that draw in on hover. Reuses the same
-         glass-card language as the rest of the site. */
-
-      .download-hero {
-        width: 92%;
-        max-width: 1300px;
-        margin: 60px auto 10px;
-        text-align: center;
-      }
-      .download-hero .eyebrow {
-        font-family: 'Space Mono', monospace;
-        font-size: 12px;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: #7f5bff;
-        margin-bottom: 14px;
-      }
-      .download-hero h1 {
-        font-size: 36px;
-        margin-bottom: 10px;
-        background: linear-gradient(90deg, #b98bff, #6fd6ff);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        display: inline-block;
-      }
-      .download-hero p {
-        color: #9c9c9c;
-        font-size: 15px;
+      :root {
+        --bg0: #000000;
+        --bg1: #05070d;
+        --bg2: #0a0d16;
+        --bg3: #10141f;
+        --bg4: #171c2b;
+        --line: rgba(255, 255, 255, .08);
+        --blue: #0066ff;
+        --blue-soft: #6fa8ff;
+        --cyan: #00e5ff;
+        --text: #e8ecf7;
+        --muted: #8a96b5;
+        --dock-h: 84px;
       }
 
-      .download-grid {
-        width: 92%;
-        max-width: 1100px;
-        margin: 40px auto 80px;
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        font-family: 'Poppins', system-ui, sans-serif;
+        background: var(--bg1);
+        color: var(--text);
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      a { color: inherit; }
+      :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+      /* ---------- Background: glow + a console grid floor ---------- */
+      .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+      .bg::before, .bg::after {
+        content: ""; position: absolute; border-radius: 50%; filter: blur(70px);
+      }
+      .bg::before {
+        width: 560px; height: 560px; left: -160px; top: -120px;
+        background: radial-gradient(circle, rgba(0, 102, 255, .45), transparent 65%);
+      }
+      .bg::after {
+        width: 520px; height: 520px; right: -160px; top: 8vh;
+        background: radial-gradient(circle, rgba(0, 229, 255, .22), transparent 65%);
+      }
+      .floor {
+        position: absolute; left: -50%; right: -50%; bottom: -6vh; height: 62vh;
+        background:
+          repeating-linear-gradient(90deg, rgba(0, 140, 255, .55) 0 1px, transparent 1px 64px),
+          repeating-linear-gradient(0deg, rgba(0, 140, 255, .55) 0 1px, transparent 1px 64px);
+        transform: perspective(520px) rotateX(62deg);
+        transform-origin: center bottom;
+        -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+                mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+        opacity: .5;
+        animation: drift 3.2s linear infinite;
+      }
+      @keyframes drift { to { background-position: 0 64px, 0 64px; } }
+      .scan {
+        position: absolute; inset: 0; opacity: .12; mix-blend-mode: overlay;
+        background: repeating-linear-gradient(to bottom, rgba(255,255,255,.5) 0 1px, transparent 1px 4px);
+      }
+
+      /* ---------- Page ---------- */
+      main {
+        position: relative; z-index: 1;
+        flex: 1;
+        width: calc(100% - 28px);
+        max-width: 940px;
+        margin: 0 auto;
+        padding: 26px 0 calc(var(--dock-h) + 30px);
+        display: flex; flex-direction: column; justify-content: center;
+      }
+
+      .hero { text-align: center; margin-bottom: 26px; }
+      .hero-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 5px 12px; border-radius: 999px;
+        font-family: 'Space Mono', monospace; font-size: 11px; color: var(--blue-soft);
+        background: rgba(0, 102, 255, .12); border: 1px solid rgba(0, 102, 255, .35);
+      }
+      .hero-badge i {
+        width: 7px; height: 7px; border-radius: 50%; background: #23a55a;
+        box-shadow: 0 0 10px #23a55a;
+      }
+      .hero h1 {
+        margin: 14px 0 8px;
+        font-size: clamp(34px, 6.2vw, 58px);
+        line-height: 1.02; font-weight: 900; letter-spacing: -1.5px;
+        background: linear-gradient(100deg, #fff 5%, #7fb2ff 45%, var(--cyan) 95%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        filter: drop-shadow(0 0 28px rgba(0, 120, 255, .45));
+      }
+      .hero p { margin: 0 auto; max-width: 440px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+      /* ---------- Platform cards ---------- */
+      .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 25px;
-      }
-
-      .download-card {
-        position: relative;
-        background: rgba(20, 20, 25, .75);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, .08);
-        border-radius: 22px;
-        padding: 36px 26px 30px;
-        text-align: center;
-        transition: transform .35s, box-shadow .35s, border-color .35s;
-        overflow: hidden;
-      }
-
-      /* HUD corner brackets — hidden until hover, then draw into view.
-         The one signature flourish on this page; everything else stays quiet. */
-      .download-card::before,
-      .download-card::after,
-      .download-card .corner-tl,
-      .download-card .corner-br {
-        content: "";
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        border-color: #6fd6ff;
-        opacity: 0;
-        transition: opacity .35s, transform .35s;
-      }
-      .download-card::before {
-        top: 10px; left: 10px;
-        border-top: 2px solid; border-left: 2px solid;
-        transform: translate(6px, 6px);
-      }
-      .download-card::after {
-        bottom: 10px; right: 10px;
-        border-bottom: 2px solid; border-right: 2px solid;
-        transform: translate(-6px, -6px);
-      }
-      .download-card:hover::before,
-      .download-card:hover::after {
-        opacity: 1;
-        transform: translate(0, 0);
-      }
-
-      .download-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 0 30px rgba(0, 102, 255, .35);
-        border-color: rgba(111, 214, 255, .3);
-      }
-
-      .download-card-icon {
-        width: 72px;
-        height: 72px;
-        margin: 0 auto 18px;
-        border-radius: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 34px;
-        background: linear-gradient(135deg, #7f5bff, #00b7ff);
-      }
-
-      .download-card h3 { font-size: 19px; margin-bottom: 8px; }
-      .download-card p { font-size: 13px; color: #a9a9a9; margin-bottom: 18px; }
-
-      /* Spec plate — a small cartridge-label strip of mono-type metadata.
-         Grounded in the subject: this is what a game cart's label shows. */
-      .spec-plate {
-        display: flex;
-        justify-content: center;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
-        margin-bottom: 22px;
-        padding: 8px 10px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, .04);
-        border: 1px solid rgba(255, 255, 255, .06);
-        font-family: 'Space Mono', monospace;
-        font-size: 11px;
-        color: #8b8b95;
       }
-      .spec-plate span b {
-        display: block;
-        color: #d8d8de;
-        font-size: 12px;
+      .card {
+        position: relative;
+        display: flex; flex-direction: column;
+        padding: 22px 18px 18px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(23, 28, 43, .78), rgba(8, 10, 18, .88));
+        border: 1px solid var(--line);
+        border-top: 3px solid var(--blue);
+        backdrop-filter: blur(16px);
+        transition: transform .3s, box-shadow .3s, border-color .3s;
       }
+      /* HUD corner brackets: draw in on hover, stay on for your device */
+      .card::before, .card::after {
+        content: ""; position: absolute; width: 16px; height: 16px;
+        border: 0 solid var(--cyan); opacity: 0;
+        transition: opacity .3s, transform .3s;
+      }
+      .card::before { top: 9px; left: 9px; border-top-width: 2px; border-left-width: 2px; transform: translate(6px, 6px); }
+      .card::after  { bottom: 9px; right: 9px; border-bottom-width: 2px; border-right-width: 2px; transform: translate(-6px, -6px); }
+      .card:hover, .card.is-you { border-color: rgba(0, 229, 255, .35); }
+      .card:hover { transform: translateY(-6px); box-shadow: 0 0 34px rgba(0, 102, 255, .38); }
+      .card:hover::before, .card:hover::after,
+      .card.is-you::before, .card.is-you::after { opacity: 1; transform: none; }
+      .card.is-you { box-shadow: 0 0 40px rgba(0, 102, 255, .3); }
 
-      .download-card .download-btn-large {
-        width: 100%;
-        justify-content: center;
-        box-sizing: border-box;
+      .you-tag {
+        display: none; position: absolute; top: 12px; right: 12px;
+        padding: 2px 8px; border-radius: 6px;
+        font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700;
+        color: #001018; background: var(--cyan);
       }
+      .card.is-you .you-tag { display: block; }
 
-      .back-home-row {
-        text-align: center;
-        margin: 0 0 60px;
+      .icon {
+        width: 54px; height: 54px; margin-bottom: 14px;
+        border-radius: 15px; display: grid; place-items: center; font-size: 26px;
+        background: linear-gradient(135deg, #0050d6, var(--blue) 50%, #00b7ff);
+        box-shadow: 0 6px 22px rgba(0, 102, 255, .5), inset 0 1px 0 rgba(255,255,255,.3);
       }
+      .card h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+      .card p { margin: 0 0 14px; font-size: 12px; line-height: 1.5; color: var(--muted); }
 
-      .back-home-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 13px 30px;
-        border-radius: 50px;
-        border: 1px solid rgba(255, 255, 255, .15);
-        background: rgba(255, 255, 255, .05);
-        color: white;
-        font-size: 14px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: .3s;
+      .specs {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+        margin: auto 0 14px; padding: 8px;
+        border-radius: 10px; background: rgba(0, 0, 0, .45); border: 1px solid var(--line);
+        font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted);
       }
-      .back-home-btn:hover { background: rgba(255, 255, 255, .1); }
+      .specs span { min-width: 0; }
+      .specs b { display: block; margin-top: 1px; font-size: 11px; color: #dfe6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-      @media (max-width: 600px) {
-        .download-hero h1 { font-size: 26px; }
-        .download-card { padding: 28px 20px 24px; }
+      .get {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        height: 42px; border-radius: 11px;
+        font-size: 13px; font-weight: 700; text-decoration: none; color: #fff;
+        background: linear-gradient(135deg, #0050d6, var(--blue) 55%, #00a6ff);
+        box-shadow: 0 0 0 rgba(0, 150, 255, 0);
+        transition: box-shadow .25s, transform .15s, filter .25s;
       }
+      .get:hover { box-shadow: 0 0 26px rgba(0, 150, 255, .75); filter: brightness(1.12); }
+      .get:active { transform: scale(.97); }
 
+      .note { margin: 18px 0 0; text-align: center; font-size: 11px; color: var(--muted); }
+      .note a { color: var(--blue-soft); text-decoration: none; }
+      .note a:hover { text-decoration: underline; }
+
+      /* ---------- Bottom dock nav ---------- */
+      .dock {
+        position: fixed; z-index: 50;
+        left: 50%; transform: translateX(-50%);
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        display: flex; align-items: center; gap: 6px;
+        padding: 8px;
+        border-radius: 24px;
+        background: rgba(8, 11, 20, .72);
+        backdrop-filter: blur(20px) saturate(1.4);
+        border: 1px solid rgba(255, 255, 255, .1);
+        box-shadow: 0 14px 44px rgba(0, 0, 0, .7), 0 0 44px rgba(0, 102, 255, .22), inset 0 1px 0 rgba(255,255,255,.06);
+        max-width: calc(100vw - 16px);
+      }
+      .dock .brand {
+        width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center;
+        font-size: 22px; text-decoration: none;
+        background: linear-gradient(135deg, #0050d6, var(--blue));
+        box-shadow: 0 4px 16px rgba(0, 102, 255, .5);
+      }
+      .dock .sep { width: 1px; height: 28px; margin: 0 4px; background: var(--line); }
+      .dock a.item {
+        position: relative; width: 46px; height: 46px; border-radius: 15px;
+        display: grid; place-items: center; font-size: 20px; text-decoration: none;
+        background: var(--bg3);
+        transition: transform .2s cubic-bezier(.3, 1.6, .5, 1), background .2s, border-radius .2s;
+      }
+      .dock a.item:hover { background: var(--blue); transform: translateY(-8px) scale(1.14); }
+      .dock a.item[aria-current="page"] { background: var(--blue); box-shadow: 0 0 20px rgba(0, 102, 255, .65); }
+      .dock a.item[aria-current="page"]::before {
+        content: ""; position: absolute; bottom: -6px; left: 50%;
+        width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%;
+        background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+      }
+      .dock a.item::after {
+        content: attr(data-label);
+        position: absolute; bottom: calc(100% + 14px); left: 50%;
+        transform: translate(-50%, 4px); opacity: 0; pointer-events: none;
+        padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+        font-size: 11px; font-weight: 600; color: #fff;
+        background: #000; border: 1px solid var(--line);
+        transition: opacity .15s, transform .15s;
+      }
+      .dock a.item:hover::after, .dock a.item:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+
+      /* ---------- Slim footer ---------- */
+      .foot {
+        position: relative; z-index: 1;
+        margin: -4px auto calc(var(--dock-h) + 24px); padding: 0 14px;
+        text-align: center; font-size: 11px; color: var(--muted);
+      }
+      .foot a { text-decoration: none; margin: 0 7px; color: var(--muted); }
+      .foot a:hover { color: var(--blue-soft); }
+      .foot small { display: block; margin-top: 6px; font-size: 10px; opacity: .7; }
+
+      /* ---------- Responsive ---------- */
+      @media (min-height: 760px) { .foot { margin-top: 0; } }
+
+      @media (max-width: 760px) {
+        main { justify-content: flex-start; padding-top: 20px; }
+        .hero { margin-bottom: 18px; }
+        .grid { grid-template-columns: 1fr; gap: 10px; }
+        .card { padding: 14px; display: grid; grid-template-columns: 54px 1fr; column-gap: 12px; align-items: center; }
+        .card .icon { grid-row: 1 / span 2; margin: 0; }
+        .card h3 { margin: 0; font-size: 15px; align-self: end; }
+        .card p { margin: 0; grid-column: 2; }
+        .card .specs, .card .get { grid-column: 1 / -1; }
+        .card .specs { margin: 12px 0 10px; }
+        .card.is-you { order: -1; }
+      }
+      @media (max-width: 460px) {
+        .dock { gap: 3px; padding: 6px; border-radius: 20px; }
+        .dock .brand, .dock a.item { width: 38px; height: 38px; font-size: 17px; border-radius: 12px; }
+        .dock .sep { display: none; }
+        .dock a.item::after { display: none; }
+      }
       @media (prefers-reduced-motion: reduce) {
-        .download-card, .download-card::before, .download-card::after {
-          transition: none;
-        }
+        .floor { animation: none; }
+        .card, .card::before, .card::after, .get, .dock a.item { transition: none; }
       }
     </style>
 </head>
 
 <body>
 
-<div class="background-glow"></div>
-
-<header class="nav-bar" style="width:92%; max-width:1300px; margin:25px auto;">
-    <div class="logo">
-        <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
-        <span>Gaming Society</span>
-    </div>
-    <div class="buttons1">
-        <a href="./index.html" class="href"><button class="button1" title="Home">🏠</button></a>
-        <a href="./Trending.html" class="href"><button class="button2" title="Live">🔥</button></a>
-        <a href="./Chat.html" class="href"><button class="button3" title="Chat">💬</button></a>
-        <a href="./Contacts.html" class="href"><button class="button3" title="Contacts">👥</button></a>
-        <a href="./Stories.html" class="href"><button class="button3" title="Stories">📸</button></a>
-        <a href="./Search.html" class="href"><button class="button3" title="Search">🔎</button></a>
-        <a href="./Profile.html" class="href"><button class="button4" title="Profile">👤</button></a>
-    </div>
-</header>
-
-<div class="download-hero">
-    <div class="eyebrow">Select platform</div>
-    <h1>Get Remix Nexus</h1>
-    <p>Pick your platform. Same chat, same squads, same community — everywhere.</p>
+<div class="bg" aria-hidden="true">
+    <div class="floor"></div>
+    <div class="scan"></div>
 </div>
 
-<div class="download-grid">
+<main>
+    <section class="hero">
+        <span class="hero-badge"><i></i>Version 1.0.0 is live</span>
+        <h1>Get Remix Nexus</h1>
+        <p>Pick your platform. Same chat, same squads, same community — everywhere.</p>
+    </section>
 
-    <!-- Android -->
-    <div class="download-card">
-        <div class="download-card-icon">🤖</div>
-        <h3>Android App</h3>
-        <p>Install the native app for the smoothest mobile experience.</p>
-        <div class="spec-plate">
-            <span>Format<b>.APK</b></span>
-            <span>Version<b>1.0.0</b></span>
-            <span>Min OS<b>Android 8+</b></span>
-        </div>
-        <a href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/RemixNexus.apk" download title="Download the Remix Nexus Android app" class="download-btn-large">⬇️ Download APK</a>
-    </div>
+    <section class="grid" aria-label="Choose your platform">
 
-    <!-- Windows -->
-    <div class="download-card">
-        <div class="download-card-icon">🪟</div>
-        <h3>Windows App</h3>
-        <p>Desktop app for Windows 10 and 11.</p>
-        <div class="spec-plate">
-            <span>Format<b>.EXE</b></span>
-            <span>Version<b>1.0.0</b></span>
-            <span>Min OS<b>Win 10+</b></span>
-        </div>
-        <a href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus.Setup.1.0.0.exe" download target="_blank" title="Download the Remix Nexus Windows app" class="download-btn-large">⬇️ Download for Windows</a>
-    </div>
+        <!-- Android -->
+        <article class="card" data-platform="android">
+            <span class="you-tag">Your device</span>
+            <div class="icon">🤖</div>
+            <h3>Android App</h3>
+            <p>Install the native app for the smoothest mobile experience.</p>
+            <div class="specs">
+                <span>Format<b>.APK</b></span>
+                <span>Version<b>1.0.0</b></span>
+                <span>Min OS<b>Android 8+</b></span>
+            </div>
+            <a class="get" href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/RemixNexus.apk" download title="Download the Remix Nexus Android app">⬇️ Download APK</a>
+        </article>
 
-    <!-- Linux -->
-    <div class="download-card">
-        <div class="download-card-icon">🐧</div>
-        <h3>Linux App</h3>
-        <p>Portable AppImage — works on most major distros.</p>
-        <div class="spec-plate">
-            <span>Format<b>.AppImage</b></span>
-            <span>Version<b>1.0.0</b></span>
-            <span>Min OS<b>—</b></span>
-        </div>
-        <!-- Served by /download/linux once you drop a .AppImage into
-             /downloads or /dist on the server — no code change needed. -->
-        <a href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus-1.0.0.AppImage" download title="Download the Remix Nexus Linux app" class="download-btn-large">⬇️ Download for Linux</a>
-    </div>  
+        <!-- Windows -->
+        <article class="card" data-platform="windows">
+            <span class="you-tag">Your device</span>
+            <div class="icon">🪟</div>
+            <h3>Windows App</h3>
+            <p>Desktop app for Windows 10 and 11.</p>
+            <div class="specs">
+                <span>Format<b>.EXE</b></span>
+                <span>Version<b>1.0.0</b></span>
+                <span>Min OS<b>Win 10+</b></span>
+            </div>
+            <a class="get" href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus.Setup.1.0.0.exe" download target="_blank" rel="noopener" title="Download the Remix Nexus Windows app">⬇️ Download for Windows</a>
+        </article>
 
-</div>
-    
-<div class="back-home-row">
-    <a href="./index.html" class="back-home-btn">← Back to Home</a>
-</div>
+        <!-- Linux -->
+        <article class="card" data-platform="linux">
+            <span class="you-tag">Your device</span>
+            <div class="icon">🐧</div>
+            <h3>Linux App</h3>
+            <p>Portable AppImage — works on most major distros.</p>
+            <div class="specs">
+                <span>Format<b>.AppImage</b></span>
+                <span>Version<b>1.0.0</b></span>
+                <span>Min OS<b>Any distro</b></span>
+            </div>
+            <a class="get" href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus-1.0.0.AppImage" download title="Download the Remix Nexus Linux app">⬇️ Download for Linux</a>
+        </article>
 
-<footer class="footer">
-    <h2>🎮 ♨𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h2>
-    <p>Play &bull; Chat &bull; Watch</p>
-    <div class="footer-links">
-        <a href="./index.html">Home</a>
-        <a href="./Trending.html">Live</a>
-        <a href="./Chat.html">Chat</a>
-         <a href="./Contacts.html">Contacts</a>
-        <a href="./Search.html">Search</a>
-        <a href="./Profile.html">Profile</a>
-        <a href="./About.html">About</a>
-        <a href="./Contact.html">Contact</a>
-        <a href="./Terms.html">Terms of Service</a>
-        <a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener">▶ YouTube</a>
-        <a href="./Privacy.html">🔒 Privacy Policy</a>
-    </div>
+    </section>
+
+    <p class="note">All builds are hosted on <a href="https://github.com/RemixMc647/Remix-Nexus/releases" target="_blank" rel="noopener">GitHub Releases</a>.</p>
+</main>
+
+<footer class="foot">
+    <a href="./About.html">About</a>
+    <a href="./Contact.html">Contact</a>
+    <a href="./Terms.html">Terms of Service</a>
+    <a href="./Privacy.html">🔒 Privacy Policy</a>
+    <a href="https://www.youtube.com/@remixmc-d6v" target="_blank" rel="noopener">▶ YouTube</a>
     <small>&copy; 2026 𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 Gaming Society. All Rights Reserved.</small>
 </footer>
+
+<!-- Bottom dock navigation -->
+<nav class="dock nav-bar" aria-label="Main navigation">
+    <a class="brand" href="./index.html" title="Remix Nexus" aria-label="Remix Nexus home">🎮</a>
+    <span class="sep"></span>
+    <a class="item" href="./index.html" data-label="Home" aria-label="Home">🏠</a>
+    <a class="item" href="./Trending.html" data-label="Live" aria-label="Live">🔥</a>
+    <a class="item" href="./Chat.html" data-label="Chat" aria-label="Chat">💬</a>
+    <a class="item" href="./Contacts.html" data-label="Contacts" aria-label="Contacts">👥</a>
+    <a class="item" href="./Stories.html" data-label="Stories" aria-label="Stories">📸</a>
+    <a class="item" href="./Search.html" data-label="Search" aria-label="Search">🔎</a>
+    <a class="item" href="./Profile.html" data-label="Profile" aria-label="Profile">👤</a>
+    <a class="item" href="./Download.html" data-label="Download" aria-label="Download" aria-current="page">⬇️</a>
+</nav>
+
+<script>
+  // Highlight the card that matches the visitor's device
+  (function () {
+    var ua = navigator.userAgent || '';
+    var p = /android/i.test(ua) ? 'android'
+          : /windows/i.test(ua) ? 'windows'
+          : /linux|x11/i.test(ua) ? 'linux' : '';
+    if (!p) return;
+    var el = document.querySelector('.card[data-platform="' + p + '"]');
+    if (el) el.classList.add('is-you');
+  })();
+</script>
 <script src="./config.js"></script>
 <script src="/js/pwa-register.js"></script>
 </body>
-</html>   
+</html>
