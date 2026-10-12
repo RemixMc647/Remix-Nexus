@@ -1,0 +1,105 @@
+/* =====================================================================
+   STORIES PAGE — "Nexus Worlds" Discover section (side section, like
+   Snapchat Discover). Black + blue Discord theme, compact.
+   ===================================================================== */
+.nxd{
+  margin:0 0 14px;
+  padding:12px;
+  border-radius:14px;
+  background:var(--nx-bg-3,#10141f);
+  border:1px solid var(--nx-line,rgba(255,255,255,.07));
+}
+.nxd-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+.nxd-title{ display:flex; align-items:center; gap:10px; min-width:0; }
+.nxd-ico{
+  width:34px; height:34px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:17px;
+  background:linear-gradient(135deg,rgba(0,102,255,.35),rgba(0,183,255,.25));
+}
+.nxd-title h3{ margin:0; font-size:14px; font-weight:700; color:var(--nx-text,#e8ecf7); }
+.nxd-title p{ margin:1px 0 0; font-size:11px; color:var(--nx-muted,#8a96b5); }
+.nxd-actions{ display:flex; gap:6px; }
+
+.nxd-pill{
+  display:inline-block; padding:6px 12px; border-radius:999px;
+  font-size:11.5px; font-weight:600; text-decoration:none; cursor:pointer;
+  color:var(--nx-text,#e8ecf7); background:var(--nx-bg-4,#171c2b);
+  border:1px solid var(--nx-line,rgba(255,255,255,.07)); transition:.15s;
+}
+.nxd-pill:hover{ background:rgba(0,102,255,.25); }
+.nxd-pill.primary{ background:var(--nx-blue,#0066ff); border-color:transparent; color:#fff; }
+.nxd-pill.primary:hover{ background:#1a75ff; }
+
+/* horizontal rail of tall cards */
+.nxd-rail{
+  display:flex; gap:10px; overflow-x:auto; padding-bottom:6px;
+  scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+}
+.nxd-rail::-webkit-scrollbar{ height:6px; }
+.nxd-rail::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.12); border-radius:6px; }
+
+.nxd-card{
+  position:relative; flex:0 0 118px; height:196px; padding:0;
+  border:1px solid var(--nx-line,rgba(255,255,255,.07)); border-radius:14px;
+  overflow:hidden; cursor:pointer; background:#05070d; color:#fff;
+  scroll-snap-align:start; transition:transform .15s, border-color .15s;
+  font-family:inherit; text-align:left;
+}
+.nxd-card:hover{ transform:translateY(-2px); border-color:var(--nx-blue,#0066ff); }
+.nxd-thumb{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.nxd-nothumb{ display:flex; align-items:center; justify-content:center; font-size:34px; background:linear-gradient(135deg,#0a1a40,#0d2a66); }
+.nxd-nothumb.big{ width:100%; height:240px; font-size:60px; }
+.nxd-card::after{ content:""; position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,0) 55%); pointer-events:none; }
+
+.nxd-game, .nxd-left, .nxd-play{
+  position:absolute; z-index:2; font-size:10px; font-weight:600; line-height:1;
+  padding:4px 7px; border-radius:999px; background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
+  max-width:calc(100% - 12px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.nxd-game{ top:6px; left:6px; }
+.nxd-left{ top:30px; left:6px; color:#ffd36b; }
+.nxd-play{ top:6px; right:6px; }
+.nxd-info{ position:absolute; z-index:2; left:8px; right:8px; bottom:8px; display:flex; flex-direction:column; gap:2px; }
+.nxd-info strong{ font-size:12px; font-weight:700; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.nxd-info em{ font-size:10.5px; font-style:normal; opacity:.75; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.nxd-empty{
+  width:100%; padding:14px; border-radius:12px; font-size:12.5px; line-height:1.5;
+  color:var(--nx-muted,#8a96b5); background:var(--nx-bg-1,#05070d);
+  border:1px dashed var(--nx-line,rgba(255,255,255,.12));
+}
+.nxd-empty a{ color:var(--nx-blue-soft,#6fa8ff); }
+
+/* viewer */
+.nxd-lightbox{
+  position:fixed; inset:0; z-index:12000; display:flex; align-items:center; justify-content:center;
+  padding:16px; background:rgba(0,0,0,.78); backdrop-filter:blur(6px);
+}
+.nxd-lightbox[hidden]{ display:none; }
+.nxd-lb-card{
+  position:relative; width:100%; max-width:420px; max-height:92vh; overflow:auto;
+  border-radius:16px; background:var(--nx-bg-3,#10141f); border:1px solid var(--nx-line,rgba(255,255,255,.1));
+}
+.nxd-lb-close{
+  position:absolute; top:8px; right:8px; z-index:3; width:32px; height:32px; border-radius:50%;
+  border:none; background:rgba(0,0,0,.6); color:#fff; font-size:14px; cursor:pointer;
+}
+.nxd-lb-media{ background:#000; }
+.nxd-lb-media img, .nxd-lb-media video{ display:block; width:100%; max-height:62vh; object-fit:contain; background:#000; }
+.nxd-lb-body{ padding:14px; display:flex; flex-direction:column; gap:8px; }
+.nxd-lb-tags{ display:flex; gap:6px; flex-wrap:wrap; }
+.nxd-lb-tags span{
+  font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:999px;
+  background:rgba(0,102,255,.18); border:1px solid rgba(0,102,255,.35); color:var(--nx-blue-soft,#6fa8ff);
+}
+.nxd-lb-tags span.warm{ background:rgba(255,184,0,.14); border-color:rgba(255,184,0,.35); color:#ffd36b; }
+.nxd-lb-body h3{ margin:0; font-size:16px; color:var(--nx-text,#e8ecf7); }
+.nxd-lb-desc{ margin:0; font-size:12.5px; line-height:1.5; color:#c3cbe0; white-space:pre-wrap; }
+.nxd-lb-meta{ margin:0; font-size:11.5px; color:var(--nx-muted,#8a96b5); }
+.nxd-lb-body .nxd-pill{ align-self:flex-start; margin-top:4px; }
+body.nxd-lock{ overflow:hidden; }
+
+@media (max-width:480px){
+  .nxd{ margin:0 0 10px; padding:10px; }
+  .nxd-card{ flex-basis:104px; height:176px; }
+}
