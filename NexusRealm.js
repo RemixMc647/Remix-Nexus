@@ -374,6 +374,27 @@ $('#challenge-form').addEventListener('submit', e => {
 });
 
 /* ------------------------------------------------------------ WORLDS */
+/* ------------------------------------------------------------ WORLD MEDIA helpers */
+function worldSrc(w) {
+  const s = String((w && w.mediaSrc) || '');
+  return s.startsWith('/') ? API + s : s;   // photos are served by the backend; videos are full Cloudinary URLs
+}
+function worldMediaHtml(w) {
+  const src = worldSrc(w);
+  if (!src) return '';
+  if (w.mediaType === 'video') {
+    return `<div class="cover-wrap"><video class="world-cover world-video" controls playsinline preload="metadata" src="${esc(src)}"></video></div>`;
+  }
+  return `<div class="cover-wrap"><img class="world-cover" loading="lazy" src="${esc(src)}" alt=""></div>`;
+}
+function timeLeft(expiresAt) {
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (!isFinite(ms)) return '';
+  if (ms <= 0) return 'expiring';
+  const mins = Math.ceil(ms / 60000), h = Math.floor(mins / 60), m = mins % 60;
+  return h > 0 ? `${h}h left` : `${Math.max(1, m)}m left`;
+}
+
 function renderWorlds() {
   const box = $('#world-list');
   if (!loaded.worlds) { box.innerHTML = skeleton(2); return; }
@@ -381,8 +402,8 @@ function renderWorlds() {
   box.innerHTML = a.length ? a.map((w, i) => {
     const canRemove = !!me && (String(w.creatorId) === myId() || me.isOwner);
     return `<article class="item-card" data-id="${esc(w._id)}" style="--i:${Math.min(i, 8)}">
-      ${w.imageUrl ? `<div class="cover-wrap"><img class="world-cover" loading="lazy" src="${esc(w.imageUrl)}" alt=""></div>` : ''}
-      <span class="tag">${esc(w.game)} · ${esc(w.category)}</span>
+      ${worldMediaHtml(w)}
+      <span class="tag">${esc(w.game)} · ${esc(w.category)}</span> <span class="tag world-left">⏳ ${esc(timeLeft(w.expiresAt))}</span>
       <h4 style="margin-top:10px">${esc(w.title)}</h4>
       <p>${esc(w.description || 'No description provided.')}</p>
       <p>Shared by <b style="color:#d8dcf5">${esc(w.creatorName || 'Nexus player')}</b> · ${esc(when(w.createdAt))}</p>
@@ -409,12 +430,115 @@ $('#world-list').addEventListener('click', e => {
     guarded(null, async () => { await api(`/api/realm/worlds/${encodeURIComponent(id)}`, { method: 'DELETE' }); toast('World removed.'); await loadWorlds(true); });
   });
 });
+/* --- publish a world: PHOTO (shrunk first) or VIDEO (max 1 minute, uploaded straight to cloud storage) --- */
+const WORLD_MAX_VIDEO_SECONDS = 60;
+const WORLD_MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+let worldPreviewUrl = null;
+
+function getVideoDuration(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    const done = (val) => { URL.revokeObjectURL(url); resolve(val); };
+    v.onloadedmetadata = () => {
+      if (!isFinite(v.duration)) {          // some phone videos report Infinity until they seek to the end
+        v.ontimeupdate = () => { v.ontimeupdate = null; done(v.duration); };
+        try { v.currentTime = 1e101; } catch (_) { done(v.duration); }
+        setTimeout(() => done(v.duration), 3000);
+      } else done(v.duration);
+    };
+    v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('unreadable')); };
+    v.src = url;
+  });
+}
+function shrinkPhoto(file, maxSide = 1280, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * scale));
+      c.height = Math.max(1, Math.round(img.height * scale));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that photo.')); };
+    img.src = url;
+  });
+}
+async function uploadWorldVideo(file, onProgress) {
+  const sig = await api('/api/stories/upload-signature', { method: 'POST', body: '{}' });
+  const form = new FormData();
+  form.append('file', file);
+  form.append('api_key', sig.apiKey);
+  form.append('timestamp', sig.timestamp);
+  form.append('tags', sig.tags);
+  form.append('signature', sig.signature);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + sig.cloudName + '/video/upload');
+    xhr.upload.onprogress = ev => { if (ev.lengthComputable && onProgress) onProgress(Math.round(ev.loaded / ev.total * 100)); };
+    xhr.onload = () => {
+      let json = {}; try { json = JSON.parse(xhr.responseText); } catch (_) {}
+      if (xhr.status >= 200 && xhr.status < 300 && json.public_id) resolve({ publicId: json.public_id, duration: Number(json.duration) || 0 });
+      else reject(new Error((json.error && json.error.message) || 'Video upload failed. Please try again.'));
+    };
+    xhr.onerror = () => reject(new Error('Network error while uploading the video.'));
+    xhr.send(form);
+  });
+}
+
+$('#world-file').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0];
+  const box = $('#world-preview');
+  if (worldPreviewUrl) { URL.revokeObjectURL(worldPreviewUrl); worldPreviewUrl = null; }
+  box.innerHTML = ''; box.hidden = true;
+  if (!file) return;
+  const isVideo = file.type.startsWith('video/'), isImage = file.type.startsWith('image/');
+  if (!isVideo && !isImage) { toast('Please choose a photo or a video.', 'err'); e.target.value = ''; return; }
+  if (isVideo) {
+    try {
+      const d = await getVideoDuration(file);
+      if (isFinite(d) && d > WORLD_MAX_VIDEO_SECONDS + 0.5) { toast('Videos can be at most 1 minute long. Please trim it first.', 'err'); e.target.value = ''; return; }
+    } catch (_) { toast('Could not read that video. Try a different file.', 'err'); e.target.value = ''; return; }
+    if (file.size > WORLD_MAX_VIDEO_BYTES) { toast('That video is too large (100MB max).', 'err'); e.target.value = ''; return; }
+  }
+  worldPreviewUrl = URL.createObjectURL(file);
+  box.innerHTML = isVideo
+    ? `<video controls playsinline preload="metadata" src="${worldPreviewUrl}"></video>`
+    : `<img alt="" src="${worldPreviewUrl}">`;
+  box.hidden = false;
+});
+
 $('#world-form').addEventListener('submit', e => {
   e.preventDefault();
   if (!needLogin()) return;
   const form = e.currentTarget, btn = $('[type=submit]', form);
-  const payload = Object.fromEntries(new FormData(form).entries());
-  guarded(btn, async () => { await api('/api/realm/worlds', { method: 'POST', body: JSON.stringify(payload) }); form.reset(); toast('🌌 Discovery published!'); confettiAt(btn); await loadWorlds(true); });
+  const file = $('#world-file').files && $('#world-file').files[0];
+  if (!file) { toast('Add a photo or a video first.', 'err'); return; }
+  const idle = btn.textContent;
+  guarded(btn, async () => {
+    try {
+      const fd = new FormData(form);
+      const payload = { title: fd.get('title'), game: fd.get('game'), category: fd.get('category'), description: fd.get('description') };
+      if (file.type.startsWith('video/')) {
+        const up = await uploadWorldVideo(file, pct => { btn.textContent = 'Uploading ' + pct + '%'; });
+        payload.mediaPublicId = up.publicId; payload.mediaDuration = up.duration || 0;
+      } else {
+        btn.textContent = 'Preparing photo…';
+        payload.mediaData = await shrinkPhoto(file);
+      }
+      btn.textContent = 'Publishing…';
+      await api('/api/realm/worlds', { method: 'POST', body: JSON.stringify(payload) });
+      form.reset();
+      const box = $('#world-preview'); box.innerHTML = ''; box.hidden = true;
+      if (worldPreviewUrl) { URL.revokeObjectURL(worldPreviewUrl); worldPreviewUrl = null; }
+      toast('🌌 Published! It will also show in Stories and disappears in 24 hours.'); confettiAt(btn); await loadWorlds(true);
+    } finally { btn.textContent = idle; }
+  });
 });
 
 /* ------------------------------------------------------------ SQUADS */
@@ -580,7 +704,23 @@ gform.addEventListener('submit', e => {
 });
 
 /* ------------------------------------------------------------ boot */
+/* ------------------------------------------------------------ GAME LISTS — every chat room */
+// Match Arena + Nexus Worlds use the SAME list as the chat rooms (rooms.js), so every game
+// that has a room can be picked — not just a few.
+function fillGameSelects() {
+  const rooms = (typeof DEFAULT_ROOMS !== 'undefined' && Array.isArray(DEFAULT_ROOMS)) ? DEFAULT_ROOMS : [];
+  if (!rooms.length) return; // rooms.js missing — keep whatever the page already has
+  $$('#challenge-form select[name="game"], #world-form select[name="game"]').forEach(sel => {
+    const keep = sel.querySelector('option[value=""]');
+    sel.innerHTML = '';
+    sel.appendChild(keep || new Option('Choose a game', ''));
+    rooms.forEach(r => sel.appendChild(new Option(String(r.name).slice(0, 40), String(r.name).slice(0, 40))));
+    sel.appendChild(new Option('🎮 Other', 'Other'));
+  });
+}
+
 async function boot() {
+  fillGameSelects();
   sizeFx();
   $('#match-list').innerHTML = skeleton(3);
   $('#world-list').innerHTML = skeleton(2);
