@@ -1,15 +1,218 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090b16"><title>Nexus Realm | Remix Nexus</title><link rel="stylesheet" href="./NexusRealm.css"></head>
-<body><header class="realm-header"><a class="realm-brand" href="./index.html">◈ REMIX NEXUS</a><div class="realm-head-actions"><span class="live-dot"></span><span>REALM ONLINE</span><a href="./index.html" class="exit-link">Exit Realm ↗</a></div></header>
-<main class="realm-shell"><section class="realm-hero"><div class="eyebrow">THE GAMING UNIVERSE</div><h1>ENTER THE <span>REALM</span></h1><p>Challenge rivals. Discover worlds. Find your squad. Make your next match legendary.</p><div class="hero-actions"><button class="btn btn-primary" data-scroll="challenges">⚔ Create a match</button><button class="btn btn-ghost" data-scroll="worlds">⌁ Explore worlds</button></div></section>
-<div id="realm-notice" class="notice" role="status" aria-live="polite"></div>
-<nav class="realm-tabs"><button class="tab active" data-tab="challenges">⚔ Match Arena</button><button class="tab" data-tab="worlds">🌌 Nexus Worlds</button><button class="tab" data-tab="squads">👥 Squads</button><button class="tab" data-tab="gifts">🎁 Digital Gifts</button></nav>
-<section id="panel-challenges" class="realm-panel"><div class="section-title"><div><div class="eyebrow">CHALLENGE ACCEPTED?</div><h2>Match Arena</h2><p>Create a match, invite a rival, and let spectators follow the result.</p></div></div>
-<div class="two-col"><form id="challenge-form" class="glass-card form-grid"><h3>＋ Create a challenge</h3><label>Game<select name="game" required><option value="">Choose a game</option><option>Minecraft</option><option>PUBG</option><option>Roblox</option><option>Fortnite</option><option>Free Fire</option><option>Call of Duty</option><option>GTA</option><option>Among Us</option><option>Other</option></select></label><label>Opponent username<input name="opponent" maxlength="32" placeholder="Username (optional for open match)"></label><label>Match type<select name="matchType"><option>Skill challenge</option><option>Build battle</option><option>Survival</option><option>Race / speedrun</option><option>Friendly duel</option><option>Other</option></select></label><label>Duration<select name="duration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option><option value="120">2 hours</option></select></label><label>Map / biome / location<input name="location" maxlength="80" placeholder="e.g. Cherry Grove, Erangel, any map"></label><label>Rules and win condition<textarea name="rules" maxlength="800" required placeholder="Describe the objective and how the winner is decided…"></textarea></label><label>Deadline (optional)<input name="deadline" type="datetime-local"></label><button class="btn btn-primary full" type="submit">Create match</button><p class="muted small full">Matches are player-organised. Nexus Realm does not connect directly to game servers.</p></form>
-<div class="glass-card"><div class="card-head"><div><div class="eyebrow">LIVE BOARD</div><h3>Public matches</h3></div><button id="refresh-matches" class="btn btn-small btn-ghost" type="button">↻ Refresh</button></div><div id="match-list" class="stack-list"><p class="muted">Loading matches…</p></div></div></div>
-<div class="glass-card spectator-note"><div class="note-icon">◉</div><div><h3>Spectator view</h3><p>Public match pages show players, rules, status, updates and submitted evidence. This free version does not stream live screens. Players can share screenshots or external video links after playing.</p></div></div></section>
-<section id="panel-worlds" class="realm-panel hidden"><div class="section-title"><div><div class="eyebrow">FIND YOUR NEXT ADVENTURE</div><h2>Nexus Worlds</h2><p>Discover builds, maps, experiences, mods and gaming secrets.</p></div></div><div class="two-col"><form id="world-form" class="glass-card form-grid"><h3>＋ Publish a discovery</h3><label>Title<input name="title" maxlength="90" required placeholder="My floating island base"></label><label>Game<select name="game" required><option>Minecraft</option><option>Roblox</option><option>PUBG</option><option>Fortnite</option><option>Other</option></select></label><label>Category<select name="category"><option>Build</option><option>World / map</option><option>Experience</option><option>Mod</option><option>Secret / tip</option><option>Other</option></select></label><label>Image URL (optional)<input name="imageUrl" type="url" maxlength="500" placeholder="https://…"></label><label>World / video / game link (optional)<input name="link" type="url" maxlength="500" placeholder="https://…"></label><label>Description<textarea name="description" maxlength="900" placeholder="What makes this worth exploring?"></textarea></label><button class="btn btn-primary full" type="submit">Publish world</button></form><div id="world-list" class="world-grid"><p class="muted">Loading discoveries…</p></div></div></section>
-<section id="panel-squads" class="realm-panel hidden"><div class="section-title"><div><div class="eyebrow">FIND YOUR PEOPLE</div><h2>Nexus Squads</h2><p>Find teammates for your next session. Squad listings are public.</p></div></div><div class="two-col"><form id="squad-form" class="glass-card form-grid"><h3>＋ Create a squad listing</h3><label>Squad name<input name="name" maxlength="60" required placeholder="Nether Explorers"></label><label>Game<select name="game" required><option>Minecraft</option><option>Roblox</option><option>PUBG</option><option>Fortnite</option><option>Free Fire</option><option>Call of Duty</option><option>Other</option></select></label><label>Players needed<select name="playersNeeded"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option></select></label><label>How to play<input name="activity" maxlength="80" placeholder="Casual, ranked, building…"></label><label>Details<textarea name="description" maxlength="500" placeholder="Region, platform, mic preference…"></textarea></label><button class="btn btn-primary full" type="submit">Publish squad</button></form><div id="squad-list" class="stack-list"><p class="muted">Loading squads…</p></div></div></section>
-<section id="panel-gifts" class="realm-panel hidden"><div class="section-title"><div><div class="eyebrow">SEND GOOD VIBES</div><h2>Digital Gifts</h2><p>Send free digital tokens to another player. These gifts have no cash value.</p></div></div><div class="two-col"><form id="gift-form" class="glass-card form-grid"><h3>🎁 Send a gift</h3><label>Recipient username<input name="recipient" maxlength="32" required placeholder="Friend's username"></label><label>Gift<select name="gift"><option value="trophy">🏆 Champion Trophy</option><option value="crystal">💎 Nexus Crystal</option><option value="gg">🎮 GG Token</option><option value="heart">💜 Respect</option><option value="star">⭐ Star Player</option></select></label><label>Message (optional)<textarea name="message" maxlength="180" placeholder="GG! That was a great match."></textarea></label><button class="btn btn-primary full" type="submit">Send free gift</button><p class="muted small full">No real gift cards, payments, cash value or redeemable codes in this version.</p></form><div class="glass-card"><h3>Gift activity</h3><div id="gift-list" class="stack-list"><p class="muted">Loading gifts…</p></div></div></div></section>
-<footer class="realm-footer">REMIX NEXUS · REALM MODE <span>Play fair. Respect other players.</span></footer></main>
-<script src="./config.js"></script><script src="./auth.js"></script><script src="./NexusRealm.js" defer></script></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070912">
+<meta name="description" content="Nexus Realm — challenge rivals, discover worlds, find your squad and collect digital gifts on Remix Nexus.">
+<title>Nexus Realm | Remix Nexus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./NexusRealm.css">
+</head>
+<body>
+
+<!-- animated backdrop -->
+<div class="bg" aria-hidden="true">
+  <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+  <span class="grid"></span>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<header class="realm-header">
+  <a class="realm-brand" href="./index.html"><span class="brand-mark">◈</span> REMIX NEXUS</a>
+  <div class="realm-head-actions">
+    <span class="live-pill"><span class="live-dot"></span>REALM ONLINE</span>
+    <a id="user-chip" class="user-chip" href="./Login.html" hidden></a>
+    <a href="./index.html" class="exit-link">Exit Realm ↗</a>
+  </div>
+</header>
+
+<main class="realm-shell">
+
+  <section class="realm-hero">
+    <div class="eyebrow">THE GAMING UNIVERSE</div>
+    <h1>ENTER THE <span class="grad">REALM</span></h1>
+    <p>Challenge rivals. Discover worlds. Find your squad. Make your next match legendary.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" type="button" data-go="challenges">⚔ Create a match</button>
+      <button class="btn btn-ghost" type="button" data-go="worlds">🌌 Explore worlds</button>
+    </div>
+    <div class="hero-stats" id="hero-stats">
+      <div class="stat"><b data-stat="matches">–</b><span>Matches</span></div>
+      <div class="stat"><b data-stat="worlds">–</b><span>Worlds</span></div>
+      <div class="stat"><b data-stat="squads">–</b><span>Squads</span></div>
+    </div>
+  </section>
+
+  <div id="auth-banner" class="auth-banner" hidden>
+    <span>🔒 Sign in to challenge rivals, publish worlds and join squads.</span>
+    <span class="auth-links"><a class="btn btn-small btn-primary" href="./Login.html">Log in</a><a class="btn btn-small btn-ghost" href="./Signup.html">Sign up</a></span>
+  </div>
+
+  <nav class="realm-tabs" id="tabs" role="tablist">
+    <span class="tab-glider" id="glider"></span>
+    <button class="tab active" role="tab" data-tab="challenges"><i>⚔</i> Match Arena</button>
+    <button class="tab" role="tab" data-tab="worlds"><i>🌌</i> Nexus Worlds</button>
+    <button class="tab" role="tab" data-tab="squads"><i>👥</i> Squads</button>
+    <button class="tab" role="tab" data-tab="gifts"><i>🎁</i> Digital Gifts<em id="gift-badge" class="tab-badge" hidden>0</em></button>
+  </nav>
+
+  <!-- ============ MATCH ARENA ============ -->
+  <section id="panel-challenges" class="realm-panel">
+    <div class="section-title"><div><div class="eyebrow">CHALLENGE ACCEPTED?</div><h2>Match Arena</h2><p>Create a match, invite a rival, and let spectators follow the result.</p></div></div>
+    <div class="two-col">
+      <form id="challenge-form" class="glass-card form-grid">
+        <h3>＋ Create a challenge</h3>
+        <label>Game
+          <select name="game" required><option value="">Choose a game</option><option>Minecraft</option><option>PUBG</option><option>Roblox</option><option>Fortnite</option><option>Free Fire</option><option>Call of Duty</option><option>GTA</option><option>Among Us</option><option>Other</option></select>
+        </label>
+        <label>Opponent username
+          <input name="opponent" maxlength="32" placeholder="Optional — leave empty for an open match" autocomplete="off">
+        </label>
+        <label>Match type
+          <select name="matchType"><option>Skill challenge</option><option>Build battle</option><option>Survival</option><option>Race / speedrun</option><option>Friendly duel</option><option>Other</option></select>
+        </label>
+        <label>Duration
+          <select name="duration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option><option value="120">2 hours</option></select>
+        </label>
+        <label class="full">Map / biome / location
+          <input name="location" maxlength="80" placeholder="e.g. Cherry Grove, Erangel, any map">
+        </label>
+        <label class="full">Rules and win condition
+          <textarea name="rules" maxlength="800" required placeholder="Describe the objective and how the winner is decided…"></textarea>
+        </label>
+        <label class="full">Deadline (optional)
+          <input name="deadline" type="datetime-local">
+        </label>
+        <button class="btn btn-primary full" type="submit">Create match</button>
+        <p class="muted small full">Matches are player-organised. Nexus Realm does not connect directly to game servers.</p>
+      </form>
+
+      <div class="glass-card">
+        <div class="card-head">
+          <div><div class="eyebrow">LIVE BOARD</div><h3>Public matches</h3></div>
+          <div class="chip-row" id="match-filters">
+            <button class="chip active" type="button" data-filter="all">All</button>
+            <button class="chip" type="button" data-filter="open">Open</button>
+            <button class="chip" type="button" data-filter="accepted">Live</button>
+            <button class="chip" type="button" data-filter="completed">Done</button>
+            <button id="refresh-matches" class="btn btn-small btn-ghost" type="button" title="Refresh">↻</button>
+          </div>
+        </div>
+        <div id="match-list" class="stack-list"></div>
+      </div>
+    </div>
+    <div class="glass-card spectator-note">
+      <div class="note-icon">◉</div>
+      <div><h3>Spectator view</h3><p>Public match pages show players, rules, status, updates and submitted evidence. This free version does not stream live screens. Players can share screenshots or external video links after playing.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ WORLDS ============ -->
+  <section id="panel-worlds" class="realm-panel hidden">
+    <div class="section-title"><div><div class="eyebrow">FIND YOUR NEXT ADVENTURE</div><h2>Nexus Worlds</h2><p>Discover builds, maps, experiences, mods and gaming secrets.</p></div></div>
+    <div class="two-col">
+      <form id="world-form" class="glass-card form-grid">
+        <h3>＋ Publish a discovery</h3>
+        <label class="full">Title<input name="title" maxlength="90" required placeholder="My floating island base"></label>
+        <label>Game<select name="game" required><option>Minecraft</option><option>Roblox</option><option>PUBG</option><option>Fortnite</option><option>Other</option></select></label>
+        <label>Category<select name="category"><option>Build</option><option>World / map</option><option>Experience</option><option>Mod</option><option>Secret / tip</option><option>Other</option></select></label>
+        <label class="full">Image URL (optional)<input name="imageUrl" type="url" maxlength="500" placeholder="https://…"></label>
+        <label class="full">World / video / game link (optional)<input name="link" type="url" maxlength="500" placeholder="https://…"></label>
+        <label class="full">Description<textarea name="description" maxlength="900" placeholder="What makes this worth exploring?"></textarea></label>
+        <button class="btn btn-primary full" type="submit">Publish world</button>
+      </form>
+      <div id="world-list" class="world-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ SQUADS ============ -->
+  <section id="panel-squads" class="realm-panel hidden">
+    <div class="section-title"><div><div class="eyebrow">FIND YOUR PEOPLE</div><h2>Nexus Squads</h2><p>Find teammates for your next session. Squad listings are public.</p></div></div>
+    <div class="two-col">
+      <form id="squad-form" class="glass-card form-grid">
+        <h3>＋ Create a squad listing</h3>
+        <label class="full">Squad name<input name="name" maxlength="60" required placeholder="Nether Explorers"></label>
+        <label>Game<select name="game" required><option>Minecraft</option><option>Roblox</option><option>PUBG</option><option>Fortnite</option><option>Free Fire</option><option>Call of Duty</option><option>Other</option></select></label>
+        <label>Players needed<select name="playersNeeded"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option></select></label>
+        <label class="full">How to play<input name="activity" maxlength="80" placeholder="Casual, ranked, building…"></label>
+        <label class="full">Details<textarea name="description" maxlength="500" placeholder="Region, platform, mic preference…"></textarea></label>
+        <button class="btn btn-primary full" type="submit">Publish squad</button>
+      </form>
+      <div id="squad-list" class="stack-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ GIFTS ============ -->
+  <section id="panel-gifts" class="realm-panel hidden">
+    <div class="section-title"><div><div class="eyebrow">SEND GOOD VIBES</div><h2>Digital Gifts</h2><p>Free digital tokens handed out by the Realm owner. They have no cash value — just bragging rights.</p></div></div>
+
+    <div class="two-col">
+      <div>
+        <!-- owner only: the send form -->
+        <form id="gift-form" class="glass-card form-grid" hidden>
+          <h3>🎁 Send a gift <span class="owner-tag">👑 OWNER ONLY</span></h3>
+          <label class="full suggest-wrap">Recipient username
+            <input name="recipient" maxlength="32" required placeholder="Start typing a username…" autocomplete="off">
+            <div id="suggest" class="suggest" hidden></div>
+          </label>
+          <div class="full">
+            <div class="field-label">Choose a gift</div>
+            <div class="gift-picker" id="gift-picker">
+              <label class="gift-opt"><input type="radio" name="gift" value="trophy" checked><span class="gi">🏆</span><span class="gn">Champion Trophy</span></label>
+              <label class="gift-opt"><input type="radio" name="gift" value="crystal"><span class="gi">💎</span><span class="gn">Nexus Crystal</span></label>
+              <label class="gift-opt"><input type="radio" name="gift" value="gg"><span class="gi">🎮</span><span class="gn">GG Token</span></label>
+              <label class="gift-opt"><input type="radio" name="gift" value="heart"><span class="gi">💜</span><span class="gn">Respect</span></label>
+              <label class="gift-opt"><input type="radio" name="gift" value="star"><span class="gi">⭐</span><span class="gn">Star Player</span></label>
+            </div>
+          </div>
+          <label class="full">Message (optional)<textarea name="message" maxlength="180" placeholder="GG! That was a great match."></textarea></label>
+          <div class="gift-preview full" id="gift-preview" aria-live="polite"></div>
+          <button class="btn btn-primary full" type="submit">Send free gift</button>
+          <p class="muted small full">The player gets an email and a phone notification. No payments, cash value or redeemable codes.</p>
+        </form>
+
+        <!-- everyone else: locked card -->
+        <div id="gift-locked" class="glass-card locked-card">
+          <div class="lock-emoji">🎁</div>
+          <h3>Gifts come from the Realm owner</h3>
+          <p class="muted">Only <b>Remix MC</b> can send gifts. Play great matches, build amazing worlds and be a good teammate — your gifts will show up in your gift box.</p>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="card-head"><div><div class="eyebrow">YOUR COLLECTION</div><h3>Trophy cabinet</h3></div></div>
+        <div id="cabinet" class="cabinet"></div>
+        <div class="card-head" style="margin-top:20px"><div><div class="eyebrow">INBOX</div><h3>Your gift box</h3></div></div>
+        <div id="gift-list" class="stack-list"></div>
+        <div id="gift-sent-wrap" hidden>
+          <div class="card-head" style="margin-top:22px"><div><div class="eyebrow">OUTBOX</div><h3>Gifts you sent</h3></div></div>
+          <div id="gift-sent" class="stack-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="realm-footer">REMIX NEXUS · REALM MODE <span>Play fair. Respect other players.</span></footer>
+</main>
+
+<!-- dialog (evidence link, pick a winner…) -->
+<div class="modal-back" id="modal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h3 id="modal-title"></h3>
+    <p id="modal-text" class="muted"></p>
+    <div id="modal-body"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" type="button" id="modal-cancel">Cancel</button><button class="btn btn-primary" type="button" id="modal-ok">OK</button></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="./config.js"></script>
+<script src="./auth.js"></script>
+<script src="./NexusRealm.js" defer></script>
+</body>
+</html>
