@@ -1,0 +1,1 @@
+(()=>{'use strict';const b=document.getElementById('nr-launcher');if(!b)return;b.addEventListener('click',()=>{window.location.href='./NexusRealm.html'});})();
