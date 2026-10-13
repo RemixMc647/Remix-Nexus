@@ -849,7 +849,7 @@ function renderContactList(){
     <div class="contact-item ${activeContact && activeContact.id === c.id ? 'active' : ''} ${isSelected ? 'group-selected' : ''}" data-id="${c.id}">
       <span class="contact-select-check">${isSelected ? '✓' : ''}</span>
       <span class="contact-item-info">
-        <span class="contact-avatar${online ? ' is-online' : ''}">${c.avatar || '🎮'}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
+        <span class="contact-avatar${online ? ' is-online' : ''}" data-pf-uid="${c.id}" data-pf-name="${escapeHTML(c.username)}" data-pf-av="${escapeHTML(c.avatar || '')}" title="View profile">${c.avatar || '🎮'}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
         <span class="contact-name">${escapeHTML(c.username)}</span>
         ${isBlocked ? '<span class="room-item-custom-tag">Blocked</span>' : ''}
       </span>
@@ -950,6 +950,13 @@ function renderContactHeader(contact){
 
   const dmCallButtonsEl = document.getElementById('dmCallButtons');
   if (dmCallButtonsEl) dmCallButtonsEl.style.display = 'flex';
+
+  // tap the icon in the conversation header → profile popup
+  activeContactAvatarEl.dataset.pfUid = contact.id || '';
+  activeContactAvatarEl.dataset.pfName = contact.username || '';
+  activeContactAvatarEl.dataset.pfAv = contact.avatar || '';
+  activeContactAvatarEl.style.cursor = 'pointer';
+  activeContactAvatarEl.title = 'View profile';
 
   if (contact.avatar){
     activeContactAvatarEl.textContent = contact.avatar;
@@ -2001,7 +2008,7 @@ renderContactList = function() {
     return `
     <div class="contact-item ${activeContact && activeContact.id === c.id ? 'active' : ''}" data-id="${c.id}">
       <span class="contact-item-info">
-        <span class="contact-avatar${online ? ' is-online' : ''}">${c.avatar || '🎮'}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
+        <span class="contact-avatar${online ? ' is-online' : ''}" data-pf-uid="${c.id}" data-pf-name="${escapeHTML(c.username)}" data-pf-av="${escapeHTML(c.avatar || '')}" title="View profile">${c.avatar || '🎮'}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
         <span class="contact-name">${escapeHTML(c.username)}</span>
         ${friendEmoji ? `<span class="friend-status-emoji" title="Friend status">${friendEmoji}</span>` : ''}
         ${isBlocked ? '<span class="room-item-custom-tag">Blocked</span>' : ''}
@@ -2276,3 +2283,11 @@ document.addEventListener("keydown",(e)=>{
     hideDmContextMenu();
     hideDmReactionPicker();
   }});
+
+// Profile popup (user-profile.js): its "Message" button opens the DM right here.
+window.NexusProfileOptions = {
+  onMessage: (u) => {
+    setMobileView('conversation');
+    openContact(u.uid, { username: u.name, avatar: u.avatar });
+  }
+};
