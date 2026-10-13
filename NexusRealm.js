@@ -282,9 +282,9 @@ function matchCard(m, i) {
   const oppName = m.opponentName || m.opponentUsername || '';
   const win = String(m.winnerUsername || '').toLowerCase();
   const canAccept = !!me && st === 'open' && !mine.challenger && (!m.opponentUsername || m.opponentUsername.toLowerCase() === myName());
-  const player = (name, role, open) => {
+  const player = (name, role, open, uid) => {
     const isWin = win && String(name).toLowerCase() === win;
-    return `<div class="player${isWin ? ' winner' : ''}${open ? ' open' : ''}"><span class="av">${open ? '?' : initial(name)}</span><b>${esc(open ? 'Open slot' : name)}</b><small>${role}${isWin ? ' · 🏆' : ''}</small></div>`;
+    return `<div class="player${isWin ? ' winner' : ''}${open ? ' open' : ''}"${(!open && uid) ? ` data-pf-uid="${esc(uid)}" data-pf-name="${esc(name)}" title="View profile"` : ''}><span class="av">${open ? '?' : initial(name)}</span><b>${esc(open ? 'Open slot' : name)}</b><small>${role}${isWin ? ' · 🏆' : ''}</small></div>`;
   };
   const props = (m.resultProposals || []).map(p => `${esc(p.username)} says ${esc(p.winnerUsername)} won`).join(' · ');
   let actions = '';
@@ -296,7 +296,7 @@ function matchCard(m, i) {
   actions += `<button class="btn btn-ghost" data-act="copy" data-id="${esc(m._id)}">🔗 Share</button>`;
   return `<article class="item-card" data-id="${esc(m._id)}" style="--i:${Math.min(i, 8)}">
     <div class="item-top"><span class="game-chip">🎮 ${esc(m.game)} · ${esc(m.matchType || 'Challenge')}</span><span class="tag s-${esc(st)}">${esc(STATUS[st] || st.toUpperCase())}</span></div>
-    <div class="vs-row">${player(m.challengerName || 'Player', 'Challenger')}<span class="vs">VS</span>${player(oppName, m.opponentName ? 'Opponent' : 'Invited', !oppName)}</div>
+    <div class="vs-row">${player(m.challengerName || 'Player', 'Challenger', false, m.challengerId)}<span class="vs">VS</span>${player(oppName, m.opponentName ? 'Opponent' : 'Invited', !oppName, m.opponentId)}</div>
     ${st === 'completed' && m.winnerUsername ? `<div class="banner win">🏆 ${esc(m.winnerUsername)} won this match</div>` : ''}
     ${st === 'disputed' ? `<div class="banner dispute">⚠ The players picked different winners. Add evidence so it can be reviewed.</div>` : ''}
     <p><b style="color:#d8dcf5">Rules:</b> ${esc(m.rules)}</p>
@@ -407,7 +407,7 @@ function renderWorlds() {
       <span class="tag">${esc(w.game)} · ${esc(w.category)}</span> <span class="tag world-left">⏳ ${esc(timeLeft(w.expiresAt))}</span>
       <h4 style="margin-top:10px">${esc(w.title)}</h4>
       <p>${esc(w.description || 'No description provided.')}</p>
-      <p>Shared by <b style="color:#d8dcf5">${esc(w.creatorName || 'Nexus player')}</b> · ${esc(when(w.createdAt))}</p>
+      <p>Shared by <b class="pf-link" style="color:#d8dcf5"${w.creatorId ? ` data-pf-uid="${esc(w.creatorId)}" data-pf-name="${esc(w.creatorName || '')}"` : ''}>${esc(w.creatorName || 'Nexus player')}</b> · ${esc(when(w.createdAt))}</p>
       <div class="item-actions">
         ${w.link ? `<a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="${esc(w.link)}">Explore ↗</a>` : ''}
         <button class="btn btn-ghost" data-act="share" data-id="${esc(w._id)}">🔗 Share</button>
@@ -561,7 +561,7 @@ function renderSquads() {
       <div class="slots" title="${got} of ${need} spots requested">${slots}<span class="muted" style="margin-left:6px">${got}/${need} requested</span></div>
       <p><b style="color:#d8dcf5">${esc(s.activity || 'Looking for teammates')}</b></p>
       <p>${esc(s.description || 'No extra details.')}</p>
-      <p>Created by ${esc(s.creatorName || 'Nexus player')} · ${esc(when(s.createdAt))}</p>
+      <p>Created by <b class="pf-link"${s.creatorId ? ` data-pf-uid="${esc(s.creatorId)}" data-pf-name="${esc(s.creatorName || '')}"` : ''}>${esc(s.creatorName || 'Nexus player')}</b> · ${esc(when(s.createdAt))}</p>
       ${s.mine && s.requests && s.requests.length ? `<div class="reqs">👋 Wants to join: <b>${s.requests.map(esc).join(', ')}</b></div>` : ''}
       <div class="item-actions">${btn}<button class="btn btn-ghost" data-act="share" data-id="${esc(s._id)}">🔗 Share</button>${canRemove ? `<button class="btn btn-danger" data-act="remove" data-id="${esc(s._id)}">Remove</button>` : ''}</div>
     </article>`;
@@ -619,7 +619,7 @@ function renderGifts() {
       <span class="new-ribbon">NEW</span>
       <span class="ge">${sealed ? '🎁' : info.emoji}</span>
       <div class="seal-text"><b>You have a gift!</b><span>Tap to open it</span></div>
-      <div class="gbody"><h4>${esc(g.giftLabel || g.gift)}</h4><p>From <b style="color:#d8dcf5">${esc(g.fromUsername || 'Remix MC')}</b></p><p>${esc(g.message || 'A gift from Nexus Realm.')}</p><span class="when">${esc(niceDate(g.createdAt))}</span></div>
+      <div class="gbody"><h4>${esc(g.giftLabel || g.gift)}</h4><p>From <b class="pf-link" style="color:#d8dcf5"${g.fromUserId ? ` data-pf-uid="${esc(g.fromUserId)}" data-pf-name="${esc(g.fromUsername || '')}"` : ''}>${esc(g.fromUsername || 'Remix MC')}</b></p><p>${esc(g.message || 'A gift from Nexus Realm.')}</p><span class="when">${esc(niceDate(g.createdAt))}</span></div>
     </article>`;
   }).join('');
 
@@ -704,6 +704,181 @@ gform.addEventListener('submit', e => {
     await loadGifts();
   });
 });
+
+/* ------------------------------------------------------------ PLAYER PROFILES
+   Tap a player's name / avatar anywhere on the page (match cards, worlds,
+   squads, gifts) to see their record and the challenges they have played —
+   both Match Arena matches and Nexus Arena duels. */
+(function injectProfileStyles() {
+  const el = document.createElement('style');
+  el.id = 'realmProfileStyles';
+  el.textContent = `
+  [data-pf-uid]{cursor:pointer}
+  .pf-link{text-decoration:underline;text-decoration-color:rgba(167,139,250,.55);text-underline-offset:3px}
+  .pf-link:hover{color:#63e6f4}
+  .player[data-pf-uid]:hover b{color:#63e6f4}
+  .rpf-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(6,5,16,.78);backdrop-filter:blur(6px)}
+  .rpf-modal.open{display:flex}
+  .rpf-card{position:relative;width:100%;max-width:460px;max-height:calc(100dvh - 28px);overflow-y:auto;border-radius:20px;background:#130f26;border:1px solid rgba(167,139,250,.28);box-shadow:0 24px 70px rgba(0,0,0,.65);color:#e9e6ff;font-family:inherit}
+  .rpf-banner{height:88px;background:linear-gradient(135deg,hsl(var(--hue,260) 75% 42%),hsl(calc(var(--hue,260) + 60) 85% 55%))}
+  .rpf-close{position:absolute;top:10px;right:10px;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:15px;cursor:pointer}
+  .rpf-head{display:flex;align-items:flex-end;gap:12px;margin:-36px 18px 0}
+  .rpf-avatar{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#63e6f4);border:5px solid #130f26;font-size:36px;color:#130f26;font-weight:800}
+  .rpf-name{margin:0 0 8px;font-size:18px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rpf-actions{display:flex;gap:8px;margin:12px 18px 0;flex-wrap:wrap}
+  .rpf-btn{padding:9px 15px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font:600 13px/1.2 inherit;font-family:inherit;text-decoration:none;cursor:pointer}
+  .rpf-btn.primary{background:linear-gradient(135deg,#a78bfa,#63e6f4);color:#130f26}
+  .rpf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 18px 0}
+  .rpf-stat{padding:10px 4px;border-radius:12px;background:rgba(255,255,255,.06);text-align:center}
+  .rpf-stat b{display:block;font-size:18px}
+  .rpf-stat span{font-size:10px;opacity:.7}
+  .rpf-h{margin:18px 18px 8px;font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;opacity:.65}
+  .rpf-list{display:flex;flex-direction:column;gap:6px;margin:0 18px 18px}
+  .rpf-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.06);cursor:pointer;transition:background .12s}
+  .rpf-row:hover{background:rgba(167,139,250,.18)}
+  .rpf-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .rpf-info b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rpf-info small{font-size:11px;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rpf-chip{flex-shrink:0;padding:4px 9px;border-radius:9px;background:rgba(255,255,255,.1);font-size:11px;font-weight:700;white-space:nowrap}
+  .rpf-chip.win{background:rgba(87,245,165,.18);color:#57f5a5}
+  .rpf-chip.loss{background:rgba(255,112,112,.16);color:#ff8f8f}
+  .rpf-chip.live{background:rgba(255,112,197,.18);color:#ff70c5}
+  .rpf-empty{padding:16px 6px;text-align:center;font-size:12px;opacity:.7}
+  `;
+  document.head.appendChild(el);
+})();
+
+let rpfToken = 0;
+function ensureProfileModal() {
+  let m = $('#rpf-modal');
+  if (m) return m;
+  m = document.createElement('div');
+  m.id = 'rpf-modal';
+  m.className = 'rpf-modal';
+  m.setAttribute('aria-hidden', 'true');
+  m.innerHTML = `
+    <div class="rpf-card" role="dialog" aria-modal="true">
+      <div class="rpf-banner" id="rpf-banner"></div>
+      <button type="button" class="rpf-close" id="rpf-close" aria-label="Close">✕</button>
+      <div class="rpf-head"><div class="rpf-avatar" id="rpf-avatar">?</div><h3 class="rpf-name" id="rpf-name"></h3></div>
+      <div class="rpf-actions" id="rpf-actions"></div>
+      <div class="rpf-stats" id="rpf-stats"></div>
+      <h4 class="rpf-h">⚔ Match Arena history</h4>
+      <div class="rpf-list" id="rpf-matches"></div>
+      <div id="rpf-arena-wrap" hidden>
+        <h4 class="rpf-h">🔥 Nexus Arena duels they created</h4>
+        <div class="rpf-list" id="rpf-arena"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => {
+    if (e.target === m || e.target.closest('#rpf-close')) return closeProfile();
+    if (e.target.closest('[data-pf-uid]')) return;
+    const mr = e.target.closest('[data-match]');
+    if (mr) { pendingFocus = { type: 'match', id: mr.dataset.match }; closeProfile(); switchTab('challenges'); return; }
+    const ar = e.target.closest('[data-arena]');
+    if (ar) location.href = './Chat.html?room=' + encodeURIComponent(ar.dataset.room) + '&arena=' + encodeURIComponent(ar.dataset.arena);
+  });
+  return m;
+}
+function closeProfile() {
+  const m = $('#rpf-modal');
+  if (!m || !m.classList.contains('open')) return;
+  m.classList.remove('open');
+  m.setAttribute('aria-hidden', 'true');
+  rpfToken++;
+}
+function hueOf(str) { let h = 0; String(str).split('').forEach(c => { h = (h * 31 + c.charCodeAt(0)) % 360; }); return h; }
+function ago(v) {
+  const mins = Math.floor((Date.now() - new Date(v).getTime()) / 60000);
+  if (!isFinite(mins) || mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const h = Math.floor(mins / 60);
+  if (h < 24) return h + 'h ago';
+  const d = Math.floor(h / 24);
+  return d < 30 ? d + 'd ago' : Math.floor(d / 30) + 'mo ago';
+}
+
+function profileMatchRow(m, uid) {
+  const mine = String(m.challengerId) === uid ? m.challengerName : m.opponentName;
+  const other = String(m.challengerId) === uid ? (m.opponentName || m.opponentUsername || 'Open slot') : m.challengerName;
+  let chip = `<span class="rpf-chip">${esc(STATUS[m.status] || String(m.status || '').toUpperCase())}</span>`;
+  if (m.status === 'completed') {
+    const won = String(m.winnerUsername || '').toLowerCase() === String(mine || '').toLowerCase();
+    chip = won ? '<span class="rpf-chip win">🏆 Won</span>' : '<span class="rpf-chip loss">Lost</span>';
+  } else if (m.status === 'accepted') chip = '<span class="rpf-chip live">🔴 LIVE</span>';
+  return `<div class="rpf-row" data-match="${esc(m._id)}">
+    <div class="rpf-info"><b>🎮 ${esc(m.game)} · ${esc(m.matchType || 'Challenge')}</b><small>vs ${esc(other)} · ${esc(ago(m.createdAt))}</small></div>${chip}</div>`;
+}
+function profileArenaRow(c) {
+  let chip = '<span class="rpf-chip">⏳ Waiting</span>';
+  if (c.status === 'live') chip = '<span class="rpf-chip live">🔴 LIVE</span>';
+  else if (c.status === 'judging') chip = '<span class="rpf-chip">🗳 Voting</span>';
+  else if (c.status === 'completed') chip = c.draw ? '<span class="rpf-chip">🤝 Draw</span>' : `<span class="rpf-chip win">🏆 ${esc(c.winnerName || 'Winner')}</span>`;
+  else if (c.status === 'declined') chip = '<span class="rpf-chip">🚫 Declined</span>';
+  else if (c.status === 'expired') chip = '<span class="rpf-chip">⌛ Expired</span>';
+  return `<div class="rpf-row" data-arena="${esc(c.id)}" data-room="${esc(c.room)}">
+    <div class="rpf-info"><b>${esc(c.gameName || 'Duel')} · ${esc(c.minutes)} min</b><small>${esc(c.challenger.username)} vs ${esc(c.opponent.username)} · ${esc(ago(c.updatedAt || c.createdAt))}</small></div>${chip}</div>`;
+}
+
+async function openProfile(uid, name) {
+  uid = String(uid);
+  const m = ensureProfileModal();
+  const token = ++rpfToken;
+  const isMe = !!me && myId() === uid;
+
+  $('#rpf-banner').style.setProperty('--hue', String(hueOf(name || uid)));
+  $('#rpf-avatar').textContent = initial(name || '?');
+  $('#rpf-name').textContent = name || 'Player';
+  $('#rpf-actions').innerHTML = isMe ? '' : `<a class="rpf-btn primary" href="./Contacts.html?uid=${encodeURIComponent(uid)}&username=${encodeURIComponent(name || '')}">💬 Message</a>`;
+  $('#rpf-stats').innerHTML = ['Created', 'Played', 'Wins', 'Losses'].map(l => `<div class="rpf-stat"><b>–</b><span>${l}</span></div>`).join('');
+  $('#rpf-matches').innerHTML = '<div class="rpf-empty">Loading…</div>';
+  $('#rpf-arena-wrap').hidden = true;
+  m.classList.add('open');
+  m.setAttribute('aria-hidden', 'false');
+
+  try {
+    const d = await api('/api/realm/users/' + encodeURIComponent(uid) + '/profile');
+    if (token !== rpfToken) return;
+    if (d.user) {
+      $('#rpf-name').textContent = d.user.username || name || 'Player';
+      const a = String(d.user.avatar || '');
+      $('#rpf-avatar').textContent = (a && a.length <= 8 && !/^https?:/i.test(a)) ? a : initial(d.user.username || name);
+    }
+    const s = d.stats || {};
+    $('#rpf-stats').innerHTML = [['Created', s.created], ['Played', s.played], ['Wins', s.wins], ['Losses', s.losses]]
+      .map(([l, v]) => `<div class="rpf-stat"><b>${Number(v) || 0}</b><span>${l}</span></div>`).join('');
+    const list = d.matches || [];
+    $('#rpf-matches').innerHTML = list.length ? list.map(x => profileMatchRow(x, uid)).join('')
+      : `<div class="rpf-empty">${isMe ? "You haven't" : "This player hasn't"} played any matches yet.</div>`;
+  } catch (e) {
+    if (token !== rpfToken) return;
+    $('#rpf-matches').innerHTML = `<div class="rpf-empty">${esc(e.message || 'Could not load this profile.')}</div>`;
+  }
+
+  // Nexus Arena duels (chat-room challenges) — needs a login, so it is optional.
+  if (token === rpfToken && token_()) {
+    try {
+      const a = await api('/api/arena/user/' + encodeURIComponent(uid));
+      if (token !== rpfToken) return;
+      const list = a.challenges || [];
+      if (list.length) { $('#rpf-arena').innerHTML = list.map(profileArenaRow).join(''); $('#rpf-arena-wrap').hidden = false; }
+    } catch (e) { /* section simply stays hidden */ }
+  }
+}
+function token_() { return !!token(); }
+
+// Tap any [data-pf-uid] (name or avatar) → profile.
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-pf-uid]');
+  if (!t || t.closest('#rpf-modal') && !t.closest('#rpf-modal [data-pf-uid]')) return;
+  e.stopPropagation(); e.preventDefault();
+  openProfile(t.dataset.pfUid, t.dataset.pfName);
+}, true);
+document.addEventListener('keydown', e => {
+  const m = $('#rpf-modal');
+  if (e.key === 'Escape' && m && m.classList.contains('open')) { e.stopImmediatePropagation(); closeProfile(); }
+}, true);
 
 /* ------------------------------------------------------------ boot */
 /* ------------------------------------------------------------ GAME LISTS — every chat room */
