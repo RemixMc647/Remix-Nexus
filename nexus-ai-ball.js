@@ -16,7 +16,7 @@ No server changes needed. Load this file AFTER Chat.js / Contacts.js.
 
   var AI_NAME = 'Nexus AI';
   var AI_ICON = '✨';
-  var AI_ROOM_ID = 'nexus-ai';            // Chat.html default room id
+  var AI_ROOM_ID = 'nexus-ai';            // replaced in initChat() by this user's PRIVATE room: nexus-ai-dm:<userId>
   var isChatPage = !!document.getElementById('roomList');
   var isContactsPage = !!document.getElementById('contactList');
   if (!isChatPage && !isContactsPage) return;
@@ -56,9 +56,9 @@ No server changes needed. Load this file AFTER Chat.js / Contacts.js.
       'body.conversation-fullscreen .nexus-ai-ball{display:none !important;}',
       '}',
       /* the default room / contact row */
-      '.room-item[data-room="' + AI_ROOM_ID + '"],.contact-item.nexus-ai-contact{border-left:3px solid #0066ff;',
+      '.room-item[data-room^="nexus-ai-dm:"],.contact-item.nexus-ai-contact{border-left:3px solid #0066ff;',
       'background:linear-gradient(90deg,rgba(0,102,255,.14),transparent) !important;}',
-      '.room-item[data-room="' + AI_ROOM_ID + '"].active,.contact-item.nexus-ai-contact.active{background:linear-gradient(90deg,rgba(0,102,255,.32),rgba(0,102,255,.05)) !important;}',
+      '.room-item[data-room^="nexus-ai-dm:"].active,.contact-item.nexus-ai-contact.active{background:linear-gradient(90deg,rgba(0,102,255,.32),rgba(0,102,255,.05)) !important;}',
       '.nx-ai-avatar{background:radial-gradient(circle at 30% 25%,#6fa8ff,#0066ff 60%,#0036a8) !important;color:#fff;}',
       '.nx-ai-msg .msg-text{white-space:pre-wrap;word-break:break-word;}',
       '.nx-ai-welcome{text-align:center;padding:28px 16px;opacity:.95;}',
@@ -94,6 +94,23 @@ No server changes needed. Load this file AFTER Chat.js / Contacts.js.
      CHAT.HTML — default room + ball
   =========================================================== */
   function initChat() {
+    // Nexus AI is PRIVATE per account (like Meta AI): the room id contains the
+    // signed-in user's id, and the server only lets that user into it. The same
+    // room is used on Contacts.html, so it's one conversation everywhere.
+    var uid = (typeof getMyUserId === 'function') ? getMyUserId() : null;
+    if (!uid) {                       // not logged in → no private AI; ball sends them to log in
+      ball.addEventListener('click', function () { window.location.href = './Login.html'; });
+      return;
+    }
+    AI_ROOM_ID = 'nexus-ai-dm:' + uid;
+    // Forget cached AI chats of any OTHER account (or the old shared room) on this phone.
+    try {
+      ['remix-nexusMessages:', 'app-chat-backup:'].forEach(function (pre) {
+        Object.keys(localStorage).forEach(function (k) {
+          if (k.indexOf(pre + 'nexus-ai') === 0 && k !== pre + AI_ROOM_ID) localStorage.removeItem(k);
+        });
+      });
+    } catch (e) {}
     var AI_ROOM = { id: AI_ROOM_ID, name: AI_ICON + ' ' + AI_NAME };
 
     // Always list Nexus AI first, ahead of the other default rooms and any
@@ -148,7 +165,7 @@ No server changes needed. Load this file AFTER Chat.js / Contacts.js.
 
     // Reloading while inside Nexus AI (URL has ?room=nexus-ai) stays in it.
     var wantedRoom = new URLSearchParams(window.location.search).get('room');
-    if (wantedRoom === AI_ROOM_ID) goToAiRoom();
+    if (wantedRoom === AI_ROOM_ID || wantedRoom === 'nexus-ai') goToAiRoom();
   }
 
   /* ===========================================================
