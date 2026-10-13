@@ -1,0 +1,47 @@
+/* =====================================================================
+   REMIX NEXUS — SAFE AREA (status bar / notch / camera hole / gesture bar)
+   Load this LAST on every page, after Discord.css / Discord-Pages.css:
+     <link rel="stylesheet" href="./safe-area.css">
+   Every page must also have viewport-fit=cover in its viewport meta:
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+   ===================================================================== */
+
+:root {
+  /* env() = the real size the phone reports for its status bar / notch.
+     safe-area.js can raise --safe-top-extra on native Android WebViews
+     that report 0 even though the status bar is drawn over the page. */
+  --safe-top-extra: 0px;
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top-extra));
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* The strip behind the status bar is painted black, matching theme-color. */
+html { background: #000; }
+
+/* Push everything below the status bar. border-box means pages that use
+   height:100dvh (Chat, Contacts, phone-fit pages) shrink instead of
+   overflowing the bottom of the screen. */
+body {
+  box-sizing: border-box;
+  padding-top: var(--safe-top) !important;
+  padding-left: max(var(--safe-left), var(--rail-w, 0px));   /* keeps the desktop icon rail offset */
+  padding-right: var(--safe-right);
+}
+
+/* Phones: no rail on the left, so only the notch inset applies */
+@media (max-width: 820px) {
+  body { padding-left: var(--safe-left); }
+}
+
+/* Fixed things that sit at the very top must also move down */
+.rn-call-overlay { padding-top: var(--safe-top); }
+.rn-incoming-call { top: calc(12px + var(--safe-top)); }
+.rn-toasts { top: calc(54px + var(--safe-top)); }
+.image-lightbox-close { top: calc(12px + var(--safe-top)); }
+
+/* Bottom tab bar already pads for the gesture bar in Discord*.css;
+   this covers pages that don't use it. */
+.nav-bar { padding-bottom: max(6px, var(--safe-bottom)); }
+@media (min-width: 821px) { .nav-bar { padding-bottom: 12px; } }
