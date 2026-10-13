@@ -342,7 +342,11 @@ body {
   align-items: flex-end;
   gap: 14px;
   margin: 0 0 14px;
-  padding: 70px 18px 0;
+  /* --banner-h = how tall the banner picture is. The avatar overlaps its
+     bottom edge by ~26px, so the header's top padding follows it. Change this
+     one number to make the banner taller or shorter. */
+  --banner-h: 200px;
+  padding: calc(var(--banner-h) - 26px) 18px 0;
   text-align: left;
 }
 .profile-header::before {
@@ -351,7 +355,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 96px;
+  height: var(--banner-h);
   background-color: #0066ff;
   background-image: var(--banner-img, none), linear-gradient(120deg, #003a99, #0066ff 55%, #00b7ff);
   background-size: cover;
@@ -681,8 +685,7 @@ details.account-settings-section[open] > summary::after { content: "▾"; }
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
-  body.page-profile .profile-header { padding-top: 40px; gap: 10px; margin-bottom: 8px; }
-  body.page-profile .profile-header::before { height: 58px; }
+  body.page-profile .profile-header { --banner-h: 124px; padding-top: calc(var(--banner-h) - 20px); gap: 10px; margin-bottom: 8px; }
   body.page-profile .avatar-display { width: 56px; height: 56px; font-size: 26px; border-width: 4px; }
   body.page-profile .avatar-display::after { width: 10px; height: 10px; border-width: 3px; }
   body.page-profile .profile-header h2 { font-size: 16px; }
@@ -909,8 +912,7 @@ body.page-static .legal-shell a:hover { text-decoration: underline; }
 .banner-message:empty { display: none; }
 
 @media (max-width: 820px) {
-  body.page-profile .profile-header { padding-top: 56px; }
-  body.page-profile .profile-header::before { height: 66px; }
+  /* banner height on phones is set once, above, with --banner-h */
   body.page-profile .banner-message { margin: -2px 10px 6px !important; font-size: 11px; }
 }
 
