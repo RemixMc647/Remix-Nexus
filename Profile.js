@@ -53,7 +53,7 @@ function renderUser(user){
 /*==============================
 PROFILE BANNER (YouTube-style cover picture)
 - the user picks any picture; it is centre-cropped and shrunk to
-  1200x400 so it stays small and loads fast
+  1500x500 (3:1, matches the taller banner) so it stays small and sharp
 - it is always saved on this device (instant)
 - it is also sent to the server (PUT /api/me/banner). If your server
   doesn't have that route yet, the banner simply stays on this device.
@@ -94,14 +94,14 @@ function bannerSay(text, color){
   bannerMessage.style.color = color || '#bdbdbd';
 }
 
-// picture -> centre-cropped 1200x400 JPEG (small file, any phone photo works)
+// picture -> centre-cropped 1500x500 JPEG (small file, any phone photo works)
 function fileToBannerDataUrl(file){
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       try {
-        const W = 1200, H = 400;
+        const W = 1500, H = 500;
         const canvas = document.createElement('canvas');
         canvas.width = W;
         canvas.height = H;
@@ -111,7 +111,13 @@ function fileToBannerDataUrl(file){
         const h = img.height * scale;
         ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
         URL.revokeObjectURL(url);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
+        // keep it under the server's size limit even for very detailed photos
+        let out = canvas.toDataURL('image/jpeg', 0.85);
+        for (const q of [0.75, 0.65, 0.55]) {
+          if (out.length <= 900000) break;
+          out = canvas.toDataURL('image/jpeg', q);
+        }
+        resolve(out);
       } catch (err) {
         URL.revokeObjectURL(url);
         reject(err);
