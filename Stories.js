@@ -142,7 +142,10 @@ function ringSvg(count, kind) {
 function ringHtml(group, kind, extraClass) {
   const n = group && group.stories ? group.stories.length : 1;
   const avatar = escapeHtml((group && group.avatar) || (me && me.avatar) || '🎮');
-  return `<div class="st-ring ${extraClass || ''}">${ringSvg(n, kind)}<div class="st-av">${avatar}</div></div>`;
+  const pf = (group && group.userId && !isMineGroup(group))
+    ? ` data-pf-uid="${escapeHtml(group.userId)}" data-pf-name="${escapeHtml(group.username)}" data-pf-av="${escapeHtml(group.avatar || '🎮')}" title="View profile"`
+    : '';
+  return `<div class="st-ring ${extraClass || ''}">${ringSvg(n, kind)}<div class="st-av"${pf}>${avatar}</div></div>`;
 }
 
 function mediaThumb(story) {
@@ -544,7 +547,9 @@ function showStory() {
     reply.style.display = 'none';
   } else {
     reply.style.display = 'block';
-    reply.href = './Contacts.html?user=' + encodeURIComponent(activeGroup.userId);
+    reply.href = './Contacts.html?uid=' + encodeURIComponent(activeGroup.userId)
+      + '&username=' + encodeURIComponent(activeGroup.username || '')
+      + '&avatar=' + encodeURIComponent(activeGroup.avatar || '');
     $('storyReplyName').textContent = activeGroup.username;
   }
 
@@ -1093,6 +1098,326 @@ $('storyTextPostBtn').onclick = async () => {
 };
 
 /* -----------------------------------------------------------
+   ⚔️ ARENA HISTORY + PLAYER PROFILES
+   Stories vanish after 24h, but Arena challenges stay: finished
+   duels live in "History" forever. Tap any player's emoji to open
+   their profile and see the challenges they created.
+   (This block injects its own markup + styles, so Stories.html and
+   Stories.css need no changes.)
+----------------------------------------------------------- */
+const arena = { active: [], done: [], tab: 'active', expanded: false, loaded: false };
+
+(function injectArenaStyles() {
+  const css = `
+  .ar-section{margin:0 0 16px;padding:12px;border:1px solid var(--nx-line,rgba(255,255,255,.08));border-radius:12px;background:var(--nx-bg-1,#05070d)}
+  .ar-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .ar-title{margin:0;font-size:14px;font-weight:700;color:var(--nx-text,#e8ecf7)}
+  .ar-note{flex:1;min-width:140px;font-size:11px;color:var(--nx-muted,#8a96b5)}
+  .ar-tabs{display:flex;gap:6px}
+  .ar-tab{padding:5px 12px;border:0;border-radius:14px;background:var(--nx-bg-3,#10141f);color:var(--nx-muted,#8a96b5);font:600 12px/1 inherit;font-family:inherit;cursor:pointer}
+  .ar-tab.active{background:var(--nx-blue,#0066ff);color:#fff}
+  .ar-list{display:flex;flex-direction:column;gap:6px}
+  .ar-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--nx-bg-2,#0a0d16);cursor:pointer;transition:background .12s}
+  .ar-row:hover{background:var(--nx-bg-3,#10141f)}
+  .ar-players{display:flex;align-items:center;gap:5px;flex-shrink:0;font-size:11px;color:var(--nx-muted,#8a96b5)}
+  .ar-av,.pf-chal-av{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:linear-gradient(135deg,#0050d6,#00b7ff);font-size:17px;line-height:1;cursor:pointer;transition:border-radius .15s}
+  .ar-av:hover{border-radius:11px}
+  .ar-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .ar-info b{font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ar-info small{font-size:11px;color:var(--nx-muted,#8a96b5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ar-chip{flex-shrink:0;padding:4px 9px;border-radius:10px;background:var(--nx-bg-4,#171c2b);font-size:11px;font-weight:700;white-space:nowrap}
+  .ar-chip.live{background:rgba(242,63,67,.18);color:#ff6b6e}
+  .ar-chip.vote{background:rgba(0,102,255,.2);color:#6fa8ff}
+  .ar-chip.win{background:rgba(35,165,90,.2);color:#5ee08e}
+  .ar-empty{padding:18px 8px;text-align:center;font-size:12px;color:var(--nx-muted,#8a96b5)}
+  .ar-empty a{color:var(--nx-blue-soft,#6fa8ff);font-weight:600}
+  .ar-more{margin-top:8px;width:100%;padding:8px;border:0;border-radius:8px;background:var(--nx-bg-3,#10141f);color:var(--nx-muted,#8a96b5);font:600 12px/1 inherit;font-family:inherit;cursor:pointer}
+  .ar-more:hover{background:var(--nx-bg-4,#171c2b);color:#fff}
+  .st-av[data-pf-uid]{cursor:pointer}
+
+  .pf-modal{position:fixed;inset:0;z-index:1300;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.7);font-family:'Poppins',system-ui,sans-serif}
+  .pf-card{position:relative;width:100%;max-width:420px;max-height:calc(100dvh - 28px);overflow-y:auto;border-radius:16px;background:var(--nx-bg-2,#0a0d16);border:1px solid var(--nx-line,rgba(255,255,255,.08));color:var(--nx-text,#e8ecf7);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .pf-banner{height:84px;background:linear-gradient(135deg,hsl(var(--hue,215) 80% 40%),hsl(calc(var(--hue,215) + 50) 85% 55%))}
+  .pf-close{position:absolute;top:10px;right:10px;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:14px;cursor:pointer}
+  .pf-head{display:flex;align-items:flex-end;gap:12px;margin:-34px 16px 0}
+  .pf-avatar{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#0050d6,#00b7ff);border:5px solid var(--nx-bg-2,#0a0d16);font-size:34px}
+  .pf-name{margin:0 0 6px;font-size:17px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pf-actions{display:flex;gap:8px;margin:12px 16px 0;flex-wrap:wrap}
+  .pf-btn{padding:8px 14px;border:0;border-radius:8px;background:var(--nx-bg-4,#171c2b);color:#fff;font:600 12px/1.2 inherit;font-family:inherit;text-decoration:none;cursor:pointer}
+  .pf-btn.primary{background:var(--nx-blue,#0066ff)}
+  .pf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 16px 0}
+  .pf-stat{padding:9px 4px;border-radius:10px;background:var(--nx-bg-1,#05070d);text-align:center}
+  .pf-stat b{display:block;font-size:17px;color:#fff}
+  .pf-stat span{font-size:10px;color:var(--nx-muted,#8a96b5)}
+  .pf-h4{margin:16px 16px 8px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--nx-muted,#8a96b5)}
+  .pf-list{display:flex;flex-direction:column;gap:6px;margin:0 16px 16px}
+  `;
+  const el = document.createElement('style');
+  el.id = 'arenaStoriesStyles';
+  el.textContent = css;
+  document.head.appendChild(el);
+})();
+
+function agoLong(dateStr) {
+  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+  if (!isFinite(mins) || mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  return days < 30 ? days + 'd ago' : Math.floor(days / 30) + 'mo ago';
+}
+
+function minsLeft(endsAt) {
+  const m = Math.ceil((new Date(endsAt).getTime() - Date.now()) / 60000);
+  return m > 0 ? m + 'm left' : 'time!';
+}
+
+function arenaChip(c) {
+  switch (c.status) {
+    case 'pending':   return '<span class="ar-chip">⏳ Waiting</span>';
+    case 'live':      return `<span class="ar-chip live">🔴 LIVE · ${escapeHtml(minsLeft(c.endsAt))}</span>`;
+    case 'judging':   return '<span class="ar-chip vote">🗳 Voting open</span>';
+    case 'completed': return c.draw
+      ? '<span class="ar-chip">🤝 Draw</span>'
+      : `<span class="ar-chip win">🏆 ${escapeHtml(c.winnerName || 'Winner')}</span>`;
+    case 'declined':  return '<span class="ar-chip">🚫 Declined</span>';
+    case 'expired':   return '<span class="ar-chip">⌛ Expired</span>';
+    default:          return '<span class="ar-chip">✖ Cancelled</span>';
+  }
+}
+
+function arenaAvatar(p, cls) {
+  return `<button type="button" class="${cls}" data-pf-uid="${escapeHtml(p.userId)}" data-pf-name="${escapeHtml(p.username)}" data-pf-av="${escapeHtml(p.avatar || '🎮')}" title="View ${escapeHtml(p.username)}'s profile">${escapeHtml(p.avatar || '🎮')}</button>`;
+}
+
+function arenaRow(c) {
+  return `
+    <div class="ar-row" data-room="${escapeHtml(c.room)}" data-id="${escapeHtml(c.id)}">
+      <span class="ar-players">${arenaAvatar(c.challenger, 'ar-av')}vs${arenaAvatar(c.opponent, 'ar-av')}</span>
+      <span class="ar-info">
+        <b>${escapeHtml(c.gameName || 'Challenge')} · ${c.minutes} min</b>
+        <small>${escapeHtml(c.challenger.username)} vs ${escapeHtml(c.opponent.username)} · ${agoLong(c.updatedAt || c.createdAt)}</small>
+      </span>
+      ${arenaChip(c)}
+    </div>`;
+}
+
+function openChallenge(room, id) {
+  location.href = './Chat.html?room=' + encodeURIComponent(room) + '&arena=' + encodeURIComponent(id);
+}
+
+function ensureArenaSection() {
+  let sec = document.getElementById('arenaSection');
+  if (sec) return sec;
+  const wall = $('storyWall');
+  if (!wall || !wall.parentNode) return null;
+  sec = document.createElement('section');
+  sec.id = 'arenaSection';
+  sec.className = 'ar-section';
+  sec.innerHTML = `
+    <div class="ar-head">
+      <h2 class="ar-title">⚔️ Arena</h2>
+      <span class="ar-note">Stories vanish after 24h — challenges stay in History.</span>
+      <div class="ar-tabs">
+        <button type="button" class="ar-tab active" data-tab="active">Live &amp; open</button>
+        <button type="button" class="ar-tab" data-tab="done">History</button>
+      </div>
+    </div>
+    <div class="ar-list" id="arenaList"></div>`;
+  wall.parentNode.insertBefore(sec, wall);
+
+  sec.addEventListener('click', (e) => {
+    const tab = e.target.closest('.ar-tab');
+    if (tab) {
+      arena.tab = tab.dataset.tab;
+      arena.expanded = false;
+      sec.querySelectorAll('.ar-tab').forEach(t => t.classList.toggle('active', t === tab));
+      renderArena();
+      return;
+    }
+    if (e.target.closest('.ar-more')) { arena.expanded = !arena.expanded; renderArena(); return; }
+    if (e.target.closest('[data-pf-uid]')) return;   // handled by the profile opener
+    const row = e.target.closest('.ar-row');
+    if (row) openChallenge(row.dataset.room, row.dataset.id);
+  });
+  return sec;
+}
+
+function renderArena() {
+  const sec = ensureArenaSection();
+  if (!sec) return;
+  const list = $('arenaList');
+  const items = arena.tab === 'active' ? arena.active : arena.done;
+
+  if (!arena.loaded) { list.innerHTML = '<div class="ar-empty">Loading challenges…</div>'; return; }
+  if (!items.length) {
+    list.innerHTML = arena.tab === 'active'
+      ? '<div class="ar-empty">No open challenges right now. <a href="./Chat.html">Challenge someone from a room →</a></div>'
+      : '<div class="ar-empty">No finished challenges yet — they will be kept here.</div>';
+    return;
+  }
+  const LIMIT = 4;
+  const shown = arena.expanded ? items : items.slice(0, LIMIT);
+  list.innerHTML = shown.map(arenaRow).join('') +
+    (items.length > LIMIT
+      ? `<button type="button" class="ar-more">${arena.expanded ? 'Show less' : 'Show all (' + items.length + ')'}</button>`
+      : '');
+}
+
+async function loadArena() {
+  try {
+    const get = (qs) => fetch(API_BASE + '/api/arena?' + qs, { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('arena ' + r.status)));
+    const [a, d] = await Promise.all([get('view=active&limit=30'), get('view=done&limit=50')]);
+    arena.active = a.challenges || [];
+    arena.done = d.challenges || [];
+    arena.loaded = true;
+    renderArena();
+  } catch (err) {
+    console.error('Load arena error:', err);
+    if (!arena.loaded) {
+      const list = $('arenaList');
+      if (list) list.innerHTML = '<div class="ar-empty">Could not load challenges right now.</div>';
+    }
+  }
+}
+
+/* ---- profile popup ---- */
+let profileToken = 0;
+let profileOnClose = null;
+
+function ensureProfileModal() {
+  let m = document.getElementById('pfModal');
+  if (m) return m;
+  m = document.createElement('div');
+  m.id = 'pfModal';
+  m.className = 'pf-modal';
+  m.style.display = 'none';
+  m.innerHTML = `
+    <div class="pf-card" role="dialog" aria-modal="true">
+      <div class="pf-banner" id="pfBanner"></div>
+      <button type="button" class="pf-close" id="pfClose" aria-label="Close">✕</button>
+      <div class="pf-head">
+        <div class="pf-avatar" id="pfAvatar">🎮</div>
+        <h3 class="pf-name" id="pfName"></h3>
+      </div>
+      <div class="pf-actions" id="pfActions"></div>
+      <div class="pf-stats" id="pfStats"></div>
+      <h4 class="pf-h4">⚔️ Challenges created</h4>
+      <div class="pf-list" id="pfList"></div>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('#pfClose')) closeProfile(); });
+  $('pfList').addEventListener('click', (e) => {
+    if (e.target.closest('[data-pf-uid]')) return;
+    const row = e.target.closest('.ar-row');
+    if (row) openChallenge(row.dataset.room, row.dataset.id);
+  });
+  return m;
+}
+
+function closeProfile() {
+  const m = document.getElementById('pfModal');
+  if (!m || m.style.display === 'none') return;
+  m.style.display = 'none';
+  profileToken++;
+  const cb = profileOnClose;
+  profileOnClose = null;
+  if (cb) cb();
+}
+
+function hueOf(str) {
+  let h = 0;
+  String(str).split('').forEach(c => { h = (h * 31 + c.charCodeAt(0)) % 360; });
+  return h;
+}
+
+async function openProfile(opts) {
+  const uid = String(opts.uid);
+  const isMe = me && String(me.id) === uid;
+  const m = ensureProfileModal();
+  const token = ++profileToken;
+  profileOnClose = opts.onClose || profileOnClose;   // keep the resume-story callback when hopping between profiles
+
+  $('pfBanner').style.setProperty('--hue', String(hueOf(opts.name || uid)));
+  $('pfAvatar').textContent = opts.avatar || '🎮';
+  $('pfName').textContent = opts.name || 'Player';
+
+  // buttons
+  const group = feed.find(g => String(g.userId) === uid && !isMineGroup(g) && g.stories && g.stories.length);
+  let actions = '';
+  if (!isMe) {
+    actions += `<a class="pf-btn primary" href="./Contacts.html?uid=${encodeURIComponent(uid)}&username=${encodeURIComponent(opts.name || '')}&avatar=${encodeURIComponent(opts.avatar || '')}">💬 Message</a>`;
+  }
+  if (group && !opts.fromViewer) actions += '<button type="button" class="pf-btn" id="pfStoryBtn">📸 View story</button>';
+  $('pfActions').innerHTML = actions;
+  const sb = document.getElementById('pfStoryBtn');
+  if (sb) sb.onclick = () => { profileOnClose = null; closeProfile(); openViewer(group); };
+
+  $('pfStats').innerHTML = ['Created', 'Wins', 'Losses', 'Draws']
+    .map(l => `<div class="pf-stat"><b>–</b><span>${l}</span></div>`).join('');
+  $('pfList').innerHTML = '<div class="ar-empty">Loading…</div>';
+  m.style.display = 'flex';
+
+  try {
+    const res = await fetch(API_BASE + '/api/arena/user/' + encodeURIComponent(uid), { headers: authHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (token !== profileToken) return;               // closed or replaced meanwhile
+    if (!res.ok) throw new Error(data.error || 'Could not load this profile.');
+
+    if (data.user) {
+      $('pfName').textContent = data.user.username || opts.name || 'Player';
+      $('pfAvatar').textContent = data.user.avatar || opts.avatar || '🎮';
+    }
+    const s = data.stats || {};
+    $('pfStats').innerHTML = [['Created', s.created], ['Wins', s.wins], ['Losses', s.losses], ['Draws', s.draws]]
+      .map(([l, v]) => `<div class="pf-stat"><b>${Number(v) || 0}</b><span>${l}</span></div>`).join('');
+
+    const list = data.challenges || [];
+    $('pfList').innerHTML = list.length
+      ? list.map(arenaRow).join('')
+      : `<div class="ar-empty">${isMe ? "You haven't" : "This player hasn't"} created any challenges yet.</div>`;
+  } catch (err) {
+    if (token !== profileToken) return;
+    $('pfList').innerHTML = `<div class="ar-empty">${escapeHtml(err.message || 'Could not load challenges.')}</div>`;
+  }
+}
+
+// Tap any player's emoji (sidebar, wall cards, Arena rows…) → their profile.
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-pf-uid]');
+  if (!t) return;
+  e.stopPropagation();
+  e.preventDefault();
+  openProfile({ uid: t.dataset.pfUid, name: t.dataset.pfName, avatar: t.dataset.pfAv });
+}, true);
+
+// …and the avatar inside the story viewer (the story pauses while you look).
+$('storyViewerAvatar').style.cursor = 'pointer';
+$('storyViewerAvatar').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!activeGroup || isMineGroup(activeGroup)) return;
+  pauseStory('sheet');
+  openProfile({
+    uid: activeGroup.userId,
+    name: activeGroup.username,
+    avatar: activeGroup.avatar,
+    fromViewer: true,
+    onClose: () => resumeStory('sheet')
+  });
+});
+
+// Esc closes the profile first (before the viewer / modals see it).
+document.addEventListener('keydown', (e) => {
+  const m = document.getElementById('pfModal');
+  if (e.key === 'Escape' && m && m.style.display !== 'none') {
+    e.stopImmediatePropagation();
+    closeProfile();
+  }
+}, true);
+
+/* -----------------------------------------------------------
    KEYBOARD (desktop) + AUTO REFRESH
 ----------------------------------------------------------- */
 document.addEventListener('keydown', (e) => {
@@ -1119,12 +1444,14 @@ document.addEventListener('keydown', (e) => {
 
 if (me) {
   loadStories();
+  renderArena();
+  loadArena();
 
   // Pick up new stories (and refresh "2h" labels) without a reload.
   setInterval(() => {
     const busy = $('storyViewer').style.display === 'flex'
       || $('storyUploadModal').style.display === 'flex'
       || $('storyTextModal').style.display === 'flex';
-    if (!busy && !document.hidden) loadStories();
+    if (!busy && !document.hidden) { loadStories(); loadArena(); }
   }, 60000);
 }
