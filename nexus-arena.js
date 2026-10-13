@@ -159,7 +159,7 @@ async function refreshStrip() {
   const room = curRoom();
   let strip = $('#arStrip');
   if (!strip) { strip = document.createElement('div'); strip.id = 'arStrip'; $('#messages').before(strip); }
-  if (!room || room === 'nexus-ai') { strip.innerHTML = ''; return; }
+  if (!room || room.indexOf('nexus-ai') === 0) { strip.innerHTML = ''; return; }
   stripRoom = room;
   try {
     const d = await api('/api/arena?view=active&room=' + encodeURIComponent(room));
@@ -324,7 +324,7 @@ function mountChat() {
   const b = document.createElement('button'); b.type = 'button'; b.id = 'arOpenBtn'; b.className = 'call-btn'; b.title = 'Challenge a player'; b.textContent = '⚔';
   b.addEventListener('click', () => openCreate()); hdr.appendChild(b);
   const nm = $('#activeRoomName');
-  new MutationObserver(() => { refreshStrip(); const ai = curRoom() === 'nexus-ai'; b.style.display = ai ? 'none' : ''; }).observe(nm, { childList: true, characterData: true, subtree: true });
+  new MutationObserver(() => { refreshStrip(); const ai = curRoom().indexOf('nexus-ai') === 0; b.style.display = ai ? 'none' : ''; }).observe(nm, { childList: true, characterData: true, subtree: true });
   refreshStrip(); setInterval(refreshStrip, 60000);
   const tryHook = () => { hookSocket(); if (!(chatSocket() || {}).__arena) setTimeout(tryHook, 800); }; tryHook();
 }
