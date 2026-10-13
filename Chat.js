@@ -490,6 +490,16 @@ if (!typingIndicatorEl && messageForm) {
 let replyingTo = null; // { id, author, text }
 let editingId = null;  // id of the message currently being edited, if any
 let onlineUsers = [];  // [{ userId, username, avatar }] for the active room
+// userId -> emoji, learned from the "Online now" strip and from opened profiles,
+// so message authors can show their icon (falls back to their first letter).
+const avatarCache = new Map();
+window.addEventListener('nexus:profile', (e) => {
+  if (e.detail && e.detail.avatar) avatarCache.set(String(e.detail.uid), e.detail.avatar);
+});
+function avatarIconFor(userId, name){
+  const a = avatarCache.get(String(userId));
+  return escapeHTML(a || (String(name || '?').trim().charAt(0).toUpperCase() || '?'));
+}
 
 function generateId(){
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -993,7 +1003,7 @@ function renderMessages(){
     // sense for someone else's verified, logged-in message.
     const authorIsClickable = !isMe && !!m.authorId;
     const authorSpan = authorIsClickable
-      ? `<button type="button" class="msg-author msg-author-link" data-uid="${escapeHTML(String(m.authorId))}" data-username="${escapeHTML(m.author)}" title="View profile & message ${escapeHTML(m.author)}">${escapeHTML(m.author)}</button>`
+      ? `<button type="button" class="msg-author msg-author-link" data-uid="${escapeHTML(String(m.authorId))}" data-username="${escapeHTML(m.author)}" data-pf-uid="${escapeHTML(String(m.authorId))}" data-pf-name="${escapeHTML(m.author)}" data-pf-av="${escapeHTML(avatarCache.get(String(m.authorId)) || '')}" title="View ${escapeHTML(m.author)}'s profile"><span class="msg-av">${avatarIconFor(m.authorId, m.author)}</span>${escapeHTML(m.author)}</button>`
       : `<span class="msg-author">${escapeHTML(m.author)}</span>`;
 
     const editedTag = m.edited ? `<span class="msg-edited-tag">(edited)</span>` : '';
@@ -1046,6 +1056,7 @@ function renderOnlineList(){
 
   const myUserId = getMyUserId();
   const others = onlineUsers.filter(u => String(u.userId) !== myUserId);
+  others.forEach(u => { if (u.avatar) avatarCache.set(String(u.userId), u.avatar); });
 
   if (!others.length){
     onlineListEl.innerHTML = '<span class="online-empty">No one else online in this room</span>';
@@ -1055,7 +1066,7 @@ function renderOnlineList(){
   onlineListEl.innerHTML = `
     <span class="online-label">Online now</span>
     ${others.map(u => `
-      <button type="button" class="online-user" data-uid="${escapeHTML(String(u.userId))}" data-username="${escapeHTML(u.username || '')}" data-avatar="${escapeHTML(u.avatar || '')}" title="View profile & message ${escapeHTML(u.username || '')}">
+      <button type="button" class="online-user" data-uid="${escapeHTML(String(u.userId))}" data-username="${escapeHTML(u.username || '')}" data-avatar="${escapeHTML(u.avatar || '')}" data-pf-uid="${escapeHTML(String(u.userId))}" data-pf-name="${escapeHTML(u.username || '')}" data-pf-av="${escapeHTML(u.avatar || '')}" title="View ${escapeHTML(u.username || '')}'s profile">
         <span class="online-avatar">${escapeHTML(u.avatar || '🎮')}</span>
         <span class="online-username">${escapeHTML(u.username || 'Player')}</span>
       </button>
@@ -2184,7 +2195,7 @@ renderMessages = function() {
 
     const authorIsClickable = !isMe && !!m.authorId;
     const authorSpan = authorIsClickable
-      ? `<button type="button" class="msg-author msg-author-link" data-uid="${escapeHTML(String(m.authorId))}" data-username="${escapeHTML(m.author)}" title="View profile & message ${escapeHTML(m.author)}">${escapeHTML(m.author)}</button>`
+      ? `<button type="button" class="msg-author msg-author-link" data-uid="${escapeHTML(String(m.authorId))}" data-username="${escapeHTML(m.author)}" data-pf-uid="${escapeHTML(String(m.authorId))}" data-pf-name="${escapeHTML(m.author)}" data-pf-av="${escapeHTML(avatarCache.get(String(m.authorId)) || '')}" title="View ${escapeHTML(m.author)}'s profile"><span class="msg-av">${avatarIconFor(m.authorId, m.author)}</span>${escapeHTML(m.author)}</button>`
       : `<span class="msg-author">${escapeHTML(m.author)}</span>`;
 
     const editedTag = m.edited ? `<span class="msg-edited-tag">(edited)</span>` : '';
