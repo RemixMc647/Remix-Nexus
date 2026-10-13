@@ -82,6 +82,10 @@ css.textContent = `
 .ar-proof{background:#0b0b16;border:1px solid #1d2140;border-radius:12px;padding:8px;text-align:center;font-size:12px}
 .ar-proof img{width:100%;border-radius:8px;margin-top:6px;cursor:zoom-in;max-height:220px;object-fit:cover}
 .ar-wait{padding:34px 4px;color:#6b739f}
+.ar-proof video{width:100%;display:block;border-radius:8px;margin-top:6px;max-height:240px;background:#000;object-fit:contain}
+.ar-kind{margin-top:5px;color:#8f98c9;font-size:11px}
+.ar-expired{padding:26px 4px;color:#8f98c9}
+.ar-up{margin:10px 0;padding:10px 12px;border-radius:10px;background:#0b1233;border:1px solid #0066ff;color:#cfe0ff;text-align:center;font-weight:600}
 .ar-bar{height:10px;border-radius:99px;background:#d63a4a;overflow:hidden;margin:6px 0}.ar-bar i{display:block;height:100%;background:#0066ff;transition:width .5s}
 .ar-votes{display:flex;justify-content:space-between;font-weight:700}
 .ar-toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:#10142e;border:1px solid #0066ff;color:#fff;padding:10px 16px;border-radius:12px;z-index:100000;font:600 13px Poppins,system-ui,sans-serif;animation:arUp .3s both;max-width:90vw}
@@ -262,8 +266,24 @@ function compress(file) {
     img.onerror = () => reject(new Error('Could not read that image.')); img.src = url;
   });
 }
-function renderDetail() {
+// Uploading a video proof: text shown while it uploads (set by the file picker below).
+let uploading = false, upState = '', pendingRender = false;
+const videoPlaying = () => !!detailOv && Array.from(detailOv.querySelectorAll('video')).some(v => !v.paused && !v.ended);
+// If someone is watching a proof video, wait until they pause/finish before redrawing the
+// sheet — otherwise the 12-second refresh would restart the video.
+['pause', 'ended'].forEach(ev => document.addEventListener(ev, e => {
+  if (pendingRender && e.target && e.target.tagName === 'VIDEO') setTimeout(() => renderDetail(true), 60);
+}, true));
+// A proof video that no longer exists (they are removed a week after upload).
+document.addEventListener('error', e => {
+  const v = e.target;
+  if (v && v.tagName === 'VIDEO' && v.closest && v.closest('.ar-proof')) v.outerHTML = '<div class="ar-expired">🎬 Video expired</div>';
+}, true);
+
+function renderDetail(force) {
   if (!detailOv || !detailData || !open || open.id !== detailData.id) return;
+  if (!force && videoPlaying()) { pendingRender = true; return; }
+  pendingRender = false;
   const c = detailData, me = myId();
   const isPlayer = c.challenger.userId === me || c.opponent.userId === me;
   const t = target(c);
@@ -271,11 +291,18 @@ function renderDetail() {
   const total = (n[a.userId] || 0) + (n[b.userId] || 0);
   const pct = total ? Math.round((n[a.userId] || 0) / total * 100) : 50;
   const proofOf = u => (c.proofs || []).find(p => p.userId === u.userId);
-  const proofBox = u => { const p = proofOf(u); return `<div class="ar-proof"><b>${esc(u.username)}</b>${p ? `<img src="${p.image}" alt="Proof by ${esc(u.username)}" data-zoom>${p.note ? `<div style="margin-top:4px;color:#aab3e0">${esc(p.note)}</div>` : ''}` : `<div class="ar-wait">${c.status === 'live' || c.status === 'pending' ? '⏳ Not yet' : '📭 No proof'}</div>`}</div>`; };
+  const proofBox = u => {
+    const p = proofOf(u);
+    let body;
+    if (!p) body = `<div class="ar-wait">${c.status === 'live' || c.status === 'pending' ? '⏳ Not yet' : '📭 No proof'}</div>`;
+    else if (p.kind === 'video') body = `<video src="${esc(p.video)}" ${p.poster ? `poster="${esc(p.poster)}"` : ''} controls playsinline preload="metadata"></video><div class="ar-kind">🎬 Video proof${p.videoDuration ? ' · ' + Math.round(p.videoDuration) + 's' : ''}</div>${p.note ? `<div style="margin-top:4px;color:#aab3e0">${esc(p.note)}</div>` : ''}`;
+    else body = `<img src="${p.image}" alt="Proof by ${esc(u.username)}" data-zoom>${p.note ? `<div style="margin-top:4px;color:#aab3e0">${esc(p.note)}</div>` : ''}`;
+    return `<div class="ar-proof"><b>${esc(u.username)}</b>${body}</div>`;
+  };
   let actions = '';
   if (c.status === 'pending' && c.opponent.userId === me) actions = `<button class="ar-btn green" data-d="accept">Accept</button><button class="ar-btn red" data-d="decline">Decline</button>`;
   else if (c.status === 'pending' && c.challenger.userId === me) actions = `<button class="ar-btn red" data-d="decline">Cancel challenge</button>`;
-  if (c.status === 'judging' && isPlayer) actions = `<button class="ar-btn" data-d="proof">📸 ${proofOf(c.challenger.userId === me ? a : b) ? 'Replace my proof' : 'Upload my proof'}</button><input type="file" accept="image/*" id="arFile" hidden>`;
+  if (c.status === 'judging' && isPlayer) actions = `<button class="ar-btn" data-d="proof" ${uploading ? 'disabled' : ''}>📸🎬 ${proofOf(c.challenger.userId === me ? a : b) ? 'Replace my proof' : 'Upload my proof'}</button><input type="file" accept="image/*,video/*" id="arFile" hidden>`;
   const voteBtns = c.status === 'judging' && !isPlayer && me
     ? `<div class="ar-row"><button class="ar-btn ${c.myVote === a.userId ? '' : 'ghost'}" data-v="${esc(a.userId)}">${c.myVote === a.userId ? '✓ ' : ''}Vote ${esc(a.username)}</button><button class="ar-btn ${c.myVote === b.userId ? '' : 'ghost'}" data-v="${esc(b.userId)}">${c.myVote === b.userId ? '✓ ' : ''}Vote ${esc(b.username)}</button></div>` : '';
   const admin = CAN_DECIDE && (c.status === 'judging' || c.status === 'live')
@@ -286,13 +313,14 @@ function renderDetail() {
     <div style="text-align:center;color:#b9c4ff;margin-top:6px">${esc(c.gameName)} · ${c.minutes} min${c.note ? '<br>“' + esc(c.note) + '”' : ''}</div>
     ${t ? `<div style="text-align:center;color:#8f98c9;margin-top:10px">${esc(cdLabel(c))}</div><div class="ar-clock" data-cd="${t}">${fmt(t - Date.now())}</div>` : ''}
     ${c.status === 'completed' ? `<div class="ar-win">${c.draw ? '🤝 It\'s a draw' : '🏆 ' + esc(c.winnerName) + ' wins!'}<div style="font-size:11px;color:#b9c4ff;font-weight:500">${c.resolvedBy === 'votes' ? 'Decided by spectator votes' : c.resolvedBy === 'forfeit' ? 'Other player sent no proof' : c.resolvedBy === 'admin' ? 'Decided by an admin' : ''}</div></div>` : ''}
-    ${c.status === 'live' ? `<div class="ar-empty">👀 Players are competing. Proof opens when the timer hits zero — then everyone votes.</div>` : ''}
+    ${c.status === 'live' ? `<div class="ar-empty">👀 Players are competing. When the timer hits zero both players upload a picture or a 1-minute video as proof — then everyone votes.</div>` : ''}
     ${['judging', 'completed'].includes(c.status) ? `<div class="ar-proofs">${proofBox(a)}${proofBox(b)}</div>
       <div class="ar-votes"><span>${esc(a.username)} · ${n[a.userId] || 0}</span><span>${n[b.userId] || 0} · ${esc(b.username)}</span></div>
       <div class="ar-bar"><i style="width:${pct}%"></i></div>` : ''}
     ${voteBtns}
     ${c.status === 'judging' && !isPlayer && !me ? '<div class="ar-empty">Log in to vote.</div>' : ''}
-    ${c.status === 'judging' && isPlayer ? '<div class="ar-empty">Players can’t vote. Upload a screenshot that shows your result.</div>' : ''}
+    ${upState ? `<div class="ar-up">${esc(upState)}</div>` : ''}
+    ${c.status === 'judging' && isPlayer ? '<div class="ar-empty">Players can’t vote. Upload a screenshot or a video (up to 1 minute) that shows your result.</div>' : ''}
     <div class="ar-row">${actions}</div>${admin}`;
 }
 document.addEventListener('click', async e => {
@@ -311,11 +339,72 @@ document.addEventListener('click', async e => {
     else if (w) { await api(`/api/arena/${id}/decide`, { method: 'POST', body: JSON.stringify({ winnerId: w.dataset.w }) }); await fetchDetail(); }
   } catch (er) { toast(er.message); }
 });
+// How long is this video? Some phone videos report "unknown" until you jump to the end.
+function videoLength(file) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(file), v = document.createElement('video');
+    let done = false;
+    const finish = val => { if (done) return; done = true; URL.revokeObjectURL(url); resolve(val); };
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => {
+      if (isFinite(v.duration)) return finish(v.duration);
+      v.ontimeupdate = () => { v.ontimeupdate = null; finish(v.duration); };
+      try { v.currentTime = 1e101; } catch (e) { finish(NaN); }
+      setTimeout(() => finish(v.duration), 3500);
+    };
+    v.onerror = () => finish(NaN);
+    v.src = url;
+    setTimeout(() => finish(NaN), 8000);
+  });
+}
+// Sends the video straight to Cloudinary (not through our server) with a progress %.
+function sendVideo(file, sig, onPct) {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('file', file); fd.append('api_key', sig.apiKey); fd.append('timestamp', sig.timestamp);
+    fd.append('tags', sig.tags); fd.append('public_id', sig.publicId); fd.append('signature', sig.signature);
+    const x = new XMLHttpRequest();
+    x.open('POST', `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`);
+    x.upload.onprogress = ev => { if (ev.lengthComputable) onPct(Math.round(ev.loaded / ev.total * 100)); };
+    x.onload = () => {
+      let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {}
+      if (x.status >= 200 && x.status < 300 && j.public_id) resolve(j);
+      else reject(new Error((j.error && j.error.message) || 'The video upload failed. Please try again.'));
+    };
+    x.onerror = () => reject(new Error('Network problem while uploading the video.'));
+    x.send(fd);
+  });
+}
+function setUp(text) { upState = text; renderDetail(true); }
+
 document.addEventListener('change', async e => {
   if (!e.target || e.target.id !== 'arFile' || !e.target.files[0]) return;
-  try { toast('Uploading proof…'); const image = await compress(e.target.files[0]);
-    await api(`/api/arena/${open.id}/proof`, { method: 'POST', body: JSON.stringify({ image }) }); toast('📸 Proof uploaded'); await fetchDetail();
+  const file = e.target.files[0]; e.target.value = '';
+  const id = open && open.id;
+  if (!id || uploading) return;
+  uploading = true;
+  try {
+    if (/^video\//.test(file.type)) {
+      if (file.size > 100 * 1024 * 1024) throw new Error('That video is too large (max 100 MB).');
+      setUp('Checking your video…');
+      const secs = await videoLength(file);
+      if (isFinite(secs) && secs > 60.5) throw new Error('Proof videos can be at most 1 minute long. Please trim it and try again.');
+      setUp('Getting ready to upload…');
+      const sig = await api(`/api/arena/${id}/proof-signature`, { method: 'POST', body: '{}' });
+      const up = await sendVideo(file, sig, pct => setUp(`Uploading video… ${pct}%`));
+      setUp('Saving your proof…');
+      await api(`/api/arena/${id}/proof`, { method: 'POST', body: JSON.stringify({ mediaPublicId: up.public_id, mediaDuration: Number(up.duration) || (isFinite(secs) ? secs : 0) }) });
+      toast('🎬 Video proof uploaded');
+    } else if (/^image\//.test(file.type)) {
+      setUp('Uploading your picture…');
+      const image = await compress(file);
+      await api(`/api/arena/${id}/proof`, { method: 'POST', body: JSON.stringify({ image }) });
+      toast('📸 Proof uploaded');
+    } else {
+      throw new Error('Please choose a picture or a video.');
+    }
   } catch (er) { toast(er.message); }
+  finally { uploading = false; upState = ''; try { await fetchDetail(); } catch (e2) {} renderDetail(true); }
 });
 
 /* ---------------- Chat page: header button ---------------- */
