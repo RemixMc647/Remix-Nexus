@@ -46,7 +46,8 @@ function when(v) {
 }
 function myId() { return me ? String(me.id || me._id || '') : ''; }
 function myName() { return me ? String(me.username || '').toLowerCase() : ''; }
-function isOwner() { return !!(me && me.isOwner) || canSendGifts; }
+// Gifts: only the ONE account the server approves (RemixMc) sees the send form — the server decides, not this page.
+function isOwner() { return canSendGifts; }
 function avatarHtml(name, avatar) {
   const a = String(avatar || '');
   if (a && a.length <= 8 && !/^https?:/i.test(a)) return `<span class="av">${esc(a)}</span>`;
@@ -695,8 +696,9 @@ gform.addEventListener('submit', e => {
   const btn = $('[type=submit]', gform);
   const payload = Object.fromEntries(new FormData(gform).entries());
   guarded(btn, async () => {
-    await api('/api/realm/gifts', { method: 'POST', body: JSON.stringify(payload) });
-    toast(`🎁 Gift sent to @${String(payload.recipient).replace(/^@/, '')}!`);
+    const sent = await api('/api/realm/gifts', { method: 'POST', body: JSON.stringify(payload) });
+    const who = String(payload.recipient).replace(/^@/, '');
+    toast(sent.emailed ? `🎁 Gift sent to @${who} and emailed to them!` : `🎁 Gift sent to @${who}. ${sent.emailNote || ''}`.trim());
     confettiAt(btn);
     gform.elements.recipient.value = ''; gform.elements.message.value = ''; hideSug(); updatePreview();
     await loadGifts();
