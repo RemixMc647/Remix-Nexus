@@ -384,7 +384,8 @@ function worldMediaHtml(w) {
   const src = worldSrc(w);
   if (!src) return '';
   if (w.mediaType === 'video') {
-    return `<div class="cover-wrap"><video class="world-cover world-video" controls playsinline preload="metadata" src="${esc(src)}"></video></div>`;
+    const poster = w.mediaPoster ? (w.mediaPoster.startsWith('/') ? API + w.mediaPoster : w.mediaPoster) : '';
+    return `<div class="cover-wrap"><video class="world-cover world-video" controls playsinline preload="metadata" src="${esc(src)}"${poster ? ` poster="${esc(poster)}"` : ''} data-orig="${esc(w.mediaSrcOriginal || '')}"></video></div>`;
   }
   return `<div class="cover-wrap"><img class="world-cover" loading="lazy" src="${esc(src)}" alt=""></div>`;
 }
@@ -415,6 +416,11 @@ function renderWorlds() {
       </div>
     </article>`;
   }).join('') : `<div style="grid-column:1/-1">${emptyHtml('🌌', 'No worlds shared yet.<br>Publish the first discovery!')}</div>`;
+  $$('video.world-video', box).forEach(v => v.addEventListener('error', () => {
+    const orig = v.dataset.orig;
+    if (orig && v.dataset.tried !== '1' && v.getAttribute('src') !== orig) { v.dataset.tried = '1'; v.src = orig; v.load(); return; }
+    const w = v.closest('.cover-wrap'); if (w) w.innerHTML = '<div class="empty" style="padding:18px">🎬 This video can’t be played right now.</div>';
+  }));
   $$('img.world-cover', box).forEach(img => img.addEventListener('error', () => { const w = img.closest('.cover-wrap'); if (w) w.remove(); }));
   applyFocus('world', '#world-list');
 }
@@ -548,21 +554,28 @@ function renderSquads() {
   if (!loaded.squads) { box.innerHTML = skeleton(3); return; }
   const a = cache.squads;
   box.innerHTML = a.length ? a.map((s, i) => {
-    const need = Number(s.playersNeeded) || 1, got = Math.min(Number(s.requestCount) || 0, need);
+    const need = Number(s.playersNeeded) || 1, got = Math.min(Number(s.memberCount) || 0, need);
+    const full = s.status === 'FULL' || got >= need;
     const slots = Array.from({ length: need }, (_, k) => `<span class="slot${k < got ? ' fill' : ''}"></span>`).join('');
     let btn;
     if (s.mine) btn = '';
     else if (!me) btn = `<a class="btn btn-primary" href="./Login.html">Log in to join</a>`;
-    else if (s.requested) btn = `<button class="btn btn-ghost" disabled>✓ Request sent</button>`;
+    else if (s.member) btn = `<button class="btn btn-ghost" data-act="leave" data-id="${esc(s._id)}">✓ You're in · Leave</button>`;
+    else if (s.requested) btn = `<button class="btn btn-ghost" disabled>⏳ Waiting for approval</button>`;
+    else if (full) btn = `<button class="btn btn-ghost" disabled>Squad full</button>`;
     else btn = `<button class="btn btn-primary" data-act="join" data-id="${esc(s._id)}">Request to join</button>`;
     const canRemove = s.mine || (me && me.isOwner);
+    const reqs = s.mine && Array.isArray(s.requests) ? s.requests : [];
+    const mems = s.mine && Array.isArray(s.memberList) ? s.memberList : [];
+    const reqHtml = reqs.length ? `<div class="reqs">👋 <b>Join requests</b>${reqs.map(r => `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(r.username)}</span><button class="btn btn-small btn-primary" data-act="accept" data-id="${esc(s._id)}" data-uid="${esc(r.userId)}"${full ? ' disabled' : ''}>Accept</button><button class="btn btn-small btn-ghost" data-act="decline" data-id="${esc(s._id)}" data-uid="${esc(r.userId)}">Decline</button></div>`).join('')}</div>` : '';
+    const memHtml = (s.mine ? mems.map(m => m.username) : (s.memberNames || [])).length ? `<p>🎮 In the squad: <b style="color:#d8dcf5">${(s.mine ? mems.map(m => m.username) : s.memberNames).map(esc).join(', ')}</b></p>` : '';
     return `<article class="item-card" data-id="${esc(s._id)}" style="--i:${Math.min(i, 8)}">
-      <div class="item-top"><div><h4>${esc(s.name)}</h4><p style="margin:0">${esc(s.game)} · ${esc(need)} player${need === 1 ? '' : 's'} needed</p></div><span class="tag s-open">${esc(s.status || 'OPEN')}</span></div>
-      <div class="slots" title="${got} of ${need} spots requested">${slots}<span class="muted" style="margin-left:6px">${got}/${need} requested</span></div>
+      <div class="item-top"><div><h4>${esc(s.name)}</h4><p style="margin:0">${esc(s.game)} · ${esc(need)} player${need === 1 ? '' : 's'} needed</p></div><span class="tag s-${full ? 'completed' : 'open'}">${full ? 'FULL' : 'OPEN'}</span></div>
+      <div class="slots" title="${got} of ${need} spots filled">${slots}<span class="muted" style="margin-left:6px">${got}/${need} joined</span></div>
       <p><b style="color:#d8dcf5">${esc(s.activity || 'Looking for teammates')}</b></p>
       <p>${esc(s.description || 'No extra details.')}</p>
       <p>Created by <b class="pf-link"${s.creatorId ? ` data-pf-uid="${esc(s.creatorId)}" data-pf-name="${esc(s.creatorName || '')}"` : ''}>${esc(s.creatorName || 'Nexus player')}</b> · ${esc(when(s.createdAt))}</p>
-      ${s.mine && s.requests && s.requests.length ? `<div class="reqs">👋 Wants to join: <b>${s.requests.map(esc).join(', ')}</b></div>` : ''}
+      ${memHtml}${reqHtml}
       <div class="item-actions">${btn}<button class="btn btn-ghost" data-act="share" data-id="${esc(s._id)}">🔗 Share</button>${canRemove ? `<button class="btn btn-danger" data-act="remove" data-id="${esc(s._id)}">Remove</button>` : ''}</div>
     </article>`;
   }).join('') : emptyHtml('👥', 'No squads listed yet.<br>Create one to find teammates!');
@@ -577,7 +590,9 @@ $('#squad-list').addEventListener('click', e => {
   const id = b.dataset.id, act = b.dataset.act;
   if (act === 'share') return copyText(`${location.origin}${location.pathname}?squad=${id}#squads`, 'Squad link copied.');
   if (!needLogin()) return;
-  if (act === 'join') guarded(b, async () => { await api(`/api/realm/squads/${encodeURIComponent(id)}/join`, { method: 'POST', body: '{}' }); toast('👋 Join request sent!'); confettiAt(b); await loadSquads(true); });
+  if (act === 'join') guarded(b, async () => { await api(`/api/realm/squads/${encodeURIComponent(id)}/join`, { method: 'POST', body: '{}' }); toast('👋 Request sent — the creator will accept or decline it.'); confettiAt(b); await loadSquads(true); });
+  if (act === 'accept' || act === 'decline') guarded(b, async () => { const d = await api(`/api/realm/squads/${encodeURIComponent(id)}/${act}`, { method: 'POST', body: JSON.stringify({ userId: b.dataset.uid }) }); toast(act === 'accept' ? '✅ ' + (d.message || 'Player accepted.') : 'Request declined.'); if (act === 'accept') confettiAt(b); await loadSquads(true); });
+  if (act === 'leave') guarded(b, async () => { await api(`/api/realm/squads/${encodeURIComponent(id)}/leave`, { method: 'POST', body: '{}' }); toast('You left the squad.'); await loadSquads(true); });
   if (act === 'remove') modal({ title: 'Remove this squad?', text: 'The listing will disappear for everyone.', okText: 'Remove' }).then(ok => {
     if (!ok) return;
     guarded(null, async () => { await api(`/api/realm/squads/${encodeURIComponent(id)}`, { method: 'DELETE' }); toast('Squad removed.'); await loadSquads(true); });
@@ -589,6 +604,7 @@ $('#squad-form').addEventListener('submit', e => {
   const form = e.currentTarget, btn = $('[type=submit]', form);
   const payload = Object.fromEntries(new FormData(form).entries());
   payload.playersNeeded = Number(payload.playersNeeded);
+  { const sel = form.elements.game, opt = sel && sel.selectedOptions && sel.selectedOptions[0]; payload.roomId = (opt && opt.dataset.room) || ''; } // lets the server post the squad in that game's chat room
   guarded(btn, async () => { await api('/api/realm/squads', { method: 'POST', body: JSON.stringify(payload) }); form.reset(); toast('👥 Squad published!'); confettiAt(btn); await loadSquads(true); });
 });
 
@@ -887,11 +903,20 @@ document.addEventListener('keydown', e => {
 function fillGameSelects() {
   const rooms = (typeof DEFAULT_ROOMS !== 'undefined' && Array.isArray(DEFAULT_ROOMS)) ? DEFAULT_ROOMS : [];
   if (!rooms.length) return; // rooms.js missing — keep whatever the page already has
-  $$('#challenge-form select[name="game"], #world-form select[name="game"]').forEach(sel => {
+  // The squad form may still use a plain text box — swap it for a dropdown so
+  // squads use the same room/game list as challenges and worlds.
+  $$('#squad-form [name="game"]').forEach(el => {
+    if (el.tagName === 'SELECT') return;
+    const sel = document.createElement('select');
+    sel.name = 'game'; sel.id = el.id; sel.className = el.className; sel.required = true;
+    el.replaceWith(sel);
+  });
+  $$('#challenge-form select[name="game"], #world-form select[name="game"], #squad-form select[name="game"]').forEach(sel => {
     const keep = sel.querySelector('option[value=""]');
     sel.innerHTML = '';
     sel.appendChild(keep || new Option('Choose a game', ''));
-    rooms.forEach(r => sel.appendChild(new Option(String(r.name).slice(0, 40), String(r.name).slice(0, 40))));
+    rooms.filter(r => r.id !== 'lounge' && String(r.id).indexOf('nexus-ai') !== 0)
+      .forEach(r => { const o = new Option(String(r.name).slice(0, 40), String(r.name).slice(0, 40)); o.dataset.room = r.id; sel.appendChild(o); });
     sel.appendChild(new Option('🎮 Other', 'Other'));
   });
 }
