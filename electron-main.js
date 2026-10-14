@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, shell } = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -28,8 +28,11 @@ if (!gotLock) {
       icon: path.join(__dirname, 'build/icons/icon-linux-512.png'),
       show: false, // don't show until content is actually ready
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
+        // The window shows your live website, so it must NOT get Node.js powers
+        // (otherwise any script on a page could read files / run programs on the user's PC).
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true
       }
     });
 
@@ -41,7 +44,9 @@ if (!gotLock) {
 
     // If the page fails to load (backend cold-starting, network issue,
     // wrong URL, etc.) tell the user instead of silently showing nothing.
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      // Ignore ads/embeds that fail to load and cancelled navigations (-3) — only the page itself matters.
+      if (!isMainFrame || errorCode === -3) return;
       console.error('Failed to load app:', errorCode, errorDescription);
       dialog.showErrorBox(
         'Remix Nexus — Connection Error',
@@ -50,7 +55,15 @@ if (!gotLock) {
       mainWindow.show(); // show anyway so the user isn't stuck on nothing
     });
 
-    mainWindow.loadURL('https://remix-nexus-tygt.onrender.com');
+    // Links to other websites (YouTube, GitHub…) open in the normal browser, not inside the app.
+    const SITE = 'https://remix-nexus-tygt.onrender.com';
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      if (url.startsWith(SITE)) return { action: 'allow' };
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
+
+    mainWindow.loadURL(SITE);
 
     mainWindow.on('closed', () => {
       mainWindow = null;
