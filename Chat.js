@@ -755,6 +755,58 @@ function clearUnread(roomId){
   saveUnreadCounts(counts);
 }
 
+/* -----------------------------------------------------------
+   MISSED-MESSAGE COUNTS (WhatsApp style)
+   The numbers above only cover messages that arrived while this page was
+   open. The server also remembers when you last opened each room, so when
+   you come back it can tell you how many messages each room got while you
+   were away — shown on the room before you click it.
+----------------------------------------------------------- */
+const readMarkTimers = {};
+
+// Tell the server "I've seen this room up to now" (debounced so a busy room
+// doesn't send a request for every single message).
+function markRoomRead(roomId){
+  const token = window.AUTH ? AUTH.getToken() : null;
+  if (!token || !roomId) return Promise.resolve();
+  clearTimeout(readMarkTimers[roomId]);
+  return new Promise((resolve) => {
+    readMarkTimers[roomId] = setTimeout(() => {
+      fetch(API_BASE + '/api/me/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ room: roomId }),
+        keepalive: true
+      }).catch(() => {}).then(resolve);
+    }, 400);
+  });
+}
+
+// Ask the server how many messages each room got since you last read it.
+async function syncServerUnread(){
+  const token = window.AUTH ? AUTH.getToken() : null;
+  if (!token) return;
+  try {
+    const ids = (typeof rooms !== 'undefined' && Array.isArray(rooms) ? rooms : []).map(r => r.id).filter(Boolean);
+    if (!ids.length) return;
+    const res = await fetch(API_BASE + '/api/me/unread', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ rooms: ids })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const fromServer = data.rooms || {};
+    const counts = getUnreadCounts();
+    ids.forEach((id) => {
+      if (id === activeRoomId && isAppInForeground()) { delete counts[id]; return; }  // the room you're looking at is read
+      if (fromServer[id] > 0) counts[id] = fromServer[id]; else delete counts[id];
+    });
+    saveUnreadCounts(counts);
+    renderRooms();
+  } catch (err) { /* offline / server asleep — the live counters still work */ }
+}
+
 // The tab counts as "not being looked at" if it's hidden (a different tab
 // or app is in front) or the browser window itself doesn't have focus.
 function isAppInForeground(){
@@ -906,7 +958,10 @@ function updateConnectionBadge(){
 }
 
 if (socket){
-  socket.on('connect', () => { updateConnectionBadge(); switchRoom(activeRoomId); subscribeToKnownRooms(); });
+  socket.on('connect', () => {
+    updateConnectionBadge(); switchRoom(activeRoomId); subscribeToKnownRooms();
+    markRoomRead(activeRoomId).then(syncServerUnread);
+  });
   socket.on('disconnect', updateConnectionBadge);
   socket.on('connect_error', updateConnectionBadge);
 }
@@ -1093,6 +1148,7 @@ function switchRoom(roomId){
   }
 
   clearUnread(roomId);
+  markRoomRead(roomId);
   onlineUsers = [];
   renderOnlineList();
   clearTypingIndicator();
@@ -1385,6 +1441,7 @@ if (socket){
 
     if (room === activeRoomId && isAppInForeground()){
       clearUnread(room);
+      markRoomRead(room);
       renderMessages();
     } else if (!isMine){
       bumpUnread(room);
@@ -2371,4 +2428,10 @@ clearReplyTarget();
 
 }
 
+});
+
+// Coming back to the tab/app: the open room is read; refresh everyone else's counts.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') markRoomRead(activeRoomId).then(syncServerUnread);
+  else markRoomRead(activeRoomId);
 });
