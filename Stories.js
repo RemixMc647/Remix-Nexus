@@ -1417,6 +1417,98 @@ document.addEventListener('keydown', (e) => {
   }
 }, true);
 
+
+/* -----------------------------------------------------------
+   👥 NEXUS SQUADS — squads created in Nexus Realm show here too
+   (own markup, reuses the Arena styles above)
+----------------------------------------------------------- */
+const squadsView = { list: [], loaded: false, expanded: false };
+
+function ensureSquadSection() {
+  let sec = document.getElementById('squadSection');
+  if (sec) return sec;
+  const wall = $('storyWall');
+  if (!wall || !wall.parentNode) return null;
+  sec = document.createElement('section');
+  sec.id = 'squadSection';
+  sec.className = 'ar-section';
+  sec.innerHTML = `
+    <div class="ar-head">
+      <h2 class="ar-title">👥 Squads</h2>
+      <span class="ar-note">Players looking for teammates right now.</span>
+      <div class="ar-tabs"><a class="ar-tab" href="./NexusRealm.html#squads" style="text-decoration:none">＋ Create</a></div>
+    </div>
+    <div class="ar-list" id="squadList"></div>`;
+  const arenaSec = document.getElementById('arenaSection');
+  wall.parentNode.insertBefore(sec, arenaSec ? arenaSec.nextSibling : wall);
+
+  sec.addEventListener('click', async (e) => {
+    if (e.target.closest('.ar-more')) { squadsView.expanded = !squadsView.expanded; renderSquads(); return; }
+    const join = e.target.closest('[data-join]');
+    if (join) {
+      join.disabled = true; join.textContent = 'Sending…';
+      try {
+        const res = await fetch(API_BASE + '/api/realm/squads/' + encodeURIComponent(join.dataset.join) + '/join', { method: 'POST', headers: authHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not send the request.');
+      } catch (err) { alert(err.message); }
+      loadSquads();
+    }
+  });
+  return sec;
+}
+
+function squadRow(sq) {
+  const need = Number(sq.playersNeeded) || 1;
+  const got = Math.min(Number(sq.memberCount) || 0, need);
+  const full = sq.status === 'FULL' || got >= need;
+  let action = '';
+  if (sq.mine) action = `<a class="ar-chip" style="text-decoration:none;color:inherit" href="./NexusRealm.html?squad=${encodeURIComponent(sq._id)}#squads">Manage${sq.requestCount ? ' (' + sq.requestCount + ')' : ''}</a>`;
+  else if (sq.member) action = '<span class="ar-chip win">✓ You\'re in</span>';
+  else if (sq.requested) action = '<span class="ar-chip vote">⏳ Pending</span>';
+  else if (full) action = '<span class="ar-chip">Full</span>';
+  else action = `<button type="button" class="ar-chip vote" style="border:0;cursor:pointer" data-join="${escapeHtml(sq._id)}">Request</button>`;
+  return `
+    <div class="ar-row" style="cursor:default">
+      <span class="ar-players"><button type="button" class="ar-av" data-pf-uid="${escapeHtml(sq.creatorId)}" data-pf-name="${escapeHtml(sq.creatorName)}" data-pf-av="🎮" title="View ${escapeHtml(sq.creatorName)}'s profile">🎮</button></span>
+      <span class="ar-info">
+        <b>${escapeHtml(sq.name)}</b>
+        <small>${escapeHtml(sq.game)} · ${got}/${need} joined · ${escapeHtml(sq.creatorName)} · ${agoLong(sq.createdAt)}</small>
+      </span>
+      ${action}
+    </div>`;
+}
+
+function renderSquads() {
+  const sec = ensureSquadSection();
+  if (!sec) return;
+  const list = $('squadList');
+  if (!squadsView.loaded) { list.innerHTML = '<div class="ar-empty">Loading squads…</div>'; return; }
+  const items = squadsView.list;
+  if (!items.length) {
+    list.innerHTML = '<div class="ar-empty">No squads right now. <a href="./NexusRealm.html#squads">Create one →</a></div>';
+    return;
+  }
+  const LIMIT = 4;
+  const shown = squadsView.expanded ? items : items.slice(0, LIMIT);
+  list.innerHTML = shown.map(squadRow).join('') +
+    (items.length > LIMIT ? `<button type="button" class="ar-more">${squadsView.expanded ? 'Show less' : 'Show all (' + items.length + ')'}</button>` : '');
+}
+
+async function loadSquads() {
+  try {
+    const res = await fetch(API_BASE + '/api/realm/squads', { headers: authHeaders() });
+    if (!res.ok) throw new Error('squads ' + res.status);
+    const data = await res.json();
+    squadsView.list = data.squads || [];
+    squadsView.loaded = true;
+    renderSquads();
+  } catch (err) {
+    console.error('Load squads error:', err);
+    if (!squadsView.loaded) { const l = $('squadList'); if (l) l.innerHTML = '<div class="ar-empty">Could not load squads right now.</div>'; }
+  }
+}
+
 /* -----------------------------------------------------------
    KEYBOARD (desktop) + AUTO REFRESH
 ----------------------------------------------------------- */
@@ -1446,12 +1538,14 @@ if (me) {
   loadStories();
   renderArena();
   loadArena();
+  renderSquads();
+  loadSquads();
 
   // Pick up new stories (and refresh "2h" labels) without a reload.
   setInterval(() => {
     const busy = $('storyViewer').style.display === 'flex'
       || $('storyUploadModal').style.display === 'flex'
       || $('storyTextModal').style.display === 'flex';
-    if (!busy && !document.hidden) { loadStories(); loadArena(); }
+    if (!busy && !document.hidden) { loadStories(); loadArena(); loadSquads(); }
   }, 60000);
 }
