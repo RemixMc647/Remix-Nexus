@@ -40,10 +40,10 @@
 
     // Native app, status bar plugin missing, and env() still says 0:
     // the page is almost certainly drawn under the status bar, so use a
-    // default of 28px (a normal Android status bar is ~24dp; 28 also
+    // default of 32px (a normal Android status bar is ~24dp; 28 also
     // clears most punch-hole cameras). Normal browsers never hit this.
     var SB = cap && cap.Plugins && cap.Plugins.StatusBar;
-    if (isNative && !SB && reported === 0) extra = 28;
+    if (isNative && !SB && reported === 0) extra = 32;
 
     root.style.setProperty('--safe-top-extra', extra + 'px');
   }
