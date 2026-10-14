@@ -48,6 +48,20 @@ content="https://remix-nexus-tygt.onrender.com/remix-nexus-controller-art.png">
 <link rel="stylesheet" href="./Trending.css">
 <link rel="icon" type="image/png" sizes="any" href="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b9de.png">
 <link rel="stylesheet" href="./safe-area.css">
+<!-- Hide "Download App" inside the installed apps (Android app, Windows/Linux desktop app). It still shows on the website. -->
+<script>
+(function () {
+  var inApp = false;
+  try {
+    var C = window.Capacitor;
+    if (C && ((C.isNativePlatform && C.isNativePlatform()) || (C.getPlatform && C.getPlatform() !== 'web'))) inApp = true;   // Android app
+    if (/Electron\//i.test(navigator.userAgent || '')) inApp = true;                                                          // Windows / Linux app
+    if (window.process && window.process.versions && window.process.versions.electron) inApp = true;
+  } catch (e) {}
+  if (inApp) document.documentElement.classList.add('is-app');
+})();
+</script>
+<style>html.is-app .download-banner, html.is-app .download-btn { display: none !important; }</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
