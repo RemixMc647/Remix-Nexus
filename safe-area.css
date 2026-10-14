@@ -45,3 +45,19 @@ body {
    this covers pages that don't use it. */
 .nav-bar { padding-bottom: max(6px, var(--safe-bottom)); }
 @media (min-width: 821px) { .nav-bar { padding-bottom: 12px; } }
+
+/* ---- Chat (open room) + Contacts (open DM) on phones ----
+   The page frame is exactly one screen tall (100dvh / --app-height). With
+   border-box + the top padding above, the header now starts BELOW the status
+   bar and the message box ends above the gesture bar, instead of the whole
+   frame being pushed off-screen. */
+html { height: 100%; }
+body.page-chat, body.page-contacts, body:has(.chat-shell) {
+  height: var(--app-height, 100dvh);
+  max-height: var(--app-height, 100dvh);
+  overflow: hidden;
+}
+@media (max-width: 820px) {
+  .chat-shell { height: 100% !important; }
+  .chat-shell.view-conversation .chat-main { padding-bottom: 0; }
+}
