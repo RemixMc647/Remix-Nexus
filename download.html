@@ -305,7 +305,7 @@
 
 <main>
     <section class="hero">
-        <span class="hero-badge"><i></i>Version 1.0.0 is live</span>
+        <span class="hero-badge"><i></i>Version 1.0.1 is live</span>
         <h1>Get Remix Nexus</h1>
         <p>Pick your platform. Same chat, same squads, same community — everywhere.</p>
     </section>
@@ -340,10 +340,10 @@
             <p>Desktop app for Windows 10 and 11.</p>
             <div class="specs">
                 <span>Format<b>.EXE</b></span>
-                <span>Version<b>1.0.0</b></span>
+                <span>Version<b>1.0.1</b></span>
                 <span>Min OS<b>Win 10+</b></span>
             </div>
-            <a class="get" href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus.Setup.1.0.0.exe" download target="_blank" rel="noopener" title="Download the Remix Nexus Windows app">⬇️ Download for Windows</a>
+            <a class="get" href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.1/Remix.Nexus.Setup.1.0.1.exe" download target="_blank" rel="noopener" title="Download the Remix Nexus Windows app">⬇️ Download for Windows</a>
         </article>
 
         <!-- Linux -->
@@ -354,21 +354,41 @@
             <p>Portable AppImage — works on most major distros.</p>
             <div class="specs">
                 <span>Format<b>.AppImage</b></span>
-                <span>Version<b>1.0.0</b></span>
+                <span>Version<b>1.0.1</b></span>
                 <span>Min OS<b>Any distro</b></span>
             </div>
-            <a class="get" href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.0/Remix.Nexus-1.0.0.AppImage" download title="Download the Remix Nexus Linux app">⬇️ Download for Linux</a>
+            <a class="get" href="https://github.com/RemixMc647/Remix-Nexus/releases/download/v1.0.1/Remix.Nexus-1.0.1.AppImage" download title="Download the Remix Nexus Linux app">⬇️ Download for Linux</a>
         </article>
 
     </section>
 
-    <details class="help">
+    <details class="help" data-help="android">
         <summary>How do I install the Android app?</summary>
         <ol>
             <li>Tap <b>Download APK</b> and wait for it to finish.</li>
             <li>Open the file from your notifications or <b>Downloads</b>.</li>
             <li>If Android asks, allow <b>Install unknown apps</b> for your browser, then go back and tap <b>Install</b>.</li>
             <li>Open Remix Nexus and log in — you're set.</li>
+        </ol>
+    </details>
+
+    <details class="help" data-help="windows">
+        <summary>How do I install the Windows app?</summary>
+        <ol>
+            <li>Click <b>Download for Windows</b> and open the <b>.exe</b> when it finishes.</li>
+            <li>If Windows shows <b>"Windows protected your PC"</b>, click <b>More info</b>, then <b>Run anyway</b>. This appears because the app is new and not yet code-signed.</li>
+            <li>Follow the installer. Remix Nexus opens and adds a Start-menu shortcut.</li>
+            <li>Updating? Just run the new installer — it replaces the old version.</li>
+        </ol>
+    </details>
+
+    <details class="help" data-help="linux">
+        <summary>How do I run the Linux app?</summary>
+        <ol>
+            <li>Download the <b>.AppImage</b> file.</li>
+            <li>Make it runnable: right-click → <b>Properties → Allow executing as a program</b>, or run <b>chmod +x Remix.Nexus-1.0.1.AppImage</b> in a terminal.</li>
+            <li>Double-click it (or run <b>./Remix.Nexus-1.0.1.AppImage</b>).</li>
+            <li>If it won't start on a newer distro, install <b>libfuse2</b> and try again.</li>
         </ol>
     </details>
 
@@ -414,6 +434,8 @@
     if (!p) return;
     var el = document.querySelector('.card[data-platform="' + p + '"]');
     if (el) el.classList.add('is-you');
+    var help = document.querySelector('.help[data-help="' + p + '"]');
+    if (help) { help.open = true; help.parentNode.insertBefore(help, document.querySelector('.help')); }
   })();
 </script>
 <script src="./safe-area.js"></script>
