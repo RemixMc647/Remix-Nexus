@@ -5,20 +5,19 @@
      crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Download Remix Nexus for Android, Windows, or Linux.">
     <meta name="robots" content="index, follow">
     <meta property="og:title" content="Remix Nexus">
     <meta property="og:description" content="Get Remix Nexus — the gaming community app. Available on Android, Windows, and Linux.">
     <meta property="og:image" content="https://remix-nexus-tygt.onrender.com/64bca3b4-63c3-4f2d-a8c3-3c75abc4b9de.png">
-    <meta property="og:url" content="https://remix-nexus-tygt.onrender.com/Download.html">
+    <meta property="og:url" content="https://remix-nexus-tygt.onrender.com/download.html">
     <meta property="og:type" content="website">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#000000">
     <title>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 | Download</title>
 
     <link rel="icon" href="./icon-linux-512.png" type="image/png">
-<link rel="stylesheet" href="./safe-area.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -270,6 +269,30 @@
         .floor { animation: none; }
         .card, .card::before, .card::after, .get, .dock a.item { transition: none; }
       }
+
+      /* ---------- Install help + other-device hint ---------- */
+      .help {
+        margin: 14px auto 0; max-width: 640px; padding: 12px 14px;
+        border-radius: 12px; background: rgba(0, 0, 0, .45); border: 1px solid var(--line);
+        font-size: 12px; line-height: 1.6; color: var(--muted);
+      }
+      .help summary { cursor: pointer; font-weight: 600; color: var(--text); }
+      .help ol { margin: 8px 0 0; padding-left: 18px; }
+      .help b { color: #dfe6ff; }
+      .web-hint {
+        display: none; margin: 0 0 14px; padding: 12px 14px; text-align: center;
+        border-radius: 12px; font-size: 12px; line-height: 1.6; color: var(--text);
+        background: rgba(0, 102, 255, .12); border: 1px solid rgba(0, 102, 255, .35);
+      }
+      .web-hint.show { display: block; }
+      .web-hint a { color: var(--blue-soft); }
+    </style>
+    <!-- Keep AFTER the inline styles: keeps content clear of the phone status bar / notch -->
+    <link rel="stylesheet" href="./safe-area.css">
+    <style>
+      /* The dock has its own padding; stop safe-area.css's .nav-bar rule overriding it */
+      .dock.nav-bar { padding: 8px; }
+      @media (max-width: 460px) { .dock.nav-bar { padding: 6px; } }
     </style>
 </head>
 
@@ -286,6 +309,12 @@
         <h1>Get Remix Nexus</h1>
         <p>Pick your platform. Same chat, same squads, same community — everywhere.</p>
     </section>
+
+    <div class="web-hint" id="webHint">
+        📱 On iPhone, iPad or Mac? There's no native app yet — open
+        <a href="./index.html">Remix Nexus</a> in your browser and use
+        <b>Share → Add to Home Screen</b> to install it like an app.
+    </div>
 
     <section class="grid" aria-label="Choose your platform">
 
@@ -333,6 +362,16 @@
 
     </section>
 
+    <details class="help">
+        <summary>How do I install the Android app?</summary>
+        <ol>
+            <li>Tap <b>Download APK</b> and wait for it to finish.</li>
+            <li>Open the file from your notifications or <b>Downloads</b>.</li>
+            <li>If Android asks, allow <b>Install unknown apps</b> for your browser, then go back and tap <b>Install</b>.</li>
+            <li>Open Remix Nexus and log in — you're set.</li>
+        </ol>
+    </details>
+
     <p class="note">All builds are hosted on <a href="https://github.com/RemixMc647/Remix-Nexus/releases" target="_blank" rel="noopener">GitHub Releases</a>.</p>
 </main>
 
@@ -356,23 +395,29 @@
     <a class="item" href="./Stories.html" data-label="Stories" aria-label="Stories">📸</a>
     <a class="item" href="./Search.html" data-label="Search" aria-label="Search">🔎</a>
     <a class="item" href="./Profile.html" data-label="Profile" aria-label="Profile">👤</a>
-    <a class="item" href="./Download.html" data-label="Download" aria-label="Download" aria-current="page">⬇️</a>
+    <a class="item" href="./download.html" data-label="Download" aria-label="Download" aria-current="page">⬇️</a>
 </nav>
 
 <script>
   // Highlight the card that matches the visitor's device
   (function () {
     var ua = navigator.userAgent || '';
+    var isApple = /iphone|ipad|ipod|macintosh|mac os x/i.test(ua);
     var p = /android/i.test(ua) ? 'android'
           : /windows/i.test(ua) ? 'windows'
+          : isApple ? ''
           : /linux|x11/i.test(ua) ? 'linux' : '';
+    if (isApple) {
+      var hint = document.getElementById('webHint');
+      if (hint) hint.classList.add('show');
+    }
     if (!p) return;
     var el = document.querySelector('.card[data-platform="' + p + '"]');
     if (el) el.classList.add('is-you');
   })();
 </script>
+<script src="./safe-area.js"></script>
 <script src="./config.js"></script>
 <script src="/js/pwa-register.js"></script>
-    <script src="./safe-area.js"></script>
 </body>
 </html>
