@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#070b15"><title>How to Play — RemixVerse</title><link rel="stylesheet" href="styles.css"></head>
+<body data-page="guide"><main class="page">
+
+<!-- BACK TO NEXUS REALM BUTTON -->
+<style>
+  .nexus-realm-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    padding: 13px 20px;
+    margin: 12px 0 20px;
+    border: 1px solid rgba(174, 145, 255, 0.65);
+    border-radius: 14px;
+    background:
+      linear-gradient(
+        120deg,
+        rgba(123, 79, 255, 0.22),
+        rgba(60, 190, 255, 0.12)
+      );
+    color: #f4efff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 0 22px rgba(128, 86, 255, 0.15);
+    transition: all 0.2s ease;
+  }
+
+  .nexus-realm-back:hover {
+    transform: translateY(-3px);
+    border-color: #bba5ff;
+    background:
+      linear-gradient(
+        120deg,
+        rgba(123, 79, 255, 0.38),
+        rgba(60, 190, 255, 0.23)
+      );
+    box-shadow: 0 0 28px rgba(128, 86, 255, 0.35);
+  }
+
+  .nexus-realm-back .nr-arrow {
+    color: #c4b1ff;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .nexus-realm-back .nr-star {
+    color: #7ee7ff;
+    font-size: 17px;
+  }
+
+  .nexus-realm-back:focus-visible {
+    outline: 3px solid #7ee7ff;
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 480px) {
+    .nexus-realm-back {
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nexus-realm-back {
+      transition: none;
+    }
+
+    .nexus-realm-back:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<a
+  class="nexus-realm-back"
+  href="https://remix-nexus-tygt.onrender.com/NexusRealm.html"
+>
+  <span class="nr-arrow" aria-hidden="true">←</span>
+  <span>Back to Nexus Realm</span>
+  <span class="nr-star" aria-hidden="true">✦</span>
+</a>
+
+  <section class="hero"><div class="eyebrow">RemixVerse field guide</div><h1><span class="gradient-text">Your life. Your choices.</span></h1><p>Learn how to play the life simulation built for the Remix Nexus community.</p><div class="actions"><a class="btn primary" href="play.html">Start playing →</a></div></section>
+<div class="grid">
+<section class="card span-12"><h2>How the game works</h2><div class="guide-list">
+<div class="guide-item"><strong>1. Create a life</strong><span class="muted">Choose a character name and a starting talent. Each new life gets a different city, family and starting stats.</span></div>
+<div class="guide-item"><strong>2. Make a choice each year</strong><span class="muted">Read the event and select an available option. Choices can improve or reduce stats, change relationships, affect money, and unlock new opportunities.</span></div>
+<div class="guide-item"><strong>3. Manage your energy</strong><span class="muted">Activities, career actions and spending time with people may use energy. Your energy restores when you age up.</span></div>
+<div class="guide-item"><strong>4. Grow your life</strong><span class="muted">Use Activities to develop your character, Relationships to strengthen bonds, and Career to apply for jobs, seek promotions or leave a job.</span></div>
+<div class="guide-item"><strong>5. Age up to continue</strong><span class="muted">After making your yearly event choice, press “Celebrate birthday & age up”. A new year begins, money flow is applied and a new event may appear.</span></div>
+<div class="guide-item"><strong>6. Build your legacy</strong><span class="muted">When a life ends, its score, rank and summary are recorded. The Legacy Hall shows past lives and achievements.</span></div>
+</div></section>
+<section class="card span-6"><h2>Your core stats</h2><p><span class="pill">Health</span> Affects your wellbeing and survival.</p><p><span class="pill">Happiness</span> Reflects how satisfied your character feels.</p><p><span class="pill">Intelligence</span> Can support education and career outcomes.</p><p><span class="pill">Reputation</span> Reflects how others see your character.</p><p><span class="pill">Money</span> Pays for costs and gifts, and can grow through employment.</p></section>
+<section class="card span-6"><h2>Saving and privacy</h2><p class="muted">When signed in, RemixVerse saves your current game, completed-life summaries, achievements and preferences to your private cloud account. A local browser cache helps the game stay responsive, while the server keeps the account copy.</p><p class="small">Sign in on another device to restore your progress. Use Reset in Legacy only if you intend to erase your saved lives and achievements.</p></section>
+</div></main>
+<script src="storage.js"></script><script src="fx.js"></script><script src="layout.js"></script></body></html>

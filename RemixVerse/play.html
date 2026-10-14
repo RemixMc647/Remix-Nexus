@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#070b15">
+    <title>Play RemixVerse — Remix Nexus</title>
+    <link rel="stylesheet" href="styles.css"></head>
+<body data-page="play"><main class="page">
+  
+<!-- BACK TO NEXUS REALM BUTTON -->
+<style>
+  .nexus-realm-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    padding: 13px 20px;
+    margin: 12px 0 20px;
+    border: 1px solid rgba(174, 145, 255, 0.65);
+    border-radius: 14px;
+    background:
+      linear-gradient(
+        120deg,
+        rgba(123, 79, 255, 0.22),
+        rgba(60, 190, 255, 0.12)
+      );
+    color: #f4efff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 0 22px rgba(128, 86, 255, 0.15);
+    transition: all 0.2s ease;
+  }
+
+  .nexus-realm-back:hover {
+    transform: translateY(-3px);
+    border-color: #bba5ff;
+    background:
+      linear-gradient(
+        120deg,
+        rgba(123, 79, 255, 0.38),
+        rgba(60, 190, 255, 0.23)
+      );
+    box-shadow: 0 0 28px rgba(128, 86, 255, 0.35);
+  }
+
+  .nexus-realm-back .nr-arrow {
+    color: #c4b1ff;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .nexus-realm-back .nr-star {
+    color: #7ee7ff;
+    font-size: 17px;
+  }
+
+  .nexus-realm-back:focus-visible {
+    outline: 3px solid #7ee7ff;
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 480px) {
+    .nexus-realm-back {
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nexus-realm-back {
+      transition: none;
+    }
+
+    .nexus-realm-back:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<a
+  class="nexus-realm-back"
+  href="https://remix-nexus-tygt.onrender.com/NexusRealm.html"
+>
+  <span class="nr-arrow" aria-hidden="true">←</span>
+  <span>Back to Nexus Realm</span>
+  <span class="nr-star" aria-hidden="true">✦</span>
+</a>
+
+  <div id="game-root"><div class="card"><h2>Checking your account…</h2><p class="muted">Loading your private cloud save.</p></div></div></main>
+<script src="storage.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="fx.js"></script><script src="layout.js"></script><script src="account.js"></script>
+</body></html>
