@@ -1,0 +1,11 @@
+REMIX VERSE LOGIN / SIGN-UP FIX
+
+Frontend location: this folder is intended to live at /Remix Vars/ inside the Remix Nexus website.
+The frontend now sends account requests to https://life-loop-game.onrender.com and includes the session cookie.
+
+IMPORTANT BACKEND STEP
+The server.js inside this folder must also be deployed by the Render Web Service named for the game (the service that serves https://life-loop-game.onrender.com). Configure that service's Root Directory to Remix Vars if it uses this same GitHub repository, with Build Command `npm install` and Start Command `npm start`. Keep the existing MONGODB_URI and SESSION_SECRET environment variables unchanged so existing accounts and sessions are not pointed at a new database.
+
+If the game service uses a different repository, update its server.js with the version in this folder and keep its existing environment variables. The main Remix Nexus website does not execute a nested server.js just because it is in a folder.
+
+The server explicitly permits credentialed API requests from https://remix-nexus-tygt.onrender.com. If you use a different custom domain for Remix Nexus, add that exact origin to allowedFrontendOrigins in server.js.
