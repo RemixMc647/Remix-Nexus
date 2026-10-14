@@ -713,6 +713,40 @@ function clearUnreadContact(contactId){
   saveUnreadContacts(counts);
 }
 
+/* -----------------------------------------------------------
+   MISSED-MESSAGE COUNTS (WhatsApp style)
+   The server knows which DMs sent to you are still unseen (the same flag
+   that drives "seen" ticks), so when you open this page it tells you how
+   many each person sent while you were away — shown before you open them.
+----------------------------------------------------------- */
+async function syncServerUnread(){
+  const token = window.AUTH ? AUTH.getToken() : null;
+  if (!token) return;
+  try {
+    const res = await fetch(API_BASE + '/api/me/unread', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ rooms: [] })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const fromServer = data.dms || {};
+    const counts = {};
+    Object.keys(fromServer).forEach((id) => {
+      if (fromServer[id] > 0) counts[id] = fromServer[id];
+    });
+    // the conversation you're looking at right now counts as read
+    if (activeContact && isAppInForeground()) delete counts[String(activeContact.id)];
+    // keep the "Nexus AI" contact (or anything else the server doesn't track) untouched
+    const old = getUnreadContacts();
+    Object.keys(old).forEach((id) => {
+      if (!(id in fromServer) && !contacts.some(c => String(c.id) === String(id))) counts[id] = old[id];
+    });
+    saveUnreadContacts(counts);
+    renderContactList();
+  } catch (err) { /* offline / server asleep — the live counters still work */ }
+}
+
 // The tab counts as "not being looked at" if it's hidden (a different tab
 // or app is in front) or the browser window itself doesn't have focus.
 function isAppInForeground(){
@@ -940,6 +974,7 @@ async function loadContacts(){
     const data = await res.json();
     contacts = data.contacts || [];
     renderContactList();
+    syncServerUnread();
   } catch (err) {
     contactListEl.innerHTML = '<p class="empty-state">Could not load contacts. Please try again later.</p>';
   }
@@ -1580,7 +1615,7 @@ function handleIncomingDM(payload){
   attachServerStatusBanner(socket);
 
   if (socket){
-    socket.on('connect', updateDmBadge);
+    socket.on('connect', () => { updateDmBadge(); syncServerUnread(); });
     socket.on('disconnect', updateDmBadge);
     socket.on('connect_error', updateDmBadge);
     socket.on('dm:message', handleIncomingDM);
@@ -2291,3 +2326,8 @@ window.NexusProfileOptions = {
     openContact(u.uid, { username: u.name, avatar: u.avatar });
   }
 };
+
+// Coming back to the tab/app: refresh how many each person sent while you were away.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') syncServerUnread();
+});
