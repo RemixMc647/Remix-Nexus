@@ -1,6 +1,6 @@
 {
   "name": "remix-nexus-gaming-society",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "main": "server.js",
   "type": "commonjs",
@@ -56,14 +56,9 @@
       "output": "dist"
     },
     "files": [
-      "*.html",
-      "*.css",
-      "*.js",
+      "electron-main.js",
       "build/icons/**",
-      "node_modules/"
-    ],
-    "extraResources": [
-      ".env"
+      "!node_modules/**"
     ],
     "win": {
       "target": "nsis",
@@ -73,7 +68,14 @@
       "target": "AppImage",
       "icon": "build/icons/icon-linux-512.png",
       "category": "Game",
-      "desktop": { "entry": { "StartupWMClass": "remix-nexus" } }
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "remix-nexus"
+        }
+      }
+    },
+    "extraMetadata": {
+      "main": "electron-main.js"
     }
   }
 }
