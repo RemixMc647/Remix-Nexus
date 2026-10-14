@@ -1,0 +1,22 @@
+LIFELOOP — REMIX NEXUS FILE SET
+
+Files:
+- index.html       Landing page
+- play.html        Playable game interface
+- legacy.html      Past lives and achievements
+- guide.html       Instructions
+- styles.css       Shared responsive visual theme
+- game.js          UI/controller for the existing simulation engine
+- storage.js       Supplied local-save system
+- data.js          Supplied game content
+- engine.js        Supplied game rules
+- fx.js            Supplied animation and sound effects
+- layout.js        Supplied shared header/footer and Remix Nexus link
+
+How to test:
+1. Keep all files together in one folder.
+2. Open index.html in a modern browser, or serve the folder with any static web server.
+3. Choose Start playing, create a life, make a choice, and age up.
+4. Progress is stored in this browser's localStorage.
+
+No GitHub, Render, backend, account, or external API connection was made. The Remix Nexus link is a normal outbound link only.
