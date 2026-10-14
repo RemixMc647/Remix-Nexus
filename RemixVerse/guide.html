@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#070b15"><title>How to Play — LifeLoop</title><link rel="stylesheet" href="styles.css">
+<style>
+.nexus-exit-wrap{position:fixed;top:16px;right:16px;z-index:100005;max-width:calc(100vw - 32px);animation:rv-exit-enter .7s cubic-bezier(.16,1,.3,1) both}
+.nexus-exit-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:12px 17px;border:2px solid rgba(255,255,255,.68);border-radius:17px;background:linear-gradient(115deg,#ff3bbd,#8157ff,#22caff,#b8ff45,#ff9a42,#ff3bbd);background-size:300% 300%;color:#fff!important;text-decoration:none!important;font:900 13px/1.2 system-ui,sans-serif;letter-spacing:.025em;text-shadow:0 2px 5px #25104c;box-shadow:0 8px 0 rgba(33,17,83,.5),0 0 28px rgba(255,59,189,.4);animation:rv-exit-rainbow 5s ease infinite,rv-exit-float 3s ease-in-out infinite;white-space:nowrap;transition:transform .18s,filter .18s}
+.nexus-exit-btn:hover{filter:brightness(1.18);transform:translateY(-3px) scale(1.04)}
+@media(max-width:520px){.nexus-exit-wrap{top:9px;right:9px}.nexus-exit-btn{font-size:11px;padding:10px 11px;border-radius:13px}}
+</style>
+</head>
+<body data-page="guide">
+<div class="nexus-exit-wrap"><a class="nexus-exit-btn" href="../NexusRealm.html" aria-label="Go and exit back to Nexus Realm">← Go &amp; Exit to Nexus Realm</a></div>
+<main class="page">
+<section class="hero"><div class="eyebrow">LifeLoop field guide</div><h1><span class="gradient-text">Your life. Your choices.</span></h1><p>Learn how to play the life simulation built for the Remix Nexus community.</p><div class="actions"><a class="btn primary" href="play.html">Start playing →</a></div></section>
+<div class="grid">
+<section class="card span-12"><h2>How the game works</h2><div class="guide-list">
+<div class="guide-item"><strong>1. Create a life</strong><span class="muted">Choose a character name and a starting talent. Each new life gets a different city, family and starting stats.</span></div>
+<div class="guide-item"><strong>2. Make a choice each year</strong><span class="muted">Read the event and select an available option. Choices can improve or reduce stats, change relationships, affect money, and unlock new opportunities.</span></div>
+<div class="guide-item"><strong>3. Manage your energy</strong><span class="muted">Activities, career actions and spending time with people may use energy. Your energy restores when you age up.</span></div>
+<div class="guide-item"><strong>4. Grow your life</strong><span class="muted">Use Activities to develop your character, Relationships to strengthen bonds, and Career to apply for jobs, seek promotions or leave a job.</span></div>
+<div class="guide-item"><strong>5. Age up to continue</strong><span class="muted">After making your yearly event choice, press “Celebrate birthday & age up”. A new year begins, money flow is applied and a new event may appear.</span></div>
+<div class="guide-item"><strong>6. Build your legacy</strong><span class="muted">When a life ends, its score, rank and summary are recorded. The Legacy Hall shows past lives and achievements.</span></div>
+</div></section>
+<section class="card span-6"><h2>Your core stats</h2><p><span class="pill">Health</span> Affects your wellbeing and survival.</p><p><span class="pill">Happiness</span> Reflects how satisfied your character feels.</p><p><span class="pill">Intelligence</span> Can support education and career outcomes.</p><p><span class="pill">Reputation</span> Reflects how others see your character.</p><p><span class="pill">Money</span> Pays for costs and gifts, and can grow through employment.</p></section>
+<section class="card span-6"><h2>Saving and privacy</h2><p class="muted">When signed in, LifeLoop saves your current game, completed-life summaries, achievements and preferences to your private cloud account. A local browser cache helps the game stay responsive, while the server keeps the account copy.</p><p class="small">Sign in on another device to restore your progress. Use Reset in Legacy only if you intend to erase your saved lives and achievements.</p></section>
+</div></main>
+<script src="storage.js"></script><script src="fx.js"></script><script src="layout.js"></script><script src="remix-vibe.js"></script>
+</body></html>

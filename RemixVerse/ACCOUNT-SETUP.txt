@@ -1,0 +1,23 @@
+LIFELOOP ACCOUNTS + PRIVATE CLOUD SAVES
+
+WHAT THIS VERSION ADDS
+- Email + password registration and login. Passwords are hashed with bcrypt.
+- Private server-side sessions stored in MongoDB.
+- Per-account cloud saves for current life, ended life, legacy, achievements and settings.
+- The game/legacy pages require a signed-in account. Logging out clears the browser's cached game/legacy data.
+- A local cache keeps the game responsive; saves sync to the server shortly after a game action.
+
+DEPLOY (MANUAL; NO REPOSITORY CONNECTION WAS MADE)
+1. Upload the whole LifeLoop-RemixNexus folder to your own hosting/repository. The included public/ folder contains the static site served by the Node service.
+2. Create a MongoDB Atlas database/user and allow the hosting service IP/network to connect. Use a dedicated database named lifeloop.
+3. Set MONGODB_URI and SESSION_SECRET in the hosting service's environment settings. Do not put real secrets in public files or commit them. SESSION_SECRET must be long and random.
+4. Use Node 20+; build command: npm install; start command: npm start. The included render.yaml is an optional manual configuration reference.
+5. Open /api/health to confirm the service is running, then open /account.html to register.
+
+IMPORTANT
+- This package does not connect to your GitHub, Render or MongoDB account. You must configure and deploy it yourself.
+- For cross-device persistence, the game and API must be served from the same HTTPS origin, as configured here.
+- Account registration does not yet include email verification, password reset, or account deletion. Add those before treating this as a production-grade public account system.
+- Use a strong database password, keep secrets private, and never share your MongoDB URI.
+
+Visual upgrade: remix-vibe.js adds colorful animated floaters, hover/click chimes, and click sparkles. Sound requires a browser user gesture and follows the in-game sound toggle when available.

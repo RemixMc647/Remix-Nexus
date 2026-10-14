@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070b15"><meta name="description" content="LifeLoop is an original life simulation game for the Remix Nexus community.">
+<title>LifeLoop — Remix Nexus</title><link rel="stylesheet" href="styles.css">
+
+<style>
+.nexus-exit-wrap{position:fixed;top:16px;right:16px;z-index:100005;max-width:calc(100vw - 32px);animation:rv-exit-enter .7s cubic-bezier(.16,1,.3,1) both}
+.nexus-exit-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:12px 17px;border:2px solid rgba(255,255,255,.68);border-radius:17px;background:linear-gradient(115deg,#ff3bbd,#8157ff,#22caff,#b8ff45,#ff9a42,#ff3bbd);background-size:300% 300%;color:#fff!important;text-decoration:none!important;font:900 13px/1.2 system-ui,sans-serif;letter-spacing:.025em;text-shadow:0 2px 5px #25104c;box-shadow:0 8px 0 rgba(33,17,83,.5),0 0 28px rgba(255,59,189,.4);animation:rv-exit-rainbow 5s ease infinite,rv-exit-float 3s ease-in-out infinite;white-space:nowrap;transition:transform .18s,filter .18s}
+.nexus-exit-btn:hover{filter:brightness(1.18);transform:translateY(-3px) scale(1.04)}
+@media(max-width:520px){.nexus-exit-wrap{top:9px;right:9px}.nexus-exit-btn{font-size:11px;padding:10px 11px;border-radius:13px}}
+</style>
+</head>
+<body data-page="home">
+<div class="nexus-exit-wrap"><a class="nexus-exit-btn" href="../NexusRealm.html" aria-label="Go and exit back to Nexus Realm">← Go &amp; Exit to Nexus Realm</a></div>
+
+<main class="page">
+<section class="hero">
+<div class="eyebrow">An original Remix Nexus experience</div>
+<h1><span class="gradient-text">Every life is a new story.</span></h1>
+<p>Build a life from the first day onward. Make choices, learn skills, find friends, develop a career and discover what kind of legacy you will leave behind.</p>
+<div class="actions"><a class="btn primary" href="play.html">Start playing →</a><a class="btn" href="guide.html">How to play</a></div>
+</section>
+<div class="grid">
+<section class="card span-4"><div class="eyebrow">01 / Decide</div><h2>Your choices matter</h2><p class="muted">Every year brings a new event. Choices can influence your health, happiness, intelligence, reputation and money.</p></section>
+<section class="card span-4"><div class="eyebrow">02 / Grow</div><h2>Build your future</h2><p class="muted">Explore activities, relationships, education and careers as your character moves through six life stages.</p></section>
+<section class="card span-4"><div class="eyebrow">03 / Remember</div><h2>Leave a legacy</h2><p class="muted">Your lives, scores and achievements follow your private account across devices.</p></section>
+<section class="card span-12"><div class="eyebrow">Your next chapter</div><h2>Ready to begin?</h2><p class="muted">LifeLoop is designed as a self-contained mini-game for Remix Nexus. Create an account to sync your game progress securely to the LifeLoop cloud service.</p><div class="actions"><a class="btn primary" href="play.html">Create your character</a><a class="btn" href="legacy.html">Explore the legacy hall</a></div></section>
+</div>
+</main>
+<script src="storage.js"></script><script src="fx.js"></script><script src="layout.js"></script>
+<script src="remix-vibe.js"></script>
+</body></html>

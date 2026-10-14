@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#070b15"><title>Play LifeLoop — Remix Nexus</title><link rel="stylesheet" href="styles.css">
+<style>
+.nexus-exit-wrap{position:fixed;top:16px;right:16px;z-index:100005;max-width:calc(100vw - 32px);animation:rv-exit-enter .7s cubic-bezier(.16,1,.3,1) both}
+.nexus-exit-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:12px 17px;border:2px solid rgba(255,255,255,.68);border-radius:17px;background:linear-gradient(115deg,#ff3bbd,#8157ff,#22caff,#b8ff45,#ff9a42,#ff3bbd);background-size:300% 300%;color:#fff!important;text-decoration:none!important;font:900 13px/1.2 system-ui,sans-serif;letter-spacing:.025em;text-shadow:0 2px 5px #25104c;box-shadow:0 8px 0 rgba(33,17,83,.5),0 0 28px rgba(255,59,189,.4);animation:rv-exit-rainbow 5s ease infinite,rv-exit-float 3s ease-in-out infinite;white-space:nowrap;transition:transform .18s,filter .18s}
+.nexus-exit-btn:hover{filter:brightness(1.18);transform:translateY(-3px) scale(1.04)}
+@media(max-width:520px){.nexus-exit-wrap{top:9px;right:9px}.nexus-exit-btn{font-size:11px;padding:10px 11px;border-radius:13px}}
+</style>
+</head>
+<body data-page="play">
+<div class="nexus-exit-wrap"><a class="nexus-exit-btn" href="../NexusRealm.html" aria-label="Go and exit back to Nexus Realm">← Go &amp; Exit to Nexus Realm</a></div>
+<main class="page"><div id="game-root"><div class="card"><h2>Checking your account…</h2><p class="muted">Loading your private cloud save.</p></div></div></main>
+<script src="storage.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="fx.js"></script><script src="layout.js"></script><script src="account.js"></script>
+<script src="remix-vibe.js"></script>
+</body></html>
