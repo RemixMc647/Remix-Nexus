@@ -828,6 +828,8 @@ own coturn) to ICE_SERVERS below.
   }
 
   function handleCallInvite({ callId, type, fromUserId, fromUsername, fromAvatar } = {}) {
+    if (incomingInvite && incomingInvite.callId === callId) return; // duplicate (live + replay)
+    if (call && call.callId === callId) return;
     if (call || roomCall) {
       // Already on a call — auto-decline, same as a busy signal.
       socket.emit('call:decline', { toUserId: fromUserId, callId });
@@ -964,6 +966,23 @@ own coturn) to ICE_SERVERS below.
       hideIncomingBanner();
       stopIncomingRingtone();
     }
+  }
+
+  function handleCallCancelled({ callId, reason } = {}) {
+    let hadIncoming = false;
+    if (incomingInvite && incomingInvite.callId === callId) { incomingInvite = null; hadIncoming = true; }
+    if (incomingRoomInvite && incomingRoomInvite.callId === callId) { incomingRoomInvite = null; hadIncoming = true; }
+    if (incomingGroupInvite && incomingGroupInvite.callId === callId) { incomingGroupInvite = null; hadIncoming = true; }
+    if (hadIncoming) {
+      hideIncomingBanner();
+      stopIncomingRingtone();
+    }
+    // Caller side: nobody answered within 30s.
+    if (call && call.callId === callId && call.direction === 'outgoing' && reason === 'timeout') {
+      alert(`${call.peerUsername || 'They'} didn't answer.`);
+      endCall(false);
+    }
+    if (window.__pendingPushCall && window.__pendingPushCall.callId === callId) window.__pendingPushCall = null;
   }
 
   function handleCallDeclined({ callId } = {}) {
@@ -1120,6 +1139,8 @@ own coturn) to ICE_SERVERS below.
   }
 
   function handleRoomCallIncoming({ room, roomName, callId, type, fromUsername } = {}) {
+    if (incomingRoomInvite && incomingRoomInvite.callId === callId) return; // duplicate
+    if (roomCall && roomCall.callId === callId) return;
     if (call || roomCall) return; // already busy
     incomingRoomInvite = { room, roomName: roomName || room, callId, type, fromUsername };
     showIncomingBanner(`${fromUsername || 'Someone'} started a ${type} call`, 'Tap to join', '🎮');
@@ -1259,6 +1280,8 @@ own coturn) to ICE_SERVERS below.
   }
 
   function handleGroupCallInvite({ callId, type, fromUserId, fromUsername, fromAvatar, participantCount } = {}) {
+    if (incomingGroupInvite && incomingGroupInvite.callId === callId) return; // duplicate
+    if (groupCall && groupCall.callId === callId) return;
     if (call || roomCall || groupCall) {
       // Already on a call — auto-decline, same as a busy signal.
       socket.emit('groupcall:decline', { callId });
@@ -1357,6 +1380,7 @@ own coturn) to ICE_SERVERS below.
     socket.on('call:signal', handleCallSignal);
     socket.on('call:ended', handleCallEnded);
     socket.on('call:declined', handleCallDeclined);
+    socket.on('call:cancelled', handleCallCancelled);
 
     socket.on('roomcall:incoming', handleRoomCallIncoming);
     socket.on('roomcall:participants', handleRoomCallParticipants);
@@ -1370,6 +1394,42 @@ own coturn) to ICE_SERVERS below.
     socket.on('groupcall:signal', handleGroupCallSignal);
     socket.on('groupcall:peer-left', handleGroupPeerLeft);
     socket.on('groupcall:declined', handleGroupCallDeclined);
+
+    // Ask the server to replay any call that's still ringing for us. Done
+    // now (listeners are attached) and on every reconnect — this is how a call
+    // that started while the app was closed shows its Accept/Decline screen.
+    socket.on('connect', syncRingingCalls);
+    syncRingingCalls();
+    wireNativeWakeHooks();
+  }
+
+  function syncRingingCalls() {
+    if (socket && socket.connected) socket.emit('call:sync');
+  }
+
+  // Android: when the user taps the incoming-call notification, the app is
+  // brought forward but its socket may still be asleep/disconnected. Wake it
+  // up so the server can replay the ringing call right away.
+  let nativeHooksWired = false;
+  function wireNativeWakeHooks() {
+    if (nativeHooksWired) return;
+    nativeHooksWired = true;
+
+    const wake = () => {
+      if (!socket) return;
+      if (!socket.connected) socket.connect();
+      else syncRingingCalls();
+    };
+
+    // call-native.js fires this when remixnexus://call?... opens the app
+    window.addEventListener('remix:push-call', wake);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') wake();
+    });
+    window.addEventListener('focus', wake);
+
+    // The app may have been launched by the notification before this file loaded
+    if (window.__pendingPushCall) wake();
   }
 
   function attachSocket(socketInstance) {
