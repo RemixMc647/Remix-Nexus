@@ -19,6 +19,44 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+      /* Scroll fix: must stay after the other stylesheets */
+      html, body {
+        height: auto !important;
+        min-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      body.page-static,
+      body.page-contact { position: static; }
+      .static-shell, .legal-shell, .contact-shell {
+        height: auto;
+        overflow: visible;
+        padding-bottom: 40px;
+      }
+
+      /* Back to Settings */
+      .contact-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0 8px 12px 0;
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: #10141f;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #e8ecf7;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        vertical-align: middle;
+        transition: background 0.15s ease;
+      }
+      .contact-back-btn:hover,
+      .contact-back-btn:focus-visible { background: #0066ff; border-color: #0066ff; color: #fff; }
+    </style>
 </head>
 <body class="page-static">
 
@@ -42,6 +80,8 @@
 
 <section class="static-shell">
   <div class="static-card">
+    <a href="./Settings.html" class="contact-back-btn" aria-label="Back to Settings">&larr; Settings</a>
+    <br>
     <span class="static-tag">Please read carefully</span>
     <h1>Terms of Service</h1>
     <p class="static-updated">Last updated: July 2026</p>
