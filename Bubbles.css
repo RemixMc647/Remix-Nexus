@@ -17,7 +17,7 @@
 }
 
 /* ---------- bubble ---------- */
-:is(body .chat-main .messages, body #dmMessages) .msg {
+body .chat-main .messages .msg {
   position: relative;
   width: fit-content;
   max-width: min(80%, 540px);
@@ -32,22 +32,22 @@
   overflow-wrap: anywhere;
 }
 
-:is(body .chat-main .messages, body #dmMessages) .msg.me {
+body .chat-main .messages .msg.me {
   background: linear-gradient(135deg, var(--bx-own-1), var(--bx-own-2));
   border-color: rgba(255, 255, 255, 0.14);
   box-shadow: 0 2px 10px rgba(0, 102, 255, 0.3);
 }
 
 /* first message of a run gets a tail and a squared corner; the rest stay round */
-:is(body .chat-main .messages, body #dmMessages) .msg.bx-tail {
+body .chat-main .messages .msg.bx-tail {
   margin-top: 10px;
   border-top-left-radius: 4px;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg.me.bx-tail {
+body .chat-main .messages .msg.me.bx-tail {
   border-top-left-radius: var(--bx-radius);
   border-top-right-radius: 4px;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg.bx-tail::before {
+body .chat-main .messages .msg.bx-tail::before {
   content: "";
   position: absolute;
   top: -1px;
@@ -55,29 +55,29 @@
   height: 13px;
   pointer-events: none;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg:not(.me).bx-tail::before {
+body .chat-main .messages .msg:not(.me).bx-tail::before {
   left: -8px;
   background: var(--bx-other);
   clip-path: polygon(100% 0, 0 0, 100% 100%);
 }
-:is(body .chat-main .messages, body #dmMessages) .msg.me.bx-tail::before {
+body .chat-main .messages .msg.me.bx-tail::before {
   right: -8px;
   background: var(--bx-tail-own);
   clip-path: polygon(0 0, 100% 0, 0 100%);
 }
 
 /* contain the floated time */
-:is(body .chat-main .messages, body #dmMessages) .msg::after {
+body .chat-main .messages .msg::after {
   content: "";
   display: block;
   clear: both;
 }
 
 /* ---------- sender line (others only) ---------- */
-:is(body .chat-main .messages, body #dmMessages) .msg.me .msg-author { display: none; }
-:is(body .chat-main .messages, body #dmMessages) .msg.bx-cont .bx-head { display: none; }
+body .chat-main .messages .msg.me .msg-author { display: none; }
+body .chat-main .messages .msg.bx-cont .bx-head { display: none; }
 
-:is(body .chat-main .messages, body #dmMessages) .msg .bx-head {
+body .chat-main .messages .msg .bx-head {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -93,13 +93,13 @@
   text-align: left;
   max-width: 100%;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg .bx-head:hover { text-decoration: underline; }
-:is(body .chat-main .messages, body #dmMessages) .msg .bx-head:focus-visible {
+body .chat-main .messages .msg .bx-head:hover { text-decoration: underline; }
+body .chat-main .messages .msg .bx-head:focus-visible {
   outline: 2px solid var(--bx-name, #7fb2ff);
   outline-offset: 2px;
   border-radius: 6px;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg .msg-av {
+body .chat-main .messages .msg .msg-av {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +114,7 @@
 }
 
 /* ---------- text, time, ticks ---------- */
-:is(body .chat-main .messages, body #dmMessages) .msg-time {
+body .chat-main .messages .msg-time {
   float: right;
   margin: 7px 0 -3px 12px;
   font-size: 11px;
@@ -122,10 +122,10 @@
   opacity: 0.72;
   white-space: nowrap;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg.me .msg-time { opacity: 0.85; }
+body .chat-main .messages .msg.me .msg-time { opacity: 0.85; }
 
 /* ---------- reply quote ---------- */
-:is(body .chat-main .messages, body #dmMessages) .msg .msg-quote {
+body .chat-main .messages .msg .msg-quote {
   display: block;
   margin: 0 0 5px;
   padding: 4px 8px;
@@ -134,12 +134,12 @@
   background: rgba(0, 0, 0, 0.22);
   font-size: 12.5px;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg .msg-quote-author {
+body .chat-main .messages .msg .msg-quote-author {
   display: block;
   font-weight: 700;
   font-size: 12px;
 }
-:is(body .chat-main .messages, body #dmMessages) .msg .msg-quote-text {
+body .chat-main .messages .msg .msg-quote-text {
   display: block;
   opacity: 0.85;
   overflow: hidden;
@@ -148,15 +148,15 @@
 }
 
 /* ---------- media ---------- */
-:is(body .chat-main .messages, body #dmMessages) .msg .media-note img,
-:is(body .chat-main .messages, body #dmMessages) .msg .media-note video {
+body .chat-main .messages .msg .media-note img,
+body .chat-main .messages .msg .media-note video {
   display: block;
   max-width: 100%;
   border-radius: 11px;
 }
 
 /* ---------- reactions / star ---------- */
-:is(body .chat-main .messages, body #dmMessages) .msg .msg-reactions {
+body .chat-main .messages .msg .msg-reactions {
   display: inline-block;
   margin-top: 4px;
   padding: 1px 7px;
@@ -166,8 +166,8 @@
 }
 
 /* ---------- search highlight ---------- */
-:is(body .chat-main .messages, body #dmMessages) mark,
-:is(body .chat-main .messages, body #dmMessages) mark.search-highlight {
+body .chat-main .messages mark,
+body .chat-main .messages mark.search-highlight {
   background: #ffd84a;
   color: #111;
   border-radius: 3px;
