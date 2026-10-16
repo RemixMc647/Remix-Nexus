@@ -1,0 +1,167 @@
+/* ==========================================================
+   REMIX NEXUS — WhatsApp-style bubbles (blue + black)
+   Load LAST, after Bubbles.css / Discord.css / Chat.css / Contacts.css.
+   Overrides only the bubble look; profile card styles stay as they are.
+   ========================================================== */
+
+:root {
+  --wa-own-1: #0a3a9c;
+  --wa-own-2: #0066ff;
+  --wa-other: #151a26;
+  --wa-other-edge: rgba(255, 255, 255, 0.07);
+  --wa-text: #f2f6fc;
+  --wa-radius: 12px;
+  --wa-max: min(68%, 360px);          /* <- bubble width: lower = shorter */
+  --wa-gap-same: 2px;                  /* between messages of the same person */
+  --wa-gap-new: 12px;                  /* when the sender changes */
+}
+
+/* ---------- chat wallpaper: black with a faint blue glow ---------- */
+html body .chat-main .messages {
+  background:
+    radial-gradient(ellipse at 80% 0%, rgba(0, 102, 255, 0.08), transparent 55%),
+    #03050a !important;
+  padding: 10px 0 8px !important;
+}
+
+/* ---------- rows: no Discord hover strip, side padding only ---------- */
+html body .chat-main .messages .msg-row {
+  display: flex !important;
+  padding: 0 12px !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+html body .chat-main .messages .msg-row:hover,
+html body .chat-main .messages .msg-row.starred { background: transparent !important; }
+
+/* ---------- the bubble (room messages + DMs) ---------- */
+html body .chat-main .messages .msg,
+html body #dmMessages > .msg {
+  display: block !important;
+  position: relative !important;
+  flex: 0 1 auto !important;            /* stop Discord.css stretching it */
+  width: fit-content !important;
+  min-width: 64px !important;
+  max-width: var(--wa-max) !important;
+  box-sizing: border-box !important;
+  padding: 6px 9px 5px !important;
+  margin: var(--wa-gap-same) auto 0 0 !important;   /* others: left */
+  border-radius: var(--wa-radius) !important;
+  background: var(--wa-other) !important;
+  border: 1px solid var(--wa-other-edge) !important;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.45) !important;
+  color: var(--wa-text) !important;
+  font-size: 14.5px !important;
+  line-height: 1.35 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere;
+}
+/* own messages: right, blue */
+html body .chat-main .messages .msg.me,
+html body #dmMessages > .msg.me {
+  margin: var(--wa-gap-same) 0 0 auto !important;
+  background: linear-gradient(135deg, var(--wa-own-1), var(--wa-own-2)) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 1px 6px rgba(0, 102, 255, 0.28) !important;
+}
+/* DM bubbles are their own row, so give them side space */
+html body #dmMessages > .msg { margin-left: 12px !important; }
+html body #dmMessages > .msg.me { margin-left: auto !important; margin-right: 12px !important; }
+
+/* ---------- gap between different people (WhatsApp spacing) ---------- */
+html body .chat-main .messages .msg.bx-tail,
+html body #dmMessages > .msg.bx-tail { margin-top: var(--wa-gap-new) !important; }
+html body .chat-main .messages .msg-row:first-child .msg.bx-tail,
+html body #dmMessages > .msg.bx-tail:first-child { margin-top: 4px !important; }
+
+/* squared corner + tail on the first bubble of a run */
+html body .chat-main .messages .msg.bx-tail,
+html body #dmMessages > .msg.bx-tail { border-top-left-radius: 3px !important; }
+html body .chat-main .messages .msg.me.bx-tail,
+html body #dmMessages > .msg.me.bx-tail {
+  border-top-left-radius: var(--wa-radius) !important;
+  border-top-right-radius: 3px !important;
+}
+html body .chat-main .messages .msg.bx-tail::before,
+html body #dmMessages > .msg.bx-tail::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 9px;
+  height: 12px;
+  pointer-events: none;
+}
+html body .chat-main .messages .msg:not(.me).bx-tail::before,
+html body #dmMessages > .msg:not(.me).bx-tail::before {
+  left: -8px;
+  background: var(--wa-other);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+html body .chat-main .messages .msg.me.bx-tail::before,
+html body #dmMessages > .msg.me.bx-tail::before {
+  right: -8px;
+  background: #0a4fd0;                       /* fallback */
+  background: color-mix(in srgb, var(--wa-own-1) 45%, var(--wa-own-2));
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+/* clear float so the bubble wraps the time */
+html body .chat-main .messages .msg::after,
+html body #dmMessages > .msg::after { content: ""; display: block; clear: both; }
+
+/* ---------- sender line (others only) ---------- */
+html body .chat-main .messages .msg .bx-head { display: flex !important; font-size: 12.5px; margin: 0 0 2px; }
+html body .chat-main .messages .msg.bx-cont .bx-head,
+html body .chat-main .messages .msg.me .msg-author,
+html body #dmMessages > .msg.bx-cont .bx-head,
+html body #dmMessages > .msg.me .msg-author { display: none !important; }
+
+/* ---------- text + time in the bottom-right corner ---------- */
+html body .chat-main .messages .msg .msg-text { display: inline !important; font-size: 14.5px !important; color: inherit !important; margin: 0 !important; }
+html body .chat-main .messages .msg .msg-time {
+  float: right !important;
+  margin: 6px 0 -3px 10px !important;
+  font-size: 10.5px !important;
+  line-height: 1 !important;
+  color: rgba(255, 255, 255, 0.62) !important;
+  white-space: nowrap;
+}
+html body .chat-main .messages .msg.me .msg-time { color: rgba(255, 255, 255, 0.78) !important; }
+
+/* media inside bubbles stays inside the shorter width */
+html body .chat-main .messages .msg .media-note img,
+html body .chat-main .messages .msg .media-note video { max-width: 100% !important; max-height: 280px; border-radius: 8px; }
+
+/* edit/delete: small floating pill so they don't widen the bubble */
+html body .chat-main .messages .msg .msg-actions {
+  position: absolute;
+  top: -12px;
+  right: 6px;
+  margin: 0;
+  padding: 1px 3px;
+  border-radius: 8px;
+  background: #10141f;
+  border: 1px solid var(--wa-other-edge);
+}
+
+/* ---------- room rows: edit/delete buttons are siblings of the bubble ---------- */
+html body .chat-main .messages .msg-row > .msg:not(.me) { margin-right: 0 !important; }
+html body .chat-main .messages .msg-row > .msg.me { margin-left: 0 !important; }
+html body .chat-main .messages .msg-row:has(> .msg.me) { justify-content: flex-end !important; }
+html body .chat-main .messages .msg-row .msg-edit-btn,
+html body .chat-main .messages .msg-row .msg-delete-btn {
+  align-self: center;
+  order: 2 !important;                       /* others: buttons sit after the bubble */
+  margin: 0 2px;
+}
+html body .chat-main .messages .msg-row:has(> .msg.me) .msg-edit-btn,
+html body .chat-main .messages .msg-row:has(> .msg.me) .msg-delete-btn {
+  order: 0 !important;                       /* own: buttons sit before the bubble */
+}
+
+/* ---------- phones: slightly wider share of the screen ---------- */
+@media (max-width: 820px) {
+  :root { --wa-max: min(80%, 300px); }
+  html body .chat-main .messages .msg-row { padding: 0 8px !important; }
+  html body #dmMessages > .msg { margin-left: 8px !important; }
+  html body #dmMessages > .msg.me { margin-right: 8px !important; }
+}
