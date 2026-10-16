@@ -75,9 +75,9 @@
         // profile card who this is.
         var c = currentContact();
         if (c) {
-          head.dataset.pfUid = String(c.id);
-          head.dataset.pfName = c.username || '';
-          head.dataset.pfAv = c.avatar || '';
+          head.dataset.bxUid = String(c.id);
+          head.dataset.bxName = c.username || '';
+          head.dataset.bxAv = c.avatar || '';
         }
         var av = el('span', 'msg-av');
         av.textContent = (c && c.avatar) || author.charAt(0).toUpperCase() || '?';
@@ -238,18 +238,37 @@
     });
   }
 
-  // Capture phase: runs before Chat.js / Contacts.js / user-profile.js
-  // handlers, so this card replaces the old "jump to Contacts" behaviour.
-  document.addEventListener('click', function (e) {
-    var t = e.target.closest ? e.target.closest('[data-pf-uid]') : null;
-    if (!t || !t.dataset.pfUid || t.closest('#bxCard')) return;
+  // Other scripts (user-profile.js, Chat.js) also open a profile when something
+  // with data-pf-uid is clicked, which is why two profiles used to appear.
+  // We take those attributes over (data-pf-* -> data-bx-*) so only THIS card exists.
+  function claimProfileLinks() {
+    document.querySelectorAll('[data-pf-uid]').forEach(function (n) {
+      n.dataset.bxUid = n.getAttribute('data-pf-uid');
+      n.dataset.bxName = n.getAttribute('data-pf-name') || '';
+      n.dataset.bxAv = n.getAttribute('data-pf-av') || '';
+      n.removeAttribute('data-pf-uid');
+      n.removeAttribute('data-pf-name');
+      n.removeAttribute('data-pf-av');
+    });
+  }
+  var claimQueued = false;
+  function queueClaim() {
+    if (claimQueued) return;
+    claimQueued = true;
+    requestAnimationFrame(function () { claimQueued = false; claimProfileLinks(); });
+  }
+
+  // Registered on window in the capture phase: nothing else on the page sees the click.
+  window.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-bx-uid]') : null;
+    if (!t || !t.dataset.bxUid || t.closest('#bxCard')) return;
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
     openCard({
-      uid: t.dataset.pfUid,
-      name: t.dataset.pfName || '',
-      avatar: t.dataset.pfAv || ''
+      uid: t.dataset.bxUid,
+      name: t.dataset.bxName || '',
+      avatar: t.dataset.bxAv || ''
     });
   }, true);
 
@@ -257,13 +276,15 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { closeCard(); return; }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.classList &&
-        e.target.classList.contains('bx-head') && e.target.dataset.pfUid) {
+        e.target.classList.contains('bx-head') && e.target.dataset.bxUid) {
       e.preventDefault();
       e.target.click();
     }
   });
 
   function init() {
+    claimProfileLinks();
+    new MutationObserver(queueClaim).observe(document.body, { childList: true, subtree: true });
     watch('messages', 'room');   // Chat.html
     watch('dmMessages', 'dm');   // Contacts.html
   }
