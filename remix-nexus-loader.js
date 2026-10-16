@@ -1,15 +1,31 @@
-/* Remix Nexus — animated website-only startup screen.
- * No native app, Capacitor, Electron, or package changes are required.
+/* Remix Nexus — animated startup screen.
+ * Shows ONCE per app launch: when the app is opened fresh (not already
+ * running in the background). Moving between pages, or coming back to the
+ * app from the background, does not show it again.
+ *
+ * How "once per launch" works: sessionStorage lives as long as the app's
+ * WebView / browser tab lives. If the app is closed completely, the next
+ * open starts a new session and the screen shows again.
+ *
  * This is an animated visual indicator, not actual network-download progress.
  */
 (function () {
   if (window.__REMIX_NEXUS_LOADER_INSTALLED__) return;
   window.__REMIX_NEXUS_LOADER_INSTALLED__ = true;
 
+  // ---- show only once per launch -------------------------------------
+  var SEEN_KEY = "remixNexusLoaderSeen";
+  try {
+    if (window.sessionStorage.getItem(SEEN_KEY) === "1") return; // already shown this launch
+    window.sessionStorage.setItem(SEEN_KEY, "1");
+  } catch (e) {
+    // Storage blocked (e.g. some private modes): fall through and show it.
+  }
+
   var startTime = Date.now();
-  var TARGET_DISPLAY_MS = 8000;
-  var MAX_WAIT_FALLBACK_MS = 10000;
-  var finished = false;
+  var TARGET_DISPLAY_MS = 8000;      // how long the screen stays up (change this to shorten it)
+  var MAX_WAIT_FALLBACK_MS = 10000;  // never trap users if "load" never fires
+  var closing = false;
   var timer = null;
   var statusIndex = -1;
   var statusLines = [
@@ -30,7 +46,8 @@
       '<div class="rnxl-particles" aria-hidden="true"></div>' +
       '<div class="rnxl-content">' +
         '<div class="rnxl-emblem" aria-hidden="true"><span>RN</span></div>' +
-        '<h1 class="rnxl-wordmark">REMIX <span class="rnxl-accent">NEXUS</span></h1>' +
+        // div, not h1: the page has its own h1 and this one disappears anyway
+        '<div class="rnxl-wordmark">REMIX <span class="rnxl-accent">NEXUS</span></div>' +
         '<div class="rnxl-tagline">Enter another level</div>' +
         '<div class="rnxl-status" id="rnxl-status-text">Connecting to the Nexus</div>' +
         '<div class="rnxl-track" aria-hidden="true"><div class="rnxl-progress" id="rnxl-progress"></div></div>' +
@@ -56,7 +73,7 @@
   }
 
   function updateProgress(value) {
-    var safeValue = Math.max(6, Math.min(94, value));
+    var safeValue = Math.max(6, Math.min(100, value));
     var bar = document.getElementById("rnxl-progress");
     var label = document.getElementById("rnxl-percent-text");
     if (bar) bar.style.width = safeValue + "%";
@@ -71,15 +88,15 @@
   }
 
   function hideLoader() {
-    if (finished) return;
-    finished = true;
-    if (timer) window.clearInterval(timer);
+    if (closing) return;
+    closing = true;
+    // The progress timer keeps running while we wait out the remaining
+    // display time, so the bar never freezes. It stops at the very end.
     var remaining = Math.max(0, TARGET_DISPLAY_MS - (Date.now() - startTime));
     window.setTimeout(function () {
+      if (timer) window.clearInterval(timer);
       updateProgress(100);
-      var label = document.getElementById("rnxl-percent-text");
       var status = document.getElementById("rnxl-status-text");
-      if (label) label.textContent = "100%";
       if (status) status.textContent = "Welcome to Remix Nexus";
       window.setTimeout(function () {
         var root = document.getElementById("remix-nexus-loader");
@@ -95,7 +112,6 @@
   function boot() {
     createLoader();
     timer = window.setInterval(function () {
-      if (finished) return;
       var elapsed = Date.now() - startTime;
       var fraction = Math.min(1, elapsed / TARGET_DISPLAY_MS);
       updateProgress(6 + fraction * 88);
