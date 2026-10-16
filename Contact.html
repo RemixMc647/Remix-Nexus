@@ -39,6 +39,22 @@ content="website">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+      /* Scroll fix: must stay after the other stylesheets */
+      html, body {
+        height: auto !important;
+        min-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      body.page-static,
+      body.page-contact { position: static; }
+      .static-shell, .legal-shell, .contact-shell {
+        height: auto;
+        overflow: visible;
+        padding-bottom: 40px;
+      }
+
       /* Back to Settings */
       .contact-back-btn {
         display: inline-flex;
