@@ -2480,17 +2480,10 @@ buildNewMsgButton(); // Build floating new messages button
 buildContextMenu(); // Build context menu
 addVoiceSpeedControls(); // Add speed controls to existing audio elements
 
-document.addEventListener("click",(e)=>{
-
-if(!replyPreview.contains(e.target)
-&&
-!messageInput.contains(e.target)){
-
-clearReplyTarget();
-
-}
-
-});
+// NOTE: a global "click outside clears the reply" handler used to live here.
+// It cancelled replies the moment the context-menu Reply item or the Send
+// button was clicked, so it was removed. The ✕ button, Escape key and
+// sendMessage() already clear the reply target.
 
 document.addEventListener("keydown",(e)=>{
 
