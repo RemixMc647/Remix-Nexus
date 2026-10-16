@@ -143,6 +143,23 @@
     window.location.href = url.toString();
   }
 
+  // Nexus Realm: how many matches / squads / worlds this player has created.
+  function loadStats(uid, box) {
+    fetch(apiBase() + '/api/realm/users/' + encodeURIComponent(uid) + '/profile')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.made || !box.isConnected) return;
+        [['⚔', 'Matches', d.made.matches], ['👥', 'Squads', d.made.squads], ['🌌', 'Worlds', d.made.worlds]]
+          .forEach(function (s) {
+            var t = el('div', 'bx-stat');
+            var b = el('b'); b.textContent = s[0] + ' ' + (Number(s[2]) || 0);
+            var l = el('span'); l.textContent = s[1] + ' created';
+            t.appendChild(b); t.appendChild(l); box.appendChild(t);
+          });
+      })
+      .catch(function () { /* stats just stay hidden */ });
+  }
+
   function openCard(p) {
     closeCard();
     var isSelf = String(p.uid) === myId();
@@ -189,6 +206,8 @@
     body.appendChild(av);
     body.appendChild(name);
     body.appendChild(sub);
+    var stats = el('div', 'bx-card-stats');
+    body.appendChild(stats);
     body.appendChild(actions);
     card.appendChild(banner);
     card.appendChild(closeBtn);
@@ -196,6 +215,7 @@
     overlay.appendChild(card);
     document.body.appendChild(overlay);
     closeBtn.focus();
+    loadStats(p.uid, stats);
 
     overlay.addEventListener('click', function (e) { if (e.target === overlay) closeCard(); });
     closeBtn.addEventListener('click', closeCard);
