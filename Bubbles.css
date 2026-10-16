@@ -1,16 +1,16 @@
 /* ==========================================================
    REMIX NEXUS — Message bubbles + profile card
    WhatsApp structure (tails, grouped messages, time + ticks in the
-   bottom-right corner) with a Remix look: own messages fade from
-   WhatsApp green into Remix blue, other people get their own name colour.
+   bottom-right corner) with a blue-and-black Remix look: own messages fade
+   from deep blue into Remix blue, other people get dark bubbles and their own name colour.
    Load AFTER Chat.css / Contacts.css / Discord.css.
    ========================================================== */
 
 :root {
-  --bx-own-1: #00a884;          /* WhatsApp green */
+  --bx-own-1: #0b3fa8;          /* deep blue */
   --bx-own-2: #0066ff;          /* Remix blue */
-  --bx-other: #1c2333;
-  --bx-other-edge: rgba(255, 255, 255, 0.07);
+  --bx-other: #121722;          /* near-black */
+  --bx-other-edge: rgba(255, 255, 255, 0.06);
   --bx-text: #f2f6fc;
   --bx-radius: 16px;
   --bx-tail-own: color-mix(in srgb, var(--bx-own-1) 50%, var(--bx-own-2));
@@ -35,7 +35,7 @@ body .chat-main .messages .msg {
 body .chat-main .messages .msg.me {
   background: linear-gradient(135deg, var(--bx-own-1), var(--bx-own-2));
   border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 2px 10px rgba(0, 102, 255, 0.28);
+  box-shadow: 0 2px 10px rgba(0, 102, 255, 0.3);
 }
 
 /* first message of a run gets a tail and a squared corner; the rest stay round */
@@ -276,3 +276,14 @@ body .chat-main .messages mark.search-highlight {
 @media (prefers-reduced-motion: reduce) {
   .bx-card { animation: none; }
 }
+
+/* ---------- read ticks on room messages ---------- */
+.bx-tick { margin-left: 4px; font-size: 12px; letter-spacing: -3px; opacity: .75; }
+.bx-tick.seen { color: #7fd0ff; opacity: 1; letter-spacing: -4px; }
+
+/* ---------- profile card: Nexus Realm creation counts ---------- */
+.bx-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.bx-card-stats:empty { display: none; }
+.bx-stat { padding: 10px 4px; border-radius: 12px; background: rgba(0, 102, 255, 0.12); text-align: center; }
+.bx-stat b { display: block; font-size: 16px; }
+.bx-stat span { font-size: 10px; opacity: .7; }
