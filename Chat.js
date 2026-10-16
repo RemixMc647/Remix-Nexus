@@ -589,12 +589,20 @@ function setMobileView(view){
 }
 
 function openRoomConversation(roomId){
-  switchRoom(roomId);
   setMobileView('conversation');
+  switchRoom(roomId);
 }
 
 if (backToRoomsBtn){
-  backToRoomsBtn.addEventListener('click', () => setMobileView('list'));
+  backToRoomsBtn.addEventListener('click', () => {
+    setMobileView('list');
+
+    // You've just left this room having seen everything in it — record that,
+    // so only messages that arrive from now on show up as a badge.
+    clearUnread(activeRoomId);
+    markRoomRead(activeRoomId);
+    renderRooms();
+  });
 }
 
 // Land straight in a conversation only if the URL explicitly asked for one
@@ -799,7 +807,7 @@ async function syncServerUnread(){
     const fromServer = data.rooms || {};
     const counts = getUnreadCounts();
     ids.forEach((id) => {
-      if (id === activeRoomId && isAppInForeground()) { delete counts[id]; return; }  // the room you're looking at is read
+      if (isRoomBeingViewed(id)) { delete counts[id]; return; }  // only the room you're really looking at is read
       if (fromServer[id] > 0) counts[id] = fromServer[id]; else delete counts[id];
     });
     saveUnreadCounts(counts);
@@ -811,6 +819,23 @@ async function syncServerUnread(){
 // or app is in front) or the browser window itself doesn't have focus.
 function isAppInForeground(){
   return document.visibilityState === 'visible' && document.hasFocus();
+}
+
+// On a phone only ONE panel is visible at a time: the room list OR an open
+// conversation. Being "in the app" is not the same as "looking at the room".
+// On desktop the open room is always on screen next to the list.
+function isConversationVisible(){
+  if (window.matchMedia && window.matchMedia('(max-width: 820px)').matches){
+    return !!chatShellEl && chatShellEl.classList.contains('view-conversation');
+  }
+
+  return true;
+}
+
+// True only when this exact room is open AND on screen right now — this is
+// what decides whether a new message counts as "read" or becomes a badge.
+function isRoomBeingViewed(roomId){
+  return roomId === activeRoomId && isAppInForeground() && isConversationVisible();
 }
 
 if ('Notification' in window && Notification.permission === 'default'){
@@ -844,7 +869,7 @@ function notifyNewRoomMessage(message, roomId){
 // When the tab regains focus, whatever room is currently open counts as
 // "seen" again — clear its badge.
 function handleForegroundReturn(){
-  if (isAppInForeground() && activeRoomId){
+  if (isAppInForeground() && activeRoomId && isConversationVisible()){
     clearUnread(activeRoomId);
     renderRooms();
     renderMessages();
@@ -960,7 +985,14 @@ function updateConnectionBadge(){
 if (socket){
   socket.on('connect', () => {
     updateConnectionBadge(); switchRoom(activeRoomId); subscribeToKnownRooms();
-    markRoomRead(activeRoomId).then(syncServerUnread);
+
+    // Only mark the open room as read if it is really on screen. On a phone
+    // you start on the room list, so nothing is marked read until you tap a room.
+    if (isConversationVisible()){
+      markRoomRead(activeRoomId).then(syncServerUnread);
+    } else {
+      syncServerUnread();
+    }
   });
   socket.on('disconnect', updateConnectionBadge);
   socket.on('connect_error', updateConnectionBadge);
@@ -1007,7 +1039,7 @@ function renderRooms(){
 // Tells the server which messages from other people I'm looking at, so their
 // senders get a double tick. Only runs while this room is open and visible.
 function reportSeen(){
-  if (!socket || !socket.connected || !activeRoomId || !isAppInForeground()) return;
+  if (!socket || !socket.connected || !activeRoomId || !isAppInForeground() || !isConversationVisible()) return;
   const myId = getMyUserId();
   if (!myId) return;
   if (!window.__seenReported) window.__seenReported = new Set();
@@ -1163,8 +1195,13 @@ function switchRoom(roomId){
     socket.emit('chat:join', { room: activeRoomId });
   }
 
-  clearUnread(roomId);
-  markRoomRead(roomId);
+  // Joining the room's channel (above) is needed to load its history, but it
+  // only counts as READ if the conversation is actually open on screen.
+  if (isConversationVisible()){
+    clearUnread(roomId);
+    markRoomRead(roomId);
+  }
+
   onlineUsers = [];
   renderOnlineList();
   clearTypingIndicator();
@@ -1455,11 +1492,13 @@ if (socket){
       ? (message.authorId && String(message.authorId) === myId)
       : (message.author === getUsername());
 
-    if (room === activeRoomId && isAppInForeground()){
+    if (isRoomBeingViewed(room)){
       clearUnread(room);
       markRoomRead(room);
       renderMessages();
     } else if (!isMine){
+      // Not looking at this room right now (other room, room list, or app in
+      // the background) — it becomes a badge on the room, like WhatsApp.
       bumpUnread(room);
     }
 
@@ -2465,6 +2504,13 @@ clearReplyTarget();
 
 // Coming back to the tab/app: the open room is read; refresh everyone else's counts.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') markRoomRead(activeRoomId).then(syncServerUnread);
-  else markRoomRead(activeRoomId);
+  if (document.visibilityState === 'visible'){
+    if (isConversationVisible()){
+      markRoomRead(activeRoomId).then(syncServerUnread);
+    } else {
+      syncServerUnread();
+    }
+  } else if (isConversationVisible()){
+    markRoomRead(activeRoomId);
+  }
 });
