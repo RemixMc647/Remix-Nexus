@@ -587,7 +587,9 @@ details.account-settings-section[open] > summary::after { content: "▾"; }
    only lists inside the page (news, profile card) scroll if they have to.
    ===================================================================== */
 @media (max-width: 820px) {
-  html, body.page-trending, body.page-profile {
+  /* Only lock Trending + Profile. The bare "html" selector that used to be
+     here locked scrolling on every page (About, Terms, Privacy, Contact...). */
+  body.page-trending, body.page-profile {
     height: 100%;
     overflow: hidden;
   }
