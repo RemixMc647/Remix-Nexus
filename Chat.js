@@ -1004,6 +1004,21 @@ function renderRooms(){
   }).join('');
 }
 
+// Tells the server which messages from other people I'm looking at, so their
+// senders get a double tick. Only runs while this room is open and visible.
+function reportSeen(){
+  if (!socket || !socket.connected || !activeRoomId || !isAppInForeground()) return;
+  const myId = getMyUserId();
+  if (!myId) return;
+  if (!window.__seenReported) window.__seenReported = new Set();
+  const ids = getMessages(activeRoomId)
+    .filter(m => m.id && m.authorId && String(m.authorId) !== myId && !window.__seenReported.has(m.id))
+    .slice(-100).map(m => m.id);
+  if (!ids.length) return;
+  ids.forEach(id => window.__seenReported.add(id));
+  socket.emit('chat:seen', { room: activeRoomId, ids });
+}
+
 function renderMessages(){
   const room = rooms.find(r => r.id === activeRoomId);
   activeRoomNameEl.textContent = room ? room.name : 'Room';
@@ -1072,7 +1087,7 @@ function renderMessages(){
       : `${replyBlock}
          ${authorSpan}
          ${bodyBlock}
-         <span class="msg-time">${new Date(m.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${editedTag}</span>`;
+         <span class="msg-time">${new Date(m.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${editedTag}${isMe && m.id ? `<span class="bx-tick${m.seenCount > 0 ? ' seen' : ''}">${m.seenCount > 0 ? '✓✓' : '✓'}</span>` : ''}</span>`;
 
     return `
     <div class="msg-row ${isMe ? 'me' : ''}" data-id="${escapeHTML(m.id || '')}" data-author="${escapeHTML(m.author)}" data-text="${escapeHTML(replyText)}">
@@ -1086,6 +1101,7 @@ function renderMessages(){
   }).join('') || '<p class="empty-state">No messages yet — say hi 👋</p>';
 
   messagesEl.scrollTop = messagesEl.scrollHeight;
+  reportSeen();
 }
 
 function escapeHTML(str){
@@ -1452,6 +1468,23 @@ if (socket){
     }
 
     renderRooms();
+  });
+
+  // Someone saw messages in this room — turn the sender's ✓ into ✓✓ (no re-render,
+  // so the scroll position doesn't jump).
+  socket.on('chat:seen', ({ room, ids } = {}) => {
+    if (!room || !Array.isArray(ids)) return;
+    const set = new Set(ids);
+    const messages = getMessages(room);
+    let changed = false;
+    messages.forEach(m => { if (set.has(m.id) && !(m.seenCount > 0)){ m.seenCount = 1; changed = true; } });
+    if (changed) saveMessages(room, messages);
+    if (room === activeRoomId){
+      ids.forEach(id => {
+        const t = messagesEl.querySelector(`.msg-row[data-id="${CSS.escape(String(id))}"] .bx-tick`);
+        if (t){ t.textContent = '✓✓'; t.classList.add('seen'); }
+      });
+    }
   });
 
   socket.on('chat:online', ({ room, users }) => {
