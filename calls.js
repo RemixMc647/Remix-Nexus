@@ -1324,6 +1324,52 @@ own coturn) to ICE_SERVERS below.
   }
 
   /* -----------------------------------------------------------
+     Native Android hooks.
+     - nativeAcceptCall : user tapped Accept on the native call screen / the
+       notification's Answer button. The invite may still be on its way from
+       the server (app was asleep), so wait up to 20s for it, then accept.
+     - nativeDeclineCall: the native side already told the server; just
+       clear the local banner/ringtone WITHOUT emitting again.
+  ----------------------------------------------------------- */
+  let nativeAcceptTimer = null;
+  // With a callId, only match that exact call (so a different ringing call is
+  // never accepted by mistake); without one, match whatever is ringing.
+  function hasIncomingInvite(callId) {
+    if (callId) {
+      return !!((incomingInvite && incomingInvite.callId === callId) ||
+                (incomingRoomInvite && incomingRoomInvite.callId === callId) ||
+                (incomingGroupInvite && incomingGroupInvite.callId === callId));
+    }
+    return !!(incomingInvite || incomingRoomInvite || incomingGroupInvite);
+  }
+  function acceptWhenInviteArrives(callId) {
+    if (hasIncomingInvite(callId)) { acceptWhicheverIncoming(); return; }
+    clearInterval(nativeAcceptTimer);
+    const started = Date.now();
+    nativeAcceptTimer = setInterval(() => {
+      if (hasIncomingInvite(callId)) {
+        clearInterval(nativeAcceptTimer);
+        acceptWhicheverIncoming();
+      } else if (Date.now() - started > 20000) {
+        clearInterval(nativeAcceptTimer);
+      }
+    }, 250);
+  }
+  function clearIncomingLocally() {
+    clearInterval(nativeAcceptTimer);
+    incomingInvite = null;
+    incomingRoomInvite = null;
+    incomingGroupInvite = null;
+    hideIncomingBanner();
+    stopIncomingRingtone();
+  }
+  window.addEventListener('nativeAcceptCall', (e) => acceptWhenInviteArrives(e && e.detail && e.detail.callId));
+  window.addEventListener('nativeDeclineCall', clearIncomingLocally);
+  window.addEventListener('remix:push-call', (e) => {
+    if (e && e.detail && e.detail.accept) acceptWhenInviteArrives(e.detail.callId);
+  });
+
+  /* -----------------------------------------------------------
      Wire the shared Accept/Decline banner to whichever kind of
      invite is currently pending (1:1, room, or ad-hoc group).
   ----------------------------------------------------------- */
@@ -1401,6 +1447,7 @@ own coturn) to ICE_SERVERS below.
     socket.on('connect', syncRingingCalls);
     syncRingingCalls();
     wireNativeWakeHooks();
+    window.RemixCallsReady = true; // MainActivity waits for this before sending Accept
   }
 
   function syncRingingCalls() {
@@ -1429,7 +1476,12 @@ own coturn) to ICE_SERVERS below.
     window.addEventListener('focus', wake);
 
     // The app may have been launched by the notification before this file loaded
-    if (window.__pendingPushCall) wake();
+    if (window.__pendingPushCall) {
+      const pending = window.__pendingPushCall;
+      wake();
+      if (pending.accept) acceptWhenInviteArrives(pending.callId);
+      window.__pendingPushCall = null;
+    }
   }
 
   function attachSocket(socketInstance) {

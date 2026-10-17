@@ -11,7 +11,8 @@ Safe on the normal website: it does nothing outside the Capacitor app.
   const { PushNotifications, App } = Cap.Plugins || {};
   if (!PushNotifications) return;
 
-  const API_BASE = 'https://remix-nexus-bgz9.onrender.com';
+  // The app loads your live site, so same-origin is always the right server
+  const API_BASE = window.location.origin;
   let lastToken = null;
 
   async function sendTokenToServer(token) {
@@ -61,7 +62,8 @@ Safe on the normal website: it does nothing outside the Capacitor app.
       callId: u.searchParams.get('callId'),
       callerName: u.searchParams.get('callerName'),
       callType: u.searchParams.get('callType'),
-      room: u.searchParams.get('room')
+      room: u.searchParams.get('room'),
+      accept: u.searchParams.get('accept') === '1'
     };
     window.__pendingPushCall = detail;
     // Your calls.js should listen for this and show its Accept/Decline screen
