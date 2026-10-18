@@ -3,9 +3,6 @@ REMIX-NEXUS — CHAT LOGIC
 Talks to the Express + Socket.io server hosted on Railway.
 ==============================*/
 
-console.log('DEBUG window.AUTH exists?', !!window.AUTH);
-console.log('DEBUG AUTH.getToken() at socket-creation time:', window.AUTH ? AUTH.getToken() : 'no AUTH object');
-
 const API_BASE = "https://remix-nexus-bgz9.onrender.com";
 
 const socket = io("https://remix-nexus-bgz9.onrender.com", {
@@ -17,8 +14,6 @@ const socket = io("https://remix-nexus-bgz9.onrender.com", {
     platform: isNativeApp() ? 'app' : 'web'
   }
 });
-
-console.log('DEBUG socket.auth immediately after creation:', socket.auth);
 
 /* -----------------------------------------------------------
    SERVER STATUS BANNER — Render's free tier spins the backend down
@@ -100,20 +95,71 @@ function getRooms(){
   return DEFAULT_ROOMS;
 }
 
-function getMessages(roomId){
+// In-memory copy of every room's messages. localStorage is only a best-effort
+// backup — it has a ~5MB limit, and photos/videos are sent as huge base64
+// strings, so saving to it can fail. The cache keeps chat working regardless.
+const messageCache = {};
+
+// Messages the person chose "Delete for Me" on — remembered on this device so
+// they don't come back when the server re-sends the room history.
+function getHiddenMessageIds(){
   try {
-    let raw = localStorage.getItem('remix-nexusMessages:' + roomId);
-    if (isNativeApp()){
-      raw = localStorage.getItem('app-chat-backup:' + roomId) || raw;
-    }
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+    return new Set(JSON.parse(localStorage.getItem('remix-nexusHiddenMsgs') || '[]'));
+  } catch { return new Set(); }
+}
+
+function hideMessageForMe(messageId){
+  if (!messageId) return;
+  const ids = Array.from(getHiddenMessageIds());
+  if (!ids.includes(messageId)) ids.push(messageId);
+  try {
+    localStorage.setItem('remix-nexusHiddenMsgs', JSON.stringify(ids.slice(-2000)));
+  } catch {}
+}
+
+function getMessages(roomId){
+  let list = messageCache[roomId];
+
+  if (!list){
+    try {
+      let raw = localStorage.getItem('remix-nexusMessages:' + roomId);
+      if (isNativeApp()){
+        raw = localStorage.getItem('app-chat-backup:' + roomId) || raw;
+      }
+      list = raw ? JSON.parse(raw) : [];
+    } catch { list = []; }
+    messageCache[roomId] = list;
+  }
+
+  const hidden = getHiddenMessageIds();
+  return hidden.size ? list.filter(m => !hidden.has(m.id)) : list;
+}
+
+// Replaces photos/voice notes with a text label so the rest of the history
+// still fits in localStorage when space runs out.
+function stripMediaForStorage(messages){
+  return messages.map(m => {
+    if (!m.media && !m.audio) return m;
+    const copy = { ...m };
+    copy.text = m.text || (m.audio ? '🎤 Voice note' : (m.media && m.media.type === 'video' ? '🎬 Video' : '🖼️ Photo'));
+    delete copy.media;
+    delete copy.audio;
+    return copy;
+  });
+}
+
+function writeMessagesToStorage(key, messages){
+  try { localStorage.setItem(key, JSON.stringify(messages)); return true; } catch {}
+  try { localStorage.setItem(key, JSON.stringify(stripMediaForStorage(messages))); return true; } catch {}
+  try { localStorage.setItem(key, JSON.stringify(stripMediaForStorage(messages).slice(-100))); return true; } catch {}
+  return false;
 }
 
 function saveMessages(roomId, messages){
-  localStorage.setItem('remix-nexusMessages:' + roomId, JSON.stringify(messages));
+  messageCache[roomId] = messages;
+  writeMessagesToStorage('remix-nexusMessages:' + roomId, messages);
   if (isNativeApp()){
-    localStorage.setItem('app-chat-backup:' + roomId, JSON.stringify(messages));
+    writeMessagesToStorage('app-chat-backup:' + roomId, messages);
   }
 }
 
@@ -1021,7 +1067,7 @@ function renderRooms(){
     const muteIcon = isMuted ? '<span class="room-item-icon" title="Muted">🔇</span>' : '';
     const archiveIcon = isArchived ? '<span class="room-item-icon" title="Archived">📦</span>' : '';
     return `
-    <div class="room-item ${r.id === activeRoomId ? 'active' : ''} ${isArchived ? 'archived' : ''}" data-room="${r.id}">
+    <div class="room-item ${r.id === activeRoomId ? 'active' : ''} ${isArchived ? 'archived' : ''}" data-room="${escapeHTML(r.id)}">
       <span class="room-item-name-wrap">
         ${pinIcon}${muteIcon}${archiveIcon}
         <span>${escapeHTML(r.name)}</span>
@@ -1077,11 +1123,11 @@ function renderMessages(){
     let bodyBlock;
     if (m.media && m.media.data){
       bodyBlock = m.media.type === 'video'
-        ? `<div class="media-note"><video controls preload="metadata" src="${m.media.data}"></video></div>`
-        : `<div class="media-note"><img src="${m.media.data}" alt="Shared image" loading="lazy"></div>`;
+        ? `<div class="media-note"><video controls preload="metadata" src="${safeSrc(m.media.data)}"></video></div>`
+        : `<div class="media-note"><img src="${safeSrc(m.media.data)}" alt="Shared image" loading="lazy"></div>`;
     } else if (m.audio && m.audio.data){
       bodyBlock = `<div class="voice-note">
-           <audio controls preload="metadata" src="${m.audio.data}"></audio>
+           <audio controls preload="metadata" src="${safeSrc(m.audio.data)}"></audio>
            <span class="voice-note-duration">${formatDuration(m.audio.duration)}</span>
          </div>`;
     } else {
@@ -1136,10 +1182,25 @@ function renderMessages(){
   reportSeen();
 }
 
+// Escapes text for use in HTML *and* inside quoted attributes (data-text="...",
+// value="...", etc.). The old version used div.innerHTML, which does NOT escape
+// quote characters — that let a message break out of an attribute.
 function escapeHTML(str){
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Only lets real image/video/audio data URLs through into src="..." attributes.
+function safeSrc(url){
+  if (typeof url !== 'string') return '';
+  if (!/^data:(image|video|audio)\//i.test(url)) return '';
+  if (/\s/.test(url.slice(0, 200))) return '';
+  if (url.indexOf('"') !== -1 || url.indexOf("'") !== -1 || url.indexOf('<') !== -1 || url.indexOf('>') !== -1) return '';
+  return url;
 }
 
 // Sends the person straight to Contacts.html with this user pre-selected,
@@ -1247,12 +1308,7 @@ function readMsgFromRow(row){
   return { id: row.dataset.id, author: row.dataset.author, text: row.dataset.text };
 }
 
-messagesEl.addEventListener('contextmenu', (e) => {
-  const row = e.target.closest('.msg-row');
-  if (!row) return;
-  e.preventDefault();
-  setReplyTarget(readMsgFromRow(row));
-});
+// (Right-click is handled once, further down, by the full context menu — it has Reply in it.)
 
 /* -----------------------------------------------------------
    DELETE OWN MESSAGE
@@ -1928,6 +1984,7 @@ if (window.RemixCalls) {
 // ================================================================
 const CONTEXT_MENU_OPTIONS = [
   { id: 'reply', label: '↩ Reply' },
+  { id: 'react', label: '😊 React' },
   { id: 'copy', label: '📋 Copy' },
   { id: 'forward', label: '↪ Forward' },
   { id: 'star', label: '⭐ Star' },
@@ -1949,7 +2006,7 @@ function showContextMenu(x, y, msgId, roomId, text, isDM) {
   buildContextMenu();
   contextMenuTargetId = msgId;
   contextMenuTargetRoom = roomId;
-  contextMenuTargetText = text || '';
+  contextMenuTargetText = '';
   contextMenuIsDM = isDM;
 
   const myUserId = getMyUserId();
@@ -1957,11 +2014,14 @@ function showContextMenu(x, y, msgId, roomId, text, isDM) {
   const msg = messages.find(m => m.id === msgId);
   const isOwn = msg && myUserId && msg.authorId && String(msg.authorId) === myUserId;
 
+  // Copy / Forward should use the real message text, not the "🎤 Voice note" label.
+  const realText = (msg && msg.text) || '';
+  contextMenuTargetText = realText;
+
   const filtered = CONTEXT_MENU_OPTIONS.filter(opt => {
     if (opt.id === 'deleteAll' && !isOwn && !isSiteOwner) return false;
-    if (opt.id === 'deleteAll' && !isOwn) return false;
-    if (opt.id === 'deleteMe' && !isOwn) return false;
-    if (opt.id === 'forward' && !text) return false;
+    if (opt.id === 'forward' && !realText) return false;
+    if (opt.id === 'copy' && !realText) return false;
     return true;
   });
 
@@ -1991,6 +2051,7 @@ function handleContextMenuClick(e) {
   const msgId = contextMenuTargetId;
   const roomId = contextMenuTargetRoom;
   const text = contextMenuTargetText;
+  const menuRect = contextMenuEl.getBoundingClientRect();
   hideContextMenu();
 
   if (!msgId || !roomId) return;
@@ -1999,6 +2060,11 @@ function handleContextMenuClick(e) {
     case 'reply': {
       const row = document.querySelector(`.msg-row[data-id="${CSS.escape(msgId)}"]`);
       if (row) setReplyTarget(readMsgFromRow(row));
+      break;
+    }
+    case 'react': {
+      // Slight delay so the click that chose "React" doesn't instantly close the picker.
+      setTimeout(() => showReactionPicker(menuRect.left, menuRect.top, msgId), 0);
       break;
     }
     case 'copy': {
@@ -2016,6 +2082,7 @@ function handleContextMenuClick(e) {
       break;
     }
     case 'deleteMe': {
+      hideMessageForMe(msgId);
       removeMessageLocally(roomId, msgId);
       break;
     }
@@ -2121,6 +2188,18 @@ function hideReactionPicker() {
   activeReactionMsgId = null;
 }
 
+// Double-click / double-tap a message to react, and tap elsewhere to close the picker.
+messagesEl.addEventListener('dblclick', (e) => {
+  const row = e.target.closest('.msg-row');
+  if (!row || e.target.closest('button, audio, video, input')) return;
+  if (!row.dataset.id) return;
+  showReactionPicker(e.clientX, e.clientY, row.dataset.id);
+});
+
+document.addEventListener('click', (e) => {
+  if (reactionPickerEl && !reactionPickerEl.contains(e.target)) hideReactionPicker();
+});
+
 // ================================================================
 // NEW: Chat Search — search bar at top of room list
 // ================================================================
@@ -2169,7 +2248,7 @@ function filterRoomList() {
     const count = unread[r.id] || 0;
     const isCustom = !!r.isCustom;
     return `
-    <div class="room-item ${r.id === activeRoomId ? 'active' : ''}" data-room="${r.id}">
+    <div class="room-item ${r.id === activeRoomId ? 'active' : ''}" data-room="${escapeHTML(r.id)}">
       <span class="room-item-name-wrap">
         <span>${escapeHTML(r.name)}</span>
         ${isCustom ? '<span class="room-item-custom-tag">Custom</span>' : ''}
@@ -2262,7 +2341,7 @@ renderMessages = function() {
     );
   }
 
-  messagesEl.innerHTML = (filteredMessages.length ? filteredMessages : messages).map(m => {
+  messagesEl.innerHTML = filteredMessages.map(m => {
     const isMe = m.author === me;
     const isOwnMessage = !!(myUserId && m.authorId && String(m.authorId) === myUserId);
     const canDelete = isOwnMessage || isSiteOwner;
@@ -2278,11 +2357,11 @@ renderMessages = function() {
     let bodyBlock;
     if (m.media && m.media.data){
       bodyBlock = m.media.type === 'video'
-        ? `<div class="media-note"><video controls preload="metadata" src="${m.media.data}"></video></div>`
-        : `<div class="media-note"><img src="${m.media.data}" alt="Shared image" loading="lazy"></div>`;
+        ? `<div class="media-note"><video controls preload="metadata" src="${safeSrc(m.media.data)}"></video></div>`
+        : `<div class="media-note"><img src="${safeSrc(m.media.data)}" alt="Shared image" loading="lazy"></div>`;
     } else if (m.audio && m.audio.data){
       bodyBlock = `<div class="voice-note">
-           <audio controls preload="metadata" src="${m.audio.data}"></audio>
+           <audio controls preload="metadata" src="${safeSrc(m.audio.data)}"></audio>
            <span class="voice-note-duration">${formatDuration(m.audio.duration)}</span>
          </div>`;
     } else {
@@ -2298,7 +2377,7 @@ renderMessages = function() {
           displayText = before + '<mark class="search-highlight">' + match + '</mark>' + after;
         }
       }
-      bodyBlock = displayText;
+      bodyBlock = `<span class="msg-text">${displayText}</span>`;
     }
 
     const replyText = m.text || (m.audio ? '🎤 Voice note' : (m.media ? (m.media.type === 'video' ? '🎬 Video' : '🖼️ Photo') : ''));
@@ -2319,7 +2398,7 @@ renderMessages = function() {
 
     // Reactions display
     const reactionsBlock = (m.reactions && m.reactions.length)
-      ? `<span class="msg-reactions">${m.reactions.map(r => r.emoji).join(' ')}</span>`
+      ? `<span class="msg-reactions">${m.reactions.map(r => escapeHTML(r.emoji)).join(' ')}</span>`
       : '';
 
     const authorIsClickable = !isMe && !!m.authorId;
@@ -2330,7 +2409,7 @@ renderMessages = function() {
     const editedTag = m.edited ? `<span class="msg-edited-tag">(edited)</span>` : '';
 
     // Sent/Delivered indicators (for own messages in DMs, shown as ticks)
-    const tickBlock = isMe && m.fromUserId ? `<span class="msg-tick" style="margin-left:4px;opacity:0.6;">✓</span>` : '';
+    const tickBlock = isMe && m.id ? `<span class="bx-tick${m.seenCount > 0 ? ' seen' : ''}">${m.seenCount > 0 ? '✓✓' : '✓'}</span>` : '';
 
     const bubbleInner = isEditingThis
       ? `<form class="msg-edit-form" data-id="${escapeHTML(m.id || '')}">
@@ -2359,6 +2438,8 @@ renderMessages = function() {
   if (!chatSearchActive) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
+
+  reportSeen();
 };
 
 // ================================================================
