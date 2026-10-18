@@ -527,10 +527,25 @@ if (dmMessageInput){
   dmMessageInput.addEventListener('input', handleDmTypingInput);
 }
 
+// Escapes text for use in HTML *and* inside quoted attributes (data-text="...",
+// value="...", etc.). The old version used div.innerHTML, which does NOT escape
+// quote characters — that let a message break out of an attribute.
 function escapeHTML(str){
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Only lets real image/video/audio data URLs through into src="..." attributes.
+function safeSrc(url){
+  if (typeof url !== 'string') return '';
+  if (!/^data:(image|video|audio)\//i.test(url)) return '';
+  if (/\s/.test(url.slice(0, 200))) return '';
+  if (url.indexOf('"') !== -1 || url.indexOf("'") !== -1 || url.indexOf('<') !== -1 || url.indexOf('>') !== -1) return '';
+  return url;
 }
 
 function formatDuration(seconds){
@@ -880,10 +895,10 @@ function renderContactList(){
     const isBlocked = blockedIds.has(String(c.id));
     const isSelected = groupCallSelectedIds.has(String(c.id));
     return `
-    <div class="contact-item ${activeContact && activeContact.id === c.id ? 'active' : ''} ${isSelected ? 'group-selected' : ''}" data-id="${c.id}">
+    <div class="contact-item ${activeContact && activeContact.id === c.id ? 'active' : ''} ${isSelected ? 'group-selected' : ''}" data-id="${escapeHTML(c.id)}">
       <span class="contact-select-check">${isSelected ? '✓' : ''}</span>
       <span class="contact-item-info">
-        <span class="contact-avatar${online ? ' is-online' : ''}" data-pf-uid="${c.id}" data-pf-name="${escapeHTML(c.username)}" data-pf-av="${escapeHTML(c.avatar || '')}" title="View profile">${c.avatar || '🎮'}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
+        <span class="contact-avatar${online ? ' is-online' : ''}" data-pf-uid="${escapeHTML(c.id)}" data-pf-name="${escapeHTML(c.username)}" data-pf-av="${escapeHTML(c.avatar || '')}" title="View profile">${escapeHTML(c.avatar || '🎮')}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
         <span class="contact-name">${escapeHTML(c.username)}</span>
         ${isBlocked ? '<span class="room-item-custom-tag">Blocked</span>' : ''}
       </span>
@@ -907,11 +922,11 @@ function renderDMMessages(){
     let bodyBlock;
     if (hasMedia){
       bodyBlock = m.media.type === 'video'
-        ? `<div class="media-note"><video controls preload="metadata" src="${m.media.data}"></video></div>`
-        : `<div class="media-note"><img src="${m.media.data}" alt="Shared image" loading="lazy"></div>`;
+        ? `<div class="media-note"><video controls preload="metadata" src="${safeSrc(m.media.data)}"></video></div>`
+        : `<div class="media-note"><img src="${safeSrc(m.media.data)}" alt="Shared image" loading="lazy"></div>`;
     } else if (hasAudio){
       bodyBlock = `<div class="voice-note">
-           <audio controls preload="metadata" src="${m.audio.data}"></audio>
+           <audio controls preload="metadata" src="${safeSrc(m.audio.data)}"></audio>
            <span class="voice-note-duration">${formatDuration(m.audio.duration)}</span>
          </div>`;
     } else {
@@ -947,7 +962,7 @@ function renderDMMessages(){
       : '';
 
     return `
-      <div class="msg ${isMe ? 'me' : ''}" data-id="${m.id}" data-author="${escapeHTML(authorName)}" data-text="${escapeHTML(replyText)}">
+      <div class="msg ${isMe ? 'me' : ''}" data-id="${escapeHTML(m.id)}" data-author="${escapeHTML(authorName)}" data-text="${escapeHTML(replyText)}">
         <span class="msg-reply-icon" title="Reply">↩</span>
         ${replyBlock}
         <span class="msg-author">${isMe ? 'You' : escapeHTML(activeContact.username)}</span>
@@ -1155,7 +1170,8 @@ async function openContact(contactId, fallback){
     blockStatus = { iBlockedThem: !!data.iBlockedThem, theyBlockedMe: !!data.theyBlockedMe };
     applyBlockStateToUI();
 
-    activeMessages = data.messages || [];
+    const hiddenDmIds = getHiddenDmIds();
+    activeMessages = (data.messages || []).filter(m => !hiddenDmIds.has(String(m.id)));
     renderDMMessages();
     markConversationSeen(contactId);
   } catch (err) {
@@ -1261,13 +1277,7 @@ dmMessagesEl.addEventListener('click', (e) => {
   }
 });
 
-// Right-click (desktop) also starts a reply — same convenience Chat.js offers.
-dmMessagesEl.addEventListener('contextmenu', (e) => {
-  const msgEl = e.target.closest('.msg');
-  if (!msgEl) return;
-  e.preventDefault();
-  setDmReplyTarget({ id: msgEl.dataset.id, author: msgEl.dataset.author, text: msgEl.dataset.text });
-});
+// (Right-click is handled once, further down, by the full context menu — it has Reply in it.)
 
 // Swipe-to-reply (either direction) on touch devices — same gesture as room chat.
 let dmTouchState = null; // { msgEl, startX, startY, active }
@@ -1630,6 +1640,9 @@ function handleIncomingDM(payload){
       if (payload && payload.message) window.alert(payload.message);
     });
 
+    // Reactions, streaks, stars, view-once etc. — attached right here, as soon as the socket exists.
+    addDmFeatureListeners();
+
     if (window.RemixCalls){
       // Use init() (not attachSocket()) so our getMyUserId/getMyUsername/getMyAvatar
       // context actually gets registered — attachSocket() only forwards the socket
@@ -1688,6 +1701,22 @@ let dmArchivedContacts = [];
 let dmStreaks = {};
 let dmReactionMsgId = null;
 
+// "Delete for Me" — remembered on this device so the message doesn't return on reload.
+function getHiddenDmIds(){
+  try {
+    return new Set(JSON.parse(localStorage.getItem('remix-nexusHiddenDMs') || '[]'));
+  } catch { return new Set(); }
+}
+
+function hideDmMessageForMe(messageId){
+  if (!messageId) return;
+  const ids = Array.from(getHiddenDmIds());
+  if (!ids.includes(String(messageId))) ids.push(String(messageId));
+  try {
+    localStorage.setItem('remix-nexusHiddenDMs', JSON.stringify(ids.slice(-2000)));
+  } catch {}
+}
+
 // Context menu for DMs
 let dmContextMenuEl = null;
 let dmContextMenuTargetId = null;
@@ -1710,9 +1739,11 @@ function showDmContextMenu(x, y, msgId, text) {
 
   const msg = activeMessages.find(m => String(m.id) === String(msgId));
   const isOwn = msg && me && String(msg.fromUserId) === String(me.id);
+  dmContextMenuTargetText = (msg && msg.text) || '';
 
   const options = [
     { id: 'reply', label: '↩ Reply' },
+    { id: 'react', label: '😊 React' },
     { id: 'copy', label: '📋 Copy' },
     { id: 'star', label: '⭐ Star' },
     { id: 'deleteMe', label: '🗑 Delete for Me' },
@@ -1744,6 +1775,7 @@ function handleDmContextMenuClick(e) {
   const action = btn.dataset.action;
   const msgId = dmContextMenuTargetId;
   const text = dmContextMenuTargetText;
+  const dmMenuRect = dmContextMenuEl.getBoundingClientRect();
   hideDmContextMenu();
 
   if (!msgId) return;
@@ -1752,6 +1784,10 @@ function handleDmContextMenuClick(e) {
     case 'reply': {
       const msgEl = document.querySelector(`.msg[data-id="${CSS.escape(msgId)}"]`);
       if (msgEl) setDmReplyTarget({ id: msgEl.dataset.id, author: msgEl.dataset.author, text: msgEl.dataset.text });
+      break;
+    }
+    case 'react': {
+      setTimeout(() => showDmReactionPicker(dmMenuRect.left, dmMenuRect.top, msgId), 0);
       break;
     }
     case 'copy': {
@@ -1763,6 +1799,7 @@ function handleDmContextMenuClick(e) {
       break;
     }
     case 'deleteMe': {
+      hideDmMessageForMe(msgId);
       activeMessages = activeMessages.filter(m => String(m.id) !== String(msgId));
       renderDMMessages();
       break;
@@ -1790,6 +1827,14 @@ dmMessagesEl.addEventListener('contextmenu', (e) => {
   const msgId = msgEl.dataset.id;
   const text = msgEl.dataset.text || '';
   showDmContextMenu(e.clientX, e.clientY, msgId, text);
+});
+
+// Double-click / double-tap a message to react.
+dmMessagesEl.addEventListener('dblclick', (e) => {
+  const msgEl = e.target.closest('.msg');
+  if (!msgEl || e.target.closest('button, audio, video, input')) return;
+  if (!msgEl.dataset.id) return;
+  showDmReactionPicker(e.clientX, e.clientY, msgEl.dataset.id);
 });
 
 // Toggle star for a DM message via REST
@@ -2040,10 +2085,12 @@ renderContactList = function() {
     const online = isContactOnline(c.id);
     const isBlocked = blockedIds.has(String(c.id));
     const friendEmoji = getFriendStatusEmoji(c.id);
+    const isSelected = groupCallSelectedIds.has(String(c.id));
     return `
-    <div class="contact-item ${activeContact && activeContact.id === c.id ? 'active' : ''}" data-id="${c.id}">
+    <div class="contact-item ${activeContact && activeContact.id === c.id ? 'active' : ''} ${isSelected ? 'group-selected' : ''}" data-id="${escapeHTML(c.id)}">
+      <span class="contact-select-check">${isSelected ? '✓' : ''}</span>
       <span class="contact-item-info">
-        <span class="contact-avatar${online ? ' is-online' : ''}" data-pf-uid="${c.id}" data-pf-name="${escapeHTML(c.username)}" data-pf-av="${escapeHTML(c.avatar || '')}" title="View profile">${c.avatar || '🎮'}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
+        <span class="contact-avatar${online ? ' is-online' : ''}" data-pf-uid="${escapeHTML(c.id)}" data-pf-name="${escapeHTML(c.username)}" data-pf-av="${escapeHTML(c.avatar || '')}" title="View profile">${escapeHTML(c.avatar || '🎮')}${online ? '<span class="online-dot" title="Online"></span>' : ''}</span>
         <span class="contact-name">${escapeHTML(c.username)}</span>
         ${friendEmoji ? `<span class="friend-status-emoji" title="Friend status">${friendEmoji}</span>` : ''}
         ${isBlocked ? '<span class="room-item-custom-tag">Blocked</span>' : ''}
@@ -2067,10 +2114,12 @@ renderDMMessages = function() {
   // Filter by search query if active
   let filteredMessages = activeMessages;
   if (dmMsgSearchActive && dmMsgSearchQuery) {
-    filteredMessages = activeMessages.filter(m =>
-      (m.text && m.text.toLowerCase().includes(dmMsgSearchQuery)) ||
-      (m.fromUserId && m.fromUserId.toLowerCase().includes(dmMsgSearchQuery))
-    );
+    filteredMessages = activeMessages.filter(m => m.text && m.text.toLowerCase().includes(dmMsgSearchQuery));
+
+    if (!filteredMessages.length) {
+      dmMessagesEl.innerHTML = '<p class="empty-state">No messages match your search.</p>';
+      return;
+    }
   }
 
   dmMessagesEl.innerHTML = filteredMessages.map(m => {
@@ -2083,7 +2132,7 @@ renderDMMessages = function() {
 
     let bodyBlock;
     if (hasMedia) {
-      if (isViewOnce && !isViewOnceViewed && !isMe) {
+      if (isViewOnce && !isViewOnceViewed && !isMe && !m._revealed) {
         // View-once media from other person — show blurred overlay
         bodyBlock = `<div class="media-note view-once-media">
           <div class="view-once-placeholder" style="padding:30px;text-align:center;background:rgba(0,0,0,0.3);border-radius:12px;cursor:pointer;">
@@ -2091,21 +2140,21 @@ renderDMMessages = function() {
             <p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,0.5);">Tap to view once</p>
           </div>
         </div>`;
-      } else if (isViewOnce && isViewOnceViewed && !isMe) {
+      } else if (isViewOnce && isViewOnceViewed && !isMe && !m._revealed) {
         // Already viewed
         bodyBlock = `<div class="media-note"><div class="view-once-placeholder" style="padding:30px;text-align:center;background:rgba(0,0,0,0.3);border-radius:12px;"><span style="font-size:24px;opacity:0.5;">👁️</span><p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,0.3);">Viewed</p></div></div>`;
       } else {
         bodyBlock = m.media.type === 'video'
-          ? `<div class="media-note"><video controls preload="metadata" src="${m.media.data}"></video></div>`
-          : `<div class="media-note"><img src="${m.media.data}" alt="Shared image" loading="lazy"></div>`;
+          ? `<div class="media-note"><video controls preload="metadata" src="${safeSrc(m.media.data)}"></video></div>`
+          : `<div class="media-note"><img src="${safeSrc(m.media.data)}" alt="Shared image" loading="lazy"></div>`;
         // Add snap timer overlay if set
         if (m.snapTimer && m.snapTimer > 0) {
-          bodyBlock += `<span class="snap-timer-badge">⏱ ${m.snapTimer}s</span>`;
+          bodyBlock += `<span class="snap-timer-badge">⏱ ${Number(m.snapTimer) || 0}s</span>`;
         }
       }
     } else if (hasAudio) {
       bodyBlock = `<div class="voice-note">
-           <audio controls preload="metadata" src="${m.audio.data}"></audio>
+           <audio controls preload="metadata" src="${safeSrc(m.audio.data)}"></audio>
            <span class="voice-note-duration">${formatDuration(m.audio.duration)}</span>
          </div>`;
     } else {
@@ -2150,16 +2199,16 @@ renderDMMessages = function() {
 
     // Reactions display
     const reactionsBlock = (m.reactions && m.reactions.length)
-      ? `<span class="msg-reactions">${m.reactions.map(r => r.emoji).join(' ')}</span>`
+      ? `<span class="msg-reactions">${m.reactions.map(r => escapeHTML(r.emoji)).join(' ')}</span>`
       : '';
 
     // Snap timer badge for self-destructing messages
     const snapTimerBlock = m.snapTimer && m.snapTimer > 0 && !isMe
-      ? `<span class="snap-timer-badge">⏱ ${m.snapTimer}s</span>`
+      ? `<span class="snap-timer-badge">⏱ ${Number(m.snapTimer) || 0}s</span>`
       : '';
 
     return `
-      <div class="msg ${isMe ? 'me' : ''} ${isStarred ? 'starred' : ''}" data-id="${m.id}" data-author="${escapeHTML(authorName)}" data-text="${escapeHTML(replyText)}">
+      <div class="msg ${isMe ? 'me' : ''} ${isStarred ? 'starred' : ''}" data-id="${escapeHTML(m.id)}" data-author="${escapeHTML(authorName)}" data-text="${escapeHTML(replyText)}">
         <span class="msg-reply-icon" title="Reply">↩</span>
         ${replyBlock}
         <span class="msg-author">${isMe ? 'You' : escapeHTML(activeContact.username)}</span>
@@ -2195,8 +2244,14 @@ dmMessagesEl.addEventListener('click', (e) => {
     const targetMsg = activeMessages.find(m => String(m.id) === String(msgId));
     if (!targetMsg || !targetMsg.viewOnce || targetMsg.viewOnceViewed) return;
 
-    // Mark as viewed locally
+    // Reveal the media now, then hide it again after the snap timer (10 seconds if none was set)
+    targetMsg._revealed = true;
     targetMsg.viewOnceViewed = true;
+    const revealSeconds = Number(targetMsg.snapTimer) > 0 ? Number(targetMsg.snapTimer) : 10;
+    setTimeout(() => {
+      targetMsg._revealed = false;
+      renderDMMessages();
+    }, revealSeconds * 1000);
     // Notify server
     if (socket && socket.connected) {
       socket.emit('dm:message:viewed', { messageId: msgId });
@@ -2259,8 +2314,11 @@ function handleDmViewOnceViewed({ messageId, byUserId } = {}) {
 // We'll patch the socket setup after the existing init runs.
 
 // Create a function to add the new listeners
+var dmFeatureListenersAttached = false;
+
 function addDmFeatureListeners() {
-  if (!socket) return;
+  if (!socket || dmFeatureListenersAttached) return;
+  dmFeatureListenersAttached = true;
   socket.on('dm:message:reacted', handleDmReacted);
   socket.on('dm:streak:update', handleDmStreakUpdate);
   socket.on('dm:screenshot:detected', handleDmScreenshot);
@@ -2295,11 +2353,12 @@ setTimeout(() => {
   addDmFeatureListeners();
   
   // Load streaks from server
-  if (socket && window.AUTH && AUTH.isLoggedIn()) {
+  if (window.AUTH && AUTH.isLoggedIn()) {
     fetch(API_BASE + '/api/me/state', {
       headers: { Authorization: 'Bearer ' + AUTH.getToken() }
     }).then(res => res.json()).then(state => {
       dmStreaks = state.streaks || {};
+      dmStarredMessages = (state.starredMessages || []).map(String);
       renderStreakCounter();
       renderContactList();
     }).catch(() => {});
