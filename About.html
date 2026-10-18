@@ -18,7 +18,38 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./scroll-fix.css?v=2">
+<style>
+/* Compact, one-screen layout (self-contained: no extra CSS/JS file needed) */
+html,body{height:auto!important;min-height:100%;overflow-x:hidden;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+body.page-static,body.page-contact{position:static}
+.static-shell,.contact-shell{height:auto!important;overflow:visible!important;margin:8px auto 0!important;padding-bottom:8px!important}
+.static-card{padding:12px 14px!important;border-radius:14px!important}
+.static-card h1{font-size:19px!important;margin:0 0 2px!important}
+.static-card p,.static-card li,.static-card summary{font-size:12px!important;line-height:1.4!important}
+.static-card p{margin:3px 0!important}
+.static-card a{color:#6fa8ff}
+.static-tag{margin:0 0 3px!important;font-size:10px!important}
+.static-updated{margin:0 0 4px!important;font-size:11px!important}
+details.t{border-top:1px solid rgba(255,255,255,.08)}
+details.t summary{cursor:pointer;padding:6px 0;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+details.t summary::-webkit-details-marker{display:none}
+details.t summary::after{content:"\25B8";color:#8a96b5}
+details.t[open] summary::after{content:"\25BE"}
+details.t p{padding:0 0 6px!important;margin:0!important;color:#c9d2ea}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 4px}
+.chips span{font-size:11px;padding:3px 8px;border-radius:999px;background:#10141f;border:1px solid rgba(255,255,255,.08)}
+.contact-back-btn{display:inline-flex;align-items:center;gap:6px;margin:0 8px 6px 0;padding:4px 10px;border-radius:8px;background:#10141f;border:1px solid rgba(255,255,255,.08);color:#e8ecf7;font-size:12px;font-weight:600;text-decoration:none;transition:background .15s ease}
+.contact-back-btn:hover,.contact-back-btn:focus-visible{background:#0066ff;border-color:#0066ff;color:#fff}
+/* Contact: shrink form so it fits */
+.contact-intro{padding:8px 12px!important;margin:0 0 8px!important}
+.contact-intro h1{font-size:18px!important;margin:2px 0!important}
+.contact-intro p{display:none}
+.contact-card{padding:10px 12px!important}
+.contact-form .form-field{margin-bottom:6px!important}
+.contact-form label{font-size:11px!important;margin-bottom:2px!important}
+.contact-form input,.contact-form select,.contact-form textarea{padding:6px 9px!important;font-size:12px!important}
+@media(max-width:820px){.contact-side{display:none!important}}
+</style>
 </head>
 <body class="page-static">
 
@@ -43,76 +74,17 @@
 <section class="static-shell">
   <div class="static-card">
     <a href="./Settings.html" class="contact-back-btn" aria-label="Back to Settings">&larr; Settings</a>
-    <br>
     <span class="static-tag">Who we are</span>
     <h1>About 𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘</h1>
     <p class="static-updated">Last updated: July 2026</p>
+    <p>𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 (RemixMC) is a free, community-run gaming society for players who would rather squad up than grind alone &mdash; Minecraft, Roblox, Fortnite, Call of Duty, Free Fire, PUBG, GTA, Among Us and more.</p>
+    <div class="chips"><span>💬 Live chat rooms</span><span>📞 Voice &amp; video calls</span><span>👥 Contacts &amp; DMs</span><span>🔥 Live &amp; Trending</span><span>🔎 Search</span><span>👤 Profiles</span></div>
+    <details class="t"><summary>Chat features</summary><p>Create your own room, reply to a specific message (swipe left or right-click), see typing indicators and online status, and start 1:1 or squad calls.</p></details>
+    <details class="t"><summary>Good to know</summary><p>Messages disappear after 3 days. Anyone can create a room, but only the site owner can delete one (default rooms are permanent) or remove any message. You can always delete your own. Video uploads are capped at 30 minutes. Allow mic, camera and notifications for calls and alerts.</p></details>
+    <details class="t"><summary>Notifications</summary><p>You get desktop notifications while RemixMC is open. The Android app also sends push notifications for messages and calls when closed or locked.</p></details>
+    <details class="t"><summary>Our approach</summary><p>Lightweight and free: no pay-to-win and no locked rooms. We run ads to cover hosting costs &mdash; see the <a href="./Terms.html">Terms</a> and <a href="./Privacy.html">Privacy Policy</a>.</p></details>
+    <details class="t"><summary>Get in touch</summary><p>Feedback, bugs or room ideas? Use our <a href="./Contact.html">Contact page</a> &mdash; we read every message.</p></details>
 
-    <p>
-      𝕽𝖊𝖒𝖎𝖝 𝕹𝖊𝖝𝖚𝖘 (RemixMC) is a free, community-run gaming society built for
-      players who'd rather squad up than grind alone. Whether you're into
-      Minecraft, Roblox, Fortnite, Call of Duty, Free Fire, PUBG, GTA, or
-      Among Us, RemixMC gives you a live room to talk in, real people to
-      play with, and a place to keep up with what the community is doing.
-    </p>
-
-    <h2>What you'll find here</h2>
-    <ul>
-      <li><strong>Live chat rooms</strong> — jump into a room for your favorite game and talk in real time.</li>
-      <li><strong>Create your own room</strong> — any logged-in member can start a new room, the same way you'd start a group on WhatsApp. Once created, it's open for everyone on RemixMC to join and chat in.</li>
-      <li><strong>Voice &amp; video calls</strong> — start a 1:1 voice or video call with anyone in your Contacts, or start a squad call right from a chat room so everyone currently in that room can join in.</li>
-      <li><strong>Reply to a specific message</strong> — swipe left on a message (or right-click it on desktop) to quote it in your reply, in both chat rooms and private messages, so it's always clear what you're responding to.</li>
-      <li><strong>Typing indicators</strong> — see a quick "so-and-so is typing…" line when someone's about to reply, in rooms and in private messages.</li>
-      <li><strong>Online status</strong> — see at a glance whether someone in your Contacts is currently online, the same way you'd see it in WhatsApp.</li>
-      <li><strong>Contacts &amp; private messages</strong> — keep talking one-on-one with people you've met in a room.</li>
-      <li><strong>Live &amp; Trending</strong> — the latest uploads from the RemixMC YouTube channel and community highlights.</li>
-      <li><strong>Search</strong> — find a squad room by game name in a couple of keystrokes.</li>
-      <li><strong>Profiles</strong> — a simple account and avatar system so people recognize you across rooms.</li>
-    </ul>
-
-    <h2>Chat &amp; Contacts, app-style</h2>
-    <p>
-      On phones and tablets (including the Android app), Chat and Contacts
-      work like WhatsApp or Snapchat: you see one screen at a time — either
-      the list of rooms/contacts, or the open conversation — with a back
-      button to return to the list. Everything is sized to fit your screen
-      with no extra scrolling around the conversation itself.
-    </p>
-
-    <h2>Good to know</h2>
-    <ul>
-      <li><strong>Chat messages are temporary</strong> — to keep rooms fast and clutter-free, every message you send automatically disappears after 3 days. This applies to rooms you create too.</li>
-      <li><strong>Anyone can create a room, only the site owner can delete one</strong> — creating a room is open to every logged-in member, but to keep the room list under control, only RemixMC's creator and site owner can remove a room once it exists. The default rooms (Just Chatting Lounge, etc.) can never be deleted by anyone.</li>
-      <li><strong>Room moderation</strong> — RemixMC's site owner can remove any message in any room, not just their own, to keep chat rooms on-topic and free of abuse — same as an admin in a WhatsApp group. Everyone can still delete their own messages at any time.</li>
-      <li><strong>Video uploads are capped at 30 minutes</strong> — clips can run up to 30 minutes long; anything longer won't be accepted.</li>
-      <li><strong>Enable your mic, camera and notifications</strong> — allow microphone access to send voice notes and make calls, camera access for video calls, and notifications so you never miss a reply or an incoming call.</li>
-    </ul>
-
-    <h2>Notifications</h2>
-    <p>
-      While RemixMC is open in your browser, you'll get a desktop
-      notification for new messages and incoming calls the moment they
-      arrive. On the Android app, you'll also get a push notification for
-      new messages and calls even when the app is closed or your phone is
-      locked.
-    </p>
-
-    <h2>Our approach</h2>
-    <p>
-      RemixMC is built to stay lightweight and free to join. There's no
-      pay-to-win, no locked chat rooms, and no barrier between you and the
-      next match. We do run advertising on this site to help cover hosting
-      and development costs, and we're upfront about that — see our
-      <a href="./Terms.html">Terms of Service</a> and
-      <a href="./Privacy.html">Privacy Policy</a> for the details.
-    </p>
-
-    <h2>Get in touch</h2>
-    <p>
-      Got feedback, found a bug, or want to suggest a new squad room?
-      Head over to our <a href="./Contact.html">Contact page</a> — we read
-      every message.
-    </p>
   </div>
 </section>
 
@@ -120,6 +92,5 @@
 <script src="./auth.js"></script>
 <script src="./chat-notifications.js"></script>
     <script src="/js/pwa-register.js"></script>
-    <script src="./scroll-unlock.js?v=2"></script>
 </body>
 </html>
