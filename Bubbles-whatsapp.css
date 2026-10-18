@@ -16,11 +16,12 @@
   --wa-gap-new: 12px;                  /* when the sender changes */
 }
 
-/* ---------- chat wallpaper: black with a faint blue glow ---------- */
+/* ---------- chat wallpaper: the background VIDEO (set in Chat.html / Contacts.html) shows through.
+   This used to paint a solid black (#03050a) over the messages area, which hid the video.
+   Now it is transparent with only a very faint blue glow on top. ---------- */
 html body .chat-main .messages {
   background:
-    radial-gradient(ellipse at 80% 0%, rgba(0, 102, 255, 0.08), transparent 55%),
-    #03050a !important;
+    radial-gradient(ellipse at 80% 0%, rgba(0, 102, 255, 0.05), transparent 55%) !important;
   padding: 10px 0 8px !important;
 }
 
