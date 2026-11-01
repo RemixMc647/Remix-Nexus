@@ -1,0 +1,131 @@
+/* =========================================================
+   NEXUS VARS / REMIX VARS — DESKTOP LAYER (Windows + Linux)
+   Load AFTER styles.css:
+   <link rel="stylesheet" href="styles.css">
+   <link rel="stylesheet" href="desktop.css">
+   CSS can't detect the OS directly, so this layer targets what
+   actually differs: fonts, scrollbars, form controls, high-contrast
+   mode, pointer type, and large monitors.
+   ========================================================= */
+
+:root{color-scheme:dark}
+
+/* ---- 1. Fonts: native UI font on each OS, same fallback chain ---- */
+body{
+  font-family:Inter,"Segoe UI Variable Text","Segoe UI",          /* Windows */
+              Ubuntu,Cantarell,"Noto Sans","DejaVu Sans",          /* Linux   */
+              system-ui,-apple-system,sans-serif;
+  text-rendering:optimizeLegibility;
+  font-kerning:normal;
+}
+.hero h1,.brand,.life-ended .rank{
+  font-family:Inter,"Segoe UI Variable Display","Segoe UI",Ubuntu,Cantarell,"Noto Sans",system-ui,sans-serif;
+}
+::selection{background:rgba(255,79,216,.45);color:#fff}
+
+/* ---- 2. Scrollbars: dark, thin, themed (Firefox/Linux + Chrome/Edge) ---- */
+html{scrollbar-color:#6a5cff #120c2e;scrollbar-width:thin}
+*{scrollbar-color:#6a5cff transparent}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:#120c2e}
+::-webkit-scrollbar-thumb{background:linear-gradient(#ff4fd8,#6a5cff,#41f3ff);border-radius:99px;border:2px solid #120c2e}
+::-webkit-scrollbar-thumb:hover{filter:brightness(1.2)}
+.log{padding-right:6px;max-height:min(400px,50vh)}
+
+/* ---- 3. Native form controls (Windows/Linux dropdowns default to white) ---- */
+select,input{color-scheme:dark}
+select option,select optgroup{background:#171039;color:#fffaff}
+input::placeholder,.ll-input::placeholder{color:#a99fdc;opacity:1}
+input:-webkit-autofill{-webkit-text-fill-color:#fffaff;box-shadow:0 0 0 100px #171039 inset}
+
+/* ---- 4. Keyboard focus: visible rings (desktop users tab around) ---- */
+:focus{outline:none}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:3px;border-radius:12px}
+.btn:focus-visible,.choice:focus-visible,.list-action:focus-visible,.tab:focus-visible{
+  outline-color:#c7ff5e;box-shadow:0 0 0 6px rgba(199,255,94,.18)}
+
+/* ---- 5. Mouse-only effects (don't fire "stuck" hovers on touch laptops) ---- */
+@media (hover:none){
+  .card:hover,.btn:hover,.choice:hover,.list-action:hover,.tab:hover{transform:none;filter:none}
+}
+@media (hover:hover) and (pointer:fine){
+  .choice,.list-action,.tab,.btn{cursor:pointer}
+  .btn:active,.choice:active,.list-action:active,.tab:active{transform:translateY(1px) scale(.99);filter:brightness(.95)}
+  .choice:hover .arrow{transform:translateX(4px)}
+  .choice .arrow{transition:transform .2s}
+}
+
+/* ---- 6. Desktop layout (≥ 1100px) ---- */
+@media (min-width:1100px){
+  .page{width:min(1280px,90vw);margin-top:clamp(84px,9vh,110px)}
+  .hero{padding:clamp(40px,4.5vw,72px)}
+  .hero h1{font-size:clamp(52px,5.4vw,78px)}
+  .grid{gap:22px;margin-top:24px}
+  .card{padding:26px}
+  .metric-row{gap:14px}
+  .metric{padding:16px}
+  .metric strong{font-size:24px}
+  .person-actions button{font-size:12px;padding:7px 11px}
+  .choice,.list-action{padding:15px 18px}
+  .rv-sound-toggle{top:20px;left:24px}
+}
+
+/* ---- 7. Big monitors: 1440p / 4K — scale up instead of floating in space ---- */
+@media (min-width:1700px){
+  body{font-size:16px}
+  .page{width:min(1480px,84vw)}
+  .hero p{font-size:19px}
+  .eyebrow{font-size:12px}
+}
+@media (min-width:2400px){
+  body{font-size:18px}
+  .page{width:min(1800px,80vw)}
+  .hero h1{font-size:96px;max-width:1100px}
+  .hero p{max-width:820px;font-size:22px}
+}
+
+/* ---- 8. Short windows (small laptops, 768px tall): tighten vertical space ---- */
+@media (min-width:1100px) and (max-height:760px){
+  .page{margin-top:72px}
+  .hero{padding:32px 44px}
+  .hero h1{font-size:clamp(40px,4.6vw,58px);margin:10px 0}
+  .card{padding:20px}
+}
+
+/* ---- 9. Performance: Linux without GPU acceleration / low-end Windows ---- */
+/* Big blurred, always-animated layers are the most expensive thing in the file. */
+@media (min-width:851px){
+  body:before,body:after{filter:blur(32px);will-change:transform}
+  .rv-floater-layer{contain:strict}
+  .card{contain:layout paint}
+}
+@supports not (backdrop-filter:blur(1px)){
+  .topbar{background:rgba(14,10,36,.97)}
+}
+
+/* ---- 10. Windows High Contrast / forced colors (and Linux high-contrast themes) ---- */
+@media (forced-colors:active){
+  body:before,body:after,.aurora,#bg-canvas,.rv-floater-layer,.card:before,.hero:before{display:none}
+  .gradient-text{background:none;color:CanvasText;-webkit-text-fill-color:currentColor}
+  .hero,.card,.event-card,.metric,.choice,.list-action,.tab,.btn,.pill,.notice,.guide-item,.job-card{
+    border:1px solid CanvasText;background:Canvas;box-shadow:none;forced-color-adjust:auto}
+  .btn.primary,.tab.active,.choice:hover,.list-action:hover{border-color:Highlight;outline:2px solid Highlight}
+  .bar,.progress{border:1px solid CanvasText;background:Canvas}
+  .bar i,.progress i{background:Highlight;forced-color-adjust:none}
+  :focus-visible{outline:3px solid Highlight}
+}
+
+/* ---- 11. Motion: respect the OS "reduce animations" setting (Win + GNOME/KDE) ---- */
+@media (prefers-reduced-motion:reduce){
+  .rv-floater-layer{display:none}
+  body:before,body:after{opacity:.15}
+}
+
+/* ---- 12. Print (Ctrl+P): clean, ink-friendly ---- */
+@media print{
+  body{background:#fff!important;color:#000}
+  body:before,body:after,.rv-floater-layer,.rv-sound-toggle,.aurora,#bg-canvas{display:none!important}
+  .hero,.card{background:#fff!important;border:1px solid #999;box-shadow:none;animation:none!important;color:#000}
+  .gradient-text{background:none;color:#000;-webkit-text-fill-color:#000}
+  .muted,.small,.hero p{color:#444}
+}
